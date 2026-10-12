@@ -8,6 +8,8 @@ from app.schemas.common import (
 )
 from app.schemas.auth import (
     AuthenticatedPrincipal,
+    FirebaseConfigResponse,
+    FirebaseLoginRequest,
     TokenResponse,
     UserLoginRequest,
     UserRegisterRequest,

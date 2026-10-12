@@ -99,6 +99,18 @@ class UnsupportedMediaTypeError(AppException):
         )
 
 
+class ConflictError(AppException):
+    """Resource conflict, e.g. duplicate user registration (409)."""
+
+    def __init__(self, message: str = "Resource conflict", field: Optional[str] = None):
+        super().__init__(
+            message=message,
+            code="CONFLICT",
+            status_code=status.HTTP_409_CONFLICT,
+            field=field,
+        )
+
+
 class ValidationAppError(AppException):
     """Business validation violation (422)."""
 

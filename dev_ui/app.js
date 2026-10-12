@@ -72,6 +72,160 @@ document.addEventListener("DOMContentLoaded", () => {
     executeRequest("/api/v1/test/unhandled-error");
   });
 
+  // --- Phase 2 Authentication (Developer B) ---
+  let storedBearerToken = null;
+
+  // Register
+  document.getElementById("btnRegister").addEventListener("click", () => {
+    const email = document.getElementById("regEmail").value;
+    const password = document.getElementById("regPassword").value;
+    const fullName = document.getElementById("regName").value;
+    const role = document.getElementById("regRole").value;
+
+    executeRequest("/api/v1/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, full_name: fullName, role }),
+    });
+  });
+
+  // Login
+  document.getElementById("btnLogin").addEventListener("click", async () => {
+    const email = document.getElementById("loginEmail").value;
+    const password = document.getElementById("loginPassword").value;
+
+    statusPill.textContent = "Status: Authenticating...";
+    statusPill.style.color = "#f59e0b";
+    responseJson.textContent = "// Logging in...";
+
+    const startTime = performance.now();
+    try {
+      const response = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const elapsed = Math.round(performance.now() - startTime);
+      latencyPill.textContent = `Time: ${elapsed}ms`;
+      statusPill.textContent = `Status: ${response.status} ${response.statusText}`;
+      const data = await response.json();
+      responseJson.textContent = JSON.stringify(data, null, 2);
+
+      if (response.ok && data.data && data.data.access_token) {
+        storedBearerToken = data.data.access_token;
+        statusPill.style.color = "#10b981";
+        statusPill.textContent += " (Token Saved)";
+      } else {
+        statusPill.style.color = "#ef4444";
+      }
+    } catch (err) {
+      statusPill.textContent = "Status: Error";
+      statusPill.style.color = "#ef4444";
+      responseJson.textContent = JSON.stringify({ error: err.message }, null, 2);
+    }
+  });
+
+  // GET /auth/me (Protected)
+  document.getElementById("btnGetMe").addEventListener("click", () => {
+    const headers = {};
+    if (storedBearerToken) {
+      headers["Authorization"] = `Bearer ${storedBearerToken}`;
+    }
+    executeRequest("/api/v1/auth/me", { headers });
+  });
+
+  // GET /auth/recruiter-only (Role Protected)
+  document.getElementById("btnRecruiterCheck").addEventListener("click", () => {
+    const headers = {};
+    if (storedBearerToken) {
+      headers["Authorization"] = `Bearer ${storedBearerToken}`;
+    }
+    executeRequest("/api/v1/auth/recruiter-only", { headers });
+  });
+
+  // --- Firebase Web SDK Client Handlers ---
+  let firebaseAuthInstance = null;
+
+  async function getOrInitFirebaseAuth() {
+    if (firebaseAuthInstance) return firebaseAuthInstance;
+    const resp = await fetch("/api/v1/auth/firebase-config");
+    const json = await resp.json();
+    if (!json.success || !json.data.apiKey) {
+      throw new Error("Firebase API key not configured in .env on server");
+    }
+    const app = window.FirebaseSDK.initializeApp(json.data);
+    firebaseAuthInstance = window.FirebaseSDK.getAuth(app);
+    return firebaseAuthInstance;
+  }
+
+  // Fetch Firebase Config
+  document.getElementById("btnFirebaseConfig").addEventListener("click", () => {
+    executeRequest("/api/v1/auth/firebase-config");
+  });
+
+  // Firebase Create User
+  document.getElementById("btnFirebaseRegister").addEventListener("click", async () => {
+    const email = document.getElementById("fbEmail").value;
+    const password = document.getElementById("fbPassword").value;
+    statusPill.textContent = "Status: Firebase registering...";
+    statusPill.style.color = "#f59e0b";
+
+    try {
+      const auth = await getOrInitFirebaseAuth();
+      const userCred = await window.FirebaseSDK.createUserWithEmailAndPassword(auth, email, password);
+      const idToken = await userCred.user.getIdToken();
+
+      // Exchange with backend
+      await executeRequest("/api/v1/auth/firebase-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: idToken, role: "candidate" }),
+      });
+    } catch (err) {
+      statusPill.textContent = "Status: Firebase Error";
+      statusPill.style.color = "#ef4444";
+      responseJson.textContent = JSON.stringify({ error: err.message, code: err.code }, null, 2);
+    }
+  });
+
+  // Firebase Sign In
+  document.getElementById("btnFirebaseLogin").addEventListener("click", async () => {
+    const email = document.getElementById("fbEmail").value;
+    const password = document.getElementById("fbPassword").value;
+    statusPill.textContent = "Status: Firebase authenticating...";
+    statusPill.style.color = "#f59e0b";
+
+    try {
+      const auth = await getOrInitFirebaseAuth();
+      const userCred = await window.FirebaseSDK.signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCred.user.getIdToken();
+
+      // Exchange with backend
+      const startTime = performance.now();
+      const response = await fetch("/api/v1/auth/firebase-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_token: idToken, role: "candidate" }),
+      });
+      const elapsed = Math.round(performance.now() - startTime);
+      latencyPill.textContent = `Time: ${elapsed}ms`;
+      statusPill.textContent = `Status: ${response.status} ${response.statusText}`;
+
+      const data = await response.json();
+      responseJson.textContent = JSON.stringify(data, null, 2);
+
+      if (response.ok && data.data && data.data.access_token) {
+        storedBearerToken = data.data.access_token;
+        statusPill.style.color = "#10b981";
+        statusPill.textContent += " (Token Saved)";
+      }
+    } catch (err) {
+      statusPill.textContent = "Status: Firebase Error";
+      statusPill.style.color = "#ef4444";
+      responseJson.textContent = JSON.stringify({ error: err.message, code: err.code }, null, 2);
+    }
+  });
+
   // Auto-ping health on initial load
   executeRequest("/api/v1/health");
 });

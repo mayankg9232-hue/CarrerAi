@@ -76,6 +76,62 @@
             <p class="action-desc">Verify 500 handler sanitizes internal exceptions.</p>
             <button class="btn btn-danger" id="btnTrigger500">Trigger Safe 500</button>
           </div>
+
+          <!-- Phase 2 Authentication Section (Developer B) -->
+          <div class="action-item" style="border-top: 1px solid var(--border-color, #27272a); padding-top: 1.25rem;">
+            <div class="action-header">
+              <span class="method post">POST</span>
+              <span class="endpoint">/api/v1/auth/register</span>
+            </div>
+            <p class="action-desc">Register candidate or recruiter account with bcrypt hashing.</p>
+            <div class="form-row">
+              <input type="text" id="regEmail" placeholder="Email" value="candidate@test.com">
+              <input type="password" id="regPassword" placeholder="Password (min 8)" value="Secret123!">
+            </div>
+            <div class="form-row" style="margin-top: 0.5rem;">
+              <input type="text" id="regName" placeholder="Full Name" value="Alex Test">
+              <select id="regRole" style="background:#18181b; color:#fff; border:1px solid #3f3f46; border-radius:6px; padding:0.5rem;">
+                <option value="candidate">Candidate</option>
+                <option value="recruiter">Recruiter</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="btnRegister" style="margin-top: 0.5rem;">Register Account</button>
+          </div>
+
+          <div class="action-item">
+            <div class="action-header">
+              <span class="method post">POST</span>
+              <span class="endpoint">/api/v1/auth/login</span>
+            </div>
+            <p class="action-desc">Authenticate and acquire signed JWT Bearer token.</p>
+            <div class="form-row">
+              <input type="text" id="loginEmail" placeholder="Email" value="candidate@test.com">
+              <input type="password" id="loginPassword" placeholder="Password" value="Secret123!">
+            </div>
+            <div class="button-row" style="margin-top: 0.5rem;">
+              <button class="btn btn-secondary" id="btnLogin">Login & Store Token</button>
+              <button class="btn btn-outline" id="btnGetMe">Verify GET /auth/me</button>
+              <button class="btn btn-warning" id="btnRecruiterCheck">Check Recruiter Role</button>
+            </div>
+          </div>
+
+          <!-- Firebase Authentication Section (Client Web SDK) -->
+          <div class="action-item" style="border-top: 1px solid var(--border-color, #27272a); padding-top: 1.25rem;">
+            <div class="action-header">
+              <span class="method post">POST</span>
+              <span class="endpoint">/api/v1/auth/firebase-login</span>
+            </div>
+            <p class="action-desc">Firebase Web SDK Authentication (Project: aihiring-3d070).</p>
+            <div class="form-row">
+              <input type="text" id="fbEmail" placeholder="Firebase Email" value="candidate@test.com">
+              <input type="password" id="fbPassword" placeholder="Firebase Password" value="Secret123!">
+            </div>
+            <div class="button-row" style="margin-top: 0.5rem;">
+              <button class="btn btn-primary" id="btnFirebaseRegister">Firebase Create User</button>
+              <button class="btn btn-secondary" id="btnFirebaseLogin">Firebase Sign In</button>
+              <button class="btn btn-outline" id="btnFirebaseConfig">Fetch Config</button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -108,6 +164,18 @@
     </footer>
   </div>
 
+  <!-- Firebase Web SDK Modular Scripts -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+    window.FirebaseSDK = {
+      initializeApp,
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+    };
+  </script>
   <script src="/dev-ui-assets/app.js"></script>
 </body>
 </html>

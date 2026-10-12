@@ -52,3 +52,22 @@ class AuthenticatedPrincipal(BaseModel):
     full_name: Optional[str] = None
     role: str = Field(default="candidate", description="Principal role")
     is_active: bool = Field(default=True, description="Account active status")
+
+
+class FirebaseLoginRequest(BaseModel):
+    """Payload to authenticate with Firebase ID token from client SDK."""
+
+    id_token: str = Field(min_length=10, description="Raw Firebase ID token (JWT) from client SDK")
+    role: Literal["candidate", "recruiter"] = Field(default="candidate", description="Assigned role if new user")
+
+
+class FirebaseConfigResponse(BaseModel):
+    """Public Firebase configuration needed by client Web SDK."""
+
+    apiKey: str
+    authDomain: str
+    projectId: str
+    storageBucket: str
+    messagingSenderId: str
+    appId: str
+    measurementId: Optional[str] = None

@@ -30,6 +30,16 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     ALGORITHM: str = "HS256"
 
+    # Firebase Authentication
+    FIREBASE_API_KEY: str = ""
+    FIREBASE_AUTH_DOMAIN: str = "aihiring-3d070.firebaseapp.com"
+    FIREBASE_PROJECT_ID: str = "aihiring-3d070"
+    FIREBASE_STORAGE_BUCKET: str = "aihiring-3d070.firebasestorage.app"
+    FIREBASE_MESSAGING_SENDER_ID: str = "14319993219"
+    FIREBASE_APP_ID: str = ""
+    FIREBASE_MEASUREMENT_ID: str = "G-EMPGKM4ZG6"
+    AUTH_PROVIDER: str = "hybrid"  # "local", "firebase", or "hybrid"
+
     # Database
     DATABASE_URL: str = "sqlite+aiosqlite:///./app_dev.db"
 
