@@ -1,6 +1,6 @@
-"""Authorization policies and resource ownership access control (Developer A coordination)."""
+"""Authorization policies and resource ownership access control (Developer A lead)."""
 
-from typing import Callable, Sequence
+from typing import Callable, Sequence, Set
 from fastapi import Depends
 
 from app.authentication.dependencies import get_current_user
@@ -14,6 +14,10 @@ def require_role(*allowed_roles: str) -> Callable[[AuthenticatedPrincipal], Auth
     def role_checker(
         current_user: AuthenticatedPrincipal = Depends(get_current_user),
     ) -> AuthenticatedPrincipal:
+        # Enforce account is active
+        if not current_user.is_active:
+            raise AuthorizationError("Account is inactive or disabled")
+
         if current_user.role not in allowed_roles:
             raise AuthorizationError(
                 f"Insufficient role permissions. Allowed roles: {', '.join(allowed_roles)}"
@@ -23,12 +27,26 @@ def require_role(*allowed_roles: str) -> Callable[[AuthenticatedPrincipal], Auth
     return role_checker
 
 
+def require_active_user(
+    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+) -> AuthenticatedPrincipal:
+    """Dependency ensuring caller's account is currently active."""
+    if not current_user.is_active:
+        raise AuthorizationError("Account is inactive or disabled")
+    return current_user
+
+
 def assert_resource_owner(
     resource_user_id: str,
     principal: AuthenticatedPrincipal,
     allow_admin: bool = True,
 ) -> None:
     """Validate that the authenticated principal owns the target resource (IDOR defense)."""
+    # Verify active account
+    if not principal.is_active:
+        raise AuthorizationError("Account is inactive or disabled")
+
+    # Admins optionally bypass individual resource ownership check
     if allow_admin and principal.role == "admin":
         return
 

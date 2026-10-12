@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     ALGORITHM: str = "HS256"
 
+    # Rate Limiting & Security (Developer A)
+    RATE_LIMIT_LOGIN_MAX: int = 50
+    RATE_LIMIT_LOGIN_WINDOW_SECONDS: int = 60
+    MAX_PAYLOAD_SIZE_BYTES: int = 5 * 1024 * 1024  # 5 MB
+
     # Firebase Authentication
     FIREBASE_API_KEY: str = ""
     FIREBASE_AUTH_DOMAIN: str = "aihiring-3d070.firebaseapp.com"
@@ -38,6 +43,7 @@ class Settings(BaseSettings):
     FIREBASE_MESSAGING_SENDER_ID: str = "14319993219"
     FIREBASE_APP_ID: str = ""
     FIREBASE_MEASUREMENT_ID: str = "G-EMPGKM4ZG6"
+    FIREBASE_SERVICE_ACCOUNT_PATH: str = ""
     AUTH_PROVIDER: str = "hybrid"  # "local", "firebase", or "hybrid"
 
     # Database

@@ -2,6 +2,8 @@
 
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import json
+import os
 import uuid
 import bcrypt
 import httpx
@@ -36,6 +38,17 @@ class AuthenticationService:
         self.bcrypt_rounds = bcrypt_rounds
         self._google_certs_cache: dict[str, str] = {}
         self._google_certs_last_fetch: float = 0.0
+
+    def get_service_account_credentials(self) -> Optional[dict]:
+        """Load service account JSON credentials if path is configured and exists."""
+        path = self.settings.FIREBASE_SERVICE_ACCOUNT_PATH
+        if path and os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.warning(f"Failed to read Firebase service account credentials: {e}")
+        return None
 
     def hash_password(self, plain_password: str) -> str:
         """Hash a plain text password using bcrypt."""

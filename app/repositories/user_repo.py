@@ -50,6 +50,11 @@ class IUserRepository(ABC):
         pass
 
     @abstractmethod
+    async def update_user(self, user_id: str, **updates) -> Optional[UserRecord]:
+        """Update fields of an existing user record."""
+        pass
+
+    @abstractmethod
     async def clear(self) -> None:
         """Clear all stored users (primarily for testing fixtures)."""
         pass
@@ -99,6 +104,15 @@ class InMemoryUserRepository(IUserRepository):
 
     async def list_users(self) -> List[UserRecord]:
         return list(self._users_by_id.values())
+
+    async def update_user(self, user_id: str, **updates) -> Optional[UserRecord]:
+        user = self._users_by_id.get(user_id)
+        if not user:
+            return None
+        for key, value in updates.items():
+            if hasattr(user, key):
+                setattr(user, key, value)
+        return user
 
     async def clear(self) -> None:
         self._users_by_id.clear()

@@ -4,8 +4,10 @@ from fastapi import APIRouter, Depends, status
 
 from app.authentication.dependencies import get_current_user
 from app.authentication.service import AuthenticationService, get_auth_service
+from app.authorization.dependencies import RequireRole, VerifyResourceOwnership
 from app.authorization.policies import assert_resource_owner, require_role
 from app.core.config import get_settings
+from app.core.rate_limiter import RateLimiterDependency
 from app.schemas.auth import (
     AuthenticatedPrincipal,
     FirebaseConfigResponse,
@@ -18,6 +20,16 @@ from app.schemas.auth import (
 from app.schemas.common import StandardResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+settings = get_settings()
+
+auth_rate_limiter = RateLimiterDependency(
+    requests_limit=settings.RATE_LIMIT_LOGIN_MAX,
+    window_seconds=settings.RATE_LIMIT_LOGIN_WINDOW_SECONDS,
+)
+strict_test_rate_limiter = RateLimiterDependency(
+    requests_limit=3,
+    window_seconds=10,
+)
 
 
 @router.post(
@@ -42,6 +54,7 @@ async def register(
     "/login",
     response_model=StandardResponse[TokenResponse],
     status_code=status.HTTP_200_OK,
+    dependencies=[Depends(auth_rate_limiter)],
     summary="Authenticate and receive JWT access token",
 )
 async def login(
@@ -76,15 +89,46 @@ async def get_me(
     "/recruiter-only",
     response_model=StandardResponse[dict],
     status_code=status.HTTP_200_OK,
-    summary="Role-protected test route",
+    summary="Role-protected test route for recruiters",
 )
 async def recruiter_only(
-    current_user: AuthenticatedPrincipal = Depends(require_role("recruiter")),
+    current_user: AuthenticatedPrincipal = Depends(RequireRole("recruiter", "admin")),
 ) -> StandardResponse[dict]:
     """Protected endpoint verifying role-based authorization check."""
     return StandardResponse[dict](
         data={"access": "granted", "role": current_user.role},
         message="Recruiter authorization confirmed",
+    )
+
+
+@router.get(
+    "/admin-only",
+    response_model=StandardResponse[dict],
+    status_code=status.HTTP_200_OK,
+    summary="Admin role-protected test route",
+)
+async def admin_only(
+    current_user: AuthenticatedPrincipal = Depends(RequireRole("admin")),
+) -> StandardResponse[dict]:
+    """Protected endpoint verifying admin role authorization."""
+    return StandardResponse[dict](
+        data={"access": "granted", "role": current_user.role},
+        message="Admin authorization confirmed",
+    )
+
+
+@router.get(
+    "/rate-limit-test",
+    response_model=StandardResponse[dict],
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(strict_test_rate_limiter)],
+    summary="Rate limiting diagnostic endpoint",
+)
+async def rate_limit_test() -> StandardResponse[dict]:
+    """Diagnostic route verifying sliding-window rate throttling."""
+    return StandardResponse[dict](
+        data={"status": "permitted"},
+        message="Request within rate limits",
     )
 
 

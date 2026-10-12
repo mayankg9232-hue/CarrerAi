@@ -38,6 +38,9 @@ env/
 .env.*.local
 *.pem
 *.key
+*service_account*.json
+*credentials*.json
+firebase-*.json
 
 # Database
 *.sqlite

@@ -6,7 +6,7 @@ from fastapi.security import OAuth2PasswordBearer
 
 from app.authentication.service import AuthenticationService, get_auth_service
 from app.core.config import get_settings
-from app.core.exceptions import AuthenticationError
+from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.schemas.auth import AuthenticatedPrincipal
 
 settings = get_settings()
@@ -36,8 +36,17 @@ async def get_current_user(
     token: str = Depends(get_token_from_request),
     auth_service: AuthenticationService = Depends(get_auth_service),
 ) -> AuthenticatedPrincipal:
-    """Dependency injecting verified AuthenticatedPrincipal into protected route handlers."""
-    return auth_service.decode_access_token(token)
+    """Dependency injecting verified AuthenticatedPrincipal with live account status."""
+    principal = auth_service.decode_access_token(token)
+    user = await auth_service.repository.get_by_id(principal.id)
+    if user:
+        principal.is_active = user.is_active
+        principal.role = user.role
+
+    if not principal.is_active:
+        raise AuthorizationError("Account is inactive or disabled")
+
+    return principal
 
 
 async def get_optional_current_user(

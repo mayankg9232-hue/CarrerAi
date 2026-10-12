@@ -20,7 +20,7 @@ from app.core.exceptions import (
     validation_exception_handler,
 )
 from app.core.logging import logger
-from app.core.security import SecurityHeadersMiddleware
+from app.core.security import DEFAULT_MAX_PAYLOAD_SIZE, PayloadSizeLimitMiddleware, SecurityHeadersMiddleware
 
 settings = get_settings()
 
@@ -47,6 +47,7 @@ def create_application() -> FastAPI:
 
     # 1. Security & Tracing Middleware (Catches unhandled errors safely)
     app.add_middleware(SecurityHeadersMiddleware)
+    app.add_middleware(PayloadSizeLimitMiddleware, max_payload_bytes=DEFAULT_MAX_PAYLOAD_SIZE)
 
     # 2. CORS Middleware
     app.add_middleware(
