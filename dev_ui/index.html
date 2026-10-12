@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Job Matcher — Developer Testing Dashboard</title>
+  <link rel="stylesheet" href="/dev-ui-assets/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="dashboard-container">
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-mark">JM</div>
+        <div>
+          <h1>AI Job Matcher</h1>
+          <p class="subtitle">Phase 1 Developer Diagnostics & API Verification Console</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <span class="badge" id="envBadge">ENV: DEVELOPMENT</span>
+        <span class="status-indicator" id="connectionStatus">
+          <span class="dot"></span> Online
+        </span>
+      </div>
+    </header>
+
+    <main class="grid-layout">
+      <!-- Left Column: Controls & Actions -->
+      <section class="card panel-controls">
+        <h2>Phase 1 Test Actions</h2>
+        <p class="section-desc">Trigger endpoints to verify HTTP contracts, schemas, and error boundaries.</p>
+
+        <div class="action-group">
+          <div class="action-item">
+            <div class="action-header">
+              <span class="method get">GET</span>
+              <span class="endpoint">/api/v1/health</span>
+            </div>
+            <p class="action-desc">Check system uptime, services, and API version.</p>
+            <button class="btn btn-primary" id="btnHealthCheck">Ping Health Check</button>
+          </div>
+
+          <div class="action-item">
+            <div class="action-header">
+              <span class="method post">POST</span>
+              <span class="endpoint">/api/v1/test/echo</span>
+            </div>
+            <p class="action-desc">Verify Pydantic validation and ErrorResponse envelope.</p>
+            <div class="form-row">
+              <input type="text" id="echoMessage" placeholder="Message (min 3 chars)" value="Hello AI Job Matcher">
+              <input type="text" id="echoTag" placeholder="Tag (alphanumeric)" value="valid_test_tag">
+            </div>
+            <div class="button-row">
+              <button class="btn btn-secondary" id="btnSendValidEcho">Send Valid Payload</button>
+              <button class="btn btn-warning" id="btnSendInvalidEcho">Send Invalid (Triggers 422)</button>
+            </div>
+          </div>
+
+          <div class="action-item">
+            <div class="action-header">
+              <span class="method get">GET</span>
+              <span class="endpoint">/api/v1/non-existent-route</span>
+            </div>
+            <p class="action-desc">Verify 404 routing error format and request tracing.</p>
+            <button class="btn btn-outline" id="btnTriggerNotFound">Trigger 404</button>
+          </div>
+
+          <div class="action-item">
+            <div class="action-header">
+              <span class="method get">GET</span>
+              <span class="endpoint">/api/v1/test/unhandled-error</span>
+            </div>
+            <p class="action-desc">Verify 500 handler sanitizes internal exceptions.</p>
+            <button class="btn btn-danger" id="btnTrigger500">Trigger Safe 500</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Response Inspector -->
+      <section class="card panel-inspector">
+        <div class="inspector-header">
+          <h2>Response Inspector</h2>
+          <div class="meta-tags">
+            <span class="meta-tag" id="statusPill">Status: Ready</span>
+            <span class="meta-tag" id="latencyPill">Time: 0ms</span>
+          </div>
+        </div>
+        
+        <div class="headers-summary">
+          <strong>Request ID:</strong> <span id="headerRequestId">—</span>
+        </div>
+
+        <div class="code-container">
+          <pre id="responseJson"><code>// Response output will appear here after clicking an action...</code></pre>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>AI Job Matcher • Phase 1 Backend Architecture • Developer A Lead</p>
+      <div class="footer-links">
+        <a href="/docs" target="_blank">Swagger OpenAPI Docs</a>
+        <a href="/redoc" target="_blank">ReDoc</a>
+      </div>
+    </footer>
+  </div>
+
+  <script src="/dev-ui-assets/app.js"></script>
+</body>
+</html>
