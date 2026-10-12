@@ -87,79 +87,12 @@ def validate_source_url(url: str, approved_domains: List[str]) -> str:
     return url.strip()
 
 
-class FirecrawlAdapter(IFirecrawlAdapter):
+from app.integrations.firecrawl.source_adapter import FirecrawlSourceAdapter
+
+
+class FirecrawlAdapter(FirecrawlSourceAdapter):
     """HTTP client adapter communicating with Firecrawl API or target job source with timeouts and rate limits."""
-
-    def __init__(self, settings: Optional[Settings] = None) -> None:
-        self._settings = settings or get_settings()
-
-    async def scrape_job(self, url: str) -> Dict[str, Any]:
-        """Validate URL and scrape job details from Firecrawl service or canonical page."""
-        validated_url = validate_source_url(url, self._settings.APPROVED_JOB_DOMAINS)
-
-        api_key = self._settings.FIRECRAWL_API_KEY
-        base_url = self._settings.FIRECRAWL_BASE_URL.rstrip("/")
-        timeout_seconds = self._settings.FIRECRAWL_TIMEOUT_SECONDS
-
-        headers = {
-            "Accept": "application/json",
-            "User-Agent": "AIJobMatcher-Crawler/1.0",
-        }
-        if api_key:
-            headers["Authorization"] = f"Bearer {api_key}"
-
-        scrape_endpoint = f"{base_url}/v1/scrape"
-        payload = {
-            "url": validated_url,
-            "formats": ["json", "markdown"],
-        }
-
-        try:
-            async with httpx.AsyncClient(timeout=timeout_seconds) as client:
-                response = await client.post(scrape_endpoint, json=payload, headers=headers)
-
-                if response.status_code == 429:
-                    raise SourceRateLimitError(f"Job source rate limit exceeded for '{validated_url}'.")
-
-                if response.status_code in (408, 504):
-                    raise SourceTimeoutError(f"Job source timed out while crawling '{validated_url}'.")
-
-                if response.status_code >= 500:
-                    raise SourceMalformedError(f"Upstream provider returned gateway error HTTP {response.status_code}.")
-
-                response.raise_for_status()
-                data = response.json()
-
-        except httpx.TimeoutException:
-            raise SourceTimeoutError(f"Timeout exceeded ({timeout_seconds}s) while scraping '{validated_url}'.")
-        except httpx.RequestError as exc:
-            raise SourceMalformedError(f"Connection failure communicating with scraper: {str(exc)}")
-
-        # Extract structured content from Firecrawl envelope
-        result_data = data.get("data", {})
-        if not result_data:
-            raise SourceMalformedError("Scraper returned an empty payload.")
-
-        metadata = result_data.get("metadata", {})
-        markdown = result_data.get("markdown", "")
-        title = metadata.get("title") or result_data.get("title")
-        company = metadata.get("og:site_name") or metadata.get("company") or "Unknown Organization"
-        description = markdown or result_data.get("content", "")
-
-        if not title or len(description) < 10:
-            raise SourceMalformedError("Scraped page does not contain valid job listing content.")
-
-        return {
-            "title": title,
-            "company": company,
-            "location": metadata.get("location", "Remote"),
-            "description": description,
-            "required_skills": metadata.get("required_skills", []),
-            "preferred_skills": metadata.get("preferred_skills", []),
-            "experience_level": metadata.get("experience_level"),
-            "source_url": validated_url,
-            "source": "firecrawl",
-        }
+    pass
 
 
 class MockFirecrawlAdapter(IFirecrawlAdapter):

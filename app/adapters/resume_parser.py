@@ -69,18 +69,12 @@ KNOWN_SKILLS = [
 ]
 
 
-class DefaultResumeParser(IResumeParser):
+from app.nlp.resume_parser import NLPResumeParser
+
+
+class DefaultResumeParser(NLPResumeParser):
     """Production-grade safe document extractor supporting PDF, DOCX, and TXT with magic byte validation."""
-
-    async def parse_cv(self, file_bytes: bytes, filename: str) -> Dict[str, Any]:
-        if not file_bytes:
-            raise UnreadableCVError("Uploaded file is empty (0 bytes).")
-
-        raw_text = self._extract_text(file_bytes, filename)
-        if not raw_text or len(raw_text.strip()) < 15:
-            raise UnreadableCVError("Resume contains no readable text or document is blank/scanned image.")
-
-        return self._extract_structured_fields(raw_text)
+    pass
 
     def _extract_text(self, file_bytes: bytes, filename: str) -> str:
         fname = filename.lower()
