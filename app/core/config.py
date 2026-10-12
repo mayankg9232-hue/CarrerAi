@@ -64,9 +64,23 @@ class Settings(BaseSettings):
     SECONDARY_LLM_API_KEY: str = ""
     SECONDARY_LLM_MODEL: str = "gemini-1.5-flash"
 
-    # Firecrawl (Introduced Phase 3)
+    # Firecrawl & Job Ingestion (Phase 3)
     FIRECRAWL_API_KEY: str = ""
     FIRECRAWL_BASE_URL: str = "https://api.firecrawl.dev"
+    FIRECRAWL_TIMEOUT_SECONDS: int = 15
+    APPROVED_JOB_DOMAINS: Union[str, List[str]] = [
+        "approved-board.example.com",
+        "careers.techcompany.com",
+    ]
+    STALE_JOB_DAYS_THRESHOLD: int = 30
+
+    # Resume Processing (Phase 3)
+    ALLOWED_CV_MIME_TYPES: Union[str, List[str]] = [
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain",
+    ]
+    MAX_CV_SIZE_BYTES: int = 5 * 1024 * 1024  # 5 MB
 
     # Agent Limits (Phase 6)
     AGENT_MAX_STEPS: int = 8
@@ -78,11 +92,11 @@ class Settings(BaseSettings):
     SANDBOX_TIMEOUT_SECONDS: int = 5
     SANDBOX_MEMORY_MB: int = 128
 
-    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @field_validator("ALLOWED_ORIGINS", "APPROVED_JOB_DOMAINS", "ALLOWED_CV_MIME_TYPES", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+    def assemble_string_or_list(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
+            return [item.strip() for item in v.split(",") if item.strip()]
         return v
 
 

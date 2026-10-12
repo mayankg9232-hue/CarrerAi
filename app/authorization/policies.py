@@ -40,11 +40,16 @@ def assert_resource_owner(
     resource_user_id: str,
     principal: AuthenticatedPrincipal,
     allow_admin: bool = True,
+    allowed_roles: Sequence[str] = (),
 ) -> None:
     """Validate that the authenticated principal owns the target resource (IDOR defense)."""
     # Verify active account
     if not principal.is_active:
         raise AuthorizationError("Account is inactive or disabled")
+
+    # Check allowed elevated roles (e.g. recruiter or admin)
+    if allowed_roles and principal.role in allowed_roles:
+        return
 
     # Admins optionally bypass individual resource ownership check
     if allow_admin and principal.role == "admin":

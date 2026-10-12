@@ -226,6 +226,79 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Phase 3 Resume Upload
+  const btnUploadResume = document.getElementById("btnUploadResume");
+  if (btnUploadResume) {
+    btnUploadResume.addEventListener("click", async () => {
+      const fileInput = document.getElementById("cvFileInput");
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Please select a PDF, DOCX, or TXT file to upload.");
+        return;
+      }
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      const headers = {};
+      if (storedBearerToken) {
+        headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      }
+
+      await executeRequest("/api/v1/resumes/upload", {
+        method: "POST",
+        headers,
+        body: formData,
+      });
+    });
+  }
+
+  // Phase 3 List Resumes
+  const btnListResumes = document.getElementById("btnListResumes");
+  if (btnListResumes) {
+    btnListResumes.addEventListener("click", async () => {
+      const headers = {};
+      if (storedBearerToken) {
+        headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      }
+      await executeRequest("/api/v1/resumes", { method: "GET", headers });
+    });
+  }
+
+  // Phase 3 Ingest Job
+  const btnIngestJob = document.getElementById("btnIngestJob");
+  if (btnIngestJob) {
+    btnIngestJob.addEventListener("click", async () => {
+      const url = document.getElementById("jobSourceUrl").value.trim();
+      const headers = { "Content-Type": "application/json" };
+      if (storedBearerToken) {
+        headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      }
+      await executeRequest("/api/v1/jobs/ingest", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ source_urls: [url], max_pages: 1 }),
+      });
+    });
+  }
+
+  // Phase 3 Search Jobs
+  const btnSearchJobs = document.getElementById("btnSearchJobs");
+  if (btnSearchJobs) {
+    btnSearchJobs.addEventListener("click", async () => {
+      const q = document.getElementById("jobSearchQuery").value.trim();
+      const skills = document.getElementById("jobSearchSkills").value.trim();
+      const params = new URLSearchParams();
+      if (q) params.append("q", q);
+      if (skills) params.append("skills", skills);
+
+      const qs = params.toString() ? `?${params.toString()}` : "";
+      const headers = {};
+      if (storedBearerToken) {
+        headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      }
+      await executeRequest(`/api/v1/jobs${qs}`, { method: "GET", headers });
+    });
+  }
+
   // Auto-ping health on initial load
   executeRequest("/api/v1/health");
 });

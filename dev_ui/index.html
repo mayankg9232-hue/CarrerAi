@@ -131,6 +131,40 @@
               <button class="btn btn-secondary" id="btnFirebaseLogin">Firebase Sign In</button>
               <button class="btn btn-outline" id="btnFirebaseConfig">Fetch Config</button>
             </div>
+          <!-- Phase 3 Resume Pipeline & Extraction (Developer A) -->
+          <div class="action-item" style="border-top: 1px solid var(--border-color, #27272a); padding-top: 1.25rem;">
+            <div class="action-header">
+              <span class="method post">POST</span>
+              <span class="endpoint">/api/v1/resumes/upload</span>
+            </div>
+            <p class="action-desc">Upload candidate CV (PDF, DOCX, TXT max 5MB) for parsing and profiling.</p>
+            <div class="form-row">
+              <input type="file" id="cvFileInput" accept=".pdf,.docx,.txt" style="background:#18181b; color:#fff; padding:0.4rem; border:1px solid #3f3f46; border-radius:6px;">
+            </div>
+            <div class="button-row" style="margin-top: 0.5rem;">
+              <button class="btn btn-primary" id="btnUploadResume">Upload & Parse CV</button>
+              <button class="btn btn-outline" id="btnListResumes">List My Profiles</button>
+            </div>
+          </div>
+
+          <!-- Phase 3 Job Ingestion & Discovery (Developer A) -->
+          <div class="action-item" style="border-top: 1px solid var(--border-color, #27272a); padding-top: 1.25rem;">
+            <div class="action-header">
+              <span class="method post">POST</span>
+              <span class="endpoint">/api/v1/jobs/ingest</span>
+            </div>
+            <p class="action-desc">Scrape and ingest jobs from approved sources with deduplication.</p>
+            <div class="form-row">
+              <input type="text" id="jobSourceUrl" placeholder="Source URL" value="https://approved-board.example.com/jobs/senior-python-dev-101">
+            </div>
+            <div class="form-row" style="margin-top: 0.5rem;">
+              <input type="text" id="jobSearchQuery" placeholder="Search keyword (e.g. Python, Remote)">
+              <input type="text" id="jobSearchSkills" placeholder="Filter Skills (e.g. FastAPI, SQL)">
+            </div>
+            <div class="button-row" style="margin-top: 0.5rem;">
+              <button class="btn btn-secondary" id="btnIngestJob">Ingest Job (Admin/Recruiter)</button>
+              <button class="btn btn-outline" id="btnSearchJobs">Search Jobs</button>
+            </div>
           </div>
         </div>
       </section>

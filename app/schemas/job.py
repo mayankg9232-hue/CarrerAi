@@ -30,6 +30,8 @@ class Job(BaseModel):
     source: str = Field(default="firecrawl", description="Source provider")
     source_url: Optional[str] = Field(default=None, description="Source URL")
     collected_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    content_hash: Optional[str] = Field(default=None, description="SHA-256 hash of title+company+description for deduplication")
+    last_seen_at: Optional[datetime] = Field(default=None, description="UTC timestamp when last verified in source scrape")
     is_active: bool = Field(default=True, description="Active status (stale listings marked false)")
 
 

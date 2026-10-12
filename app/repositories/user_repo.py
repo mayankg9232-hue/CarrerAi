@@ -126,3 +126,10 @@ _user_repository = InMemoryUserRepository()
 def get_user_repository() -> IUserRepository:
     """Dependency provider returning singleton user repository."""
     return _user_repository
+
+
+def reset_user_repository() -> None:
+    """Reset singleton repository for test isolation."""
+    global _user_repository
+    _user_repository._users_by_id.clear()
+    _user_repository._id_by_email.clear()
