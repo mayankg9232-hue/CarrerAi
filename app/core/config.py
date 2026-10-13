@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "dev-secret-key-change-in-production-min-32-chars-long"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     ALGORITHM: str = "HS256"
+    GITHUB_TOKEN: str = ""
 
     # Rate Limiting & Security (Developer A)
     RATE_LIMIT_LOGIN_MAX: int = 50

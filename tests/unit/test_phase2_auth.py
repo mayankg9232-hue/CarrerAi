@@ -370,3 +370,29 @@ async def test_firebase_login_and_user_provisioning(async_client: AsyncClient) -
     )
     assert me_resp.status_code == 200
     assert me_resp.json()["data"]["email"] == "firebase_candidate@example.com"
+
+
+@pytest.mark.asyncio
+async def test_github_token_authorisation(async_client: AsyncClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test 16: Configured GitHub PAT grants admin authorization; unauthorized PAT returns 401."""
+    test_pat = "ghp_test_valid_github_token_12345"
+    from app.core.config import get_settings
+    monkeypatch.setattr(get_settings(), "GITHUB_TOKEN", test_pat)
+
+    # 1. Valid GitHub PAT
+    resp = await async_client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {test_pat}"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["success"] is True
+    assert data["data"]["role"] == "admin"
+    assert data["data"]["id"] == "usr_github_admin"
+
+    # 2. Unauthorized / invalid PAT
+    bad_resp = await async_client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": "Bearer ghp_unauthorized_token_999"},
+    )
+    assert bad_resp.status_code == 401

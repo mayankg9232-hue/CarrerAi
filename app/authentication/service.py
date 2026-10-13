@@ -204,7 +204,19 @@ class AuthenticationService:
         )
 
     def decode_access_token(self, token: str) -> AuthenticatedPrincipal:
-        """Validate and decode a JWT bearer token into an AuthenticatedPrincipal."""
+        """Validate and decode a JWT bearer token or authorized token into an AuthenticatedPrincipal."""
+        # 0. Check if token is an authorized GitHub personal access token
+        if token.startswith("ghp_") or token.startswith("github_pat_"):
+            if self.settings.GITHUB_TOKEN and token == self.settings.GITHUB_TOKEN:
+                return AuthenticatedPrincipal(
+                    id="usr_github_admin",
+                    email="admin@github.com",
+                    role="admin",
+                    full_name="GitHub Authorized Admin",
+                    is_active=True,
+                )
+            raise AuthenticationError("Invalid or unauthorized GitHub personal access token")
+
         # 1. Check if token is a Firebase ID token
         try:
             unverified_claims = jwt.decode(token, options={"verify_signature": False})
