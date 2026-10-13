@@ -39,8 +39,8 @@ from app.schemas.resume import (
 
 @pytest.fixture
 def matching_engine() -> MatchingEngine:
-    """Fixture providing initialized MatchingEngine instance."""
-    return MatchingEngine()
+    """Fixture providing initialized MatchingEngine instance using local embedder for fast unit tests."""
+    return MatchingEngine(embedding_provider=LocalDeterministicEmbeddingProvider())
 
 
 # ==============================================================================

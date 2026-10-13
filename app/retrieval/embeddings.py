@@ -3,7 +3,8 @@
 from abc import ABC, abstractmethod
 import math
 import re
-from typing import List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
+import httpx
 import numpy as np
 
 from app.schemas.job import Job
@@ -126,6 +127,134 @@ class LocalDeterministicEmbeddingProvider(IEmbeddingProvider):
 
     async def embed_batch(self, texts: List[str]) -> List[List[float]]:
         return [self._tokenize_and_project(t) for t in texts]
+
+
+class GeminiEmbeddingProvider(IEmbeddingProvider):
+    """Google Gemini Embedding provider supporting Gemini Embedding 2 (gemini-embedding-2).
+
+    Uses asynchronous HTTP requests via httpx to compute high-fidelity 3072-dimensional
+    embeddings for individual texts and batches with error handling and rate-limit resilience.
+    """
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        model: str = "gemini-embedding-2",
+        base_url: str = "https://generativelanguage.googleapis.com/v1beta",
+        timeout: float = 20.0,
+        transport: Optional[httpx.AsyncBaseTransport] = None,
+    ) -> None:
+        self.api_key = api_key
+        raw = model.strip() if model else "gemini-embedding-2"
+        self.model_short = raw.replace("models/", "")
+        self.base_url = base_url.rstrip("/")
+        self.timeout = max(1.0, float(timeout))
+        self.transport = transport
+        self._dim = 3072
+
+    @property
+    def dimension(self) -> int:
+        return self._dim
+
+    async def embed_text(self, text: str) -> List[float]:
+        """Generate a dense embedding vector for a single text using Gemini embedContent."""
+        if not text or not text.strip():
+            return [0.0] * self._dim
+
+        if not self.api_key:
+            raise ValueError("Gemini API key is required for GeminiEmbeddingProvider.")
+
+        url = f"{self.base_url}/models/{self.model_short}:embedContent?key={self.api_key}"
+        payload = {
+            "content": {
+                "parts": [{"text": text}]
+            }
+        }
+
+        async with httpx.AsyncClient(timeout=self.timeout, transport=self.transport) as client:
+            resp = await client.post(url, json=payload)
+            if resp.status_code == 200:
+                data = resp.json()
+                values = data.get("embedding", {}).get("values", [])
+                if values:
+                    self._dim = len(values)
+                    return values
+                return [0.0] * self._dim
+            elif resp.status_code == 429:
+                raise RuntimeError(f"Gemini embedding rate limit exceeded: {resp.text}")
+            elif resp.status_code in (401, 403):
+                raise RuntimeError(f"Gemini embedding authentication error: {resp.text}")
+            else:
+                raise RuntimeError(f"Gemini embedding API error ({resp.status_code}): {resp.text}")
+
+    async def embed_batch(self, texts: List[str]) -> List[List[float]]:
+        """Generate embedding vectors for a batch of strings using Gemini batchEmbedContents."""
+        if not texts:
+            return []
+
+        if not self.api_key:
+            raise ValueError("Gemini API key is required for GeminiEmbeddingProvider.")
+
+        results: List[List[float]] = []
+        batch_size = 100
+
+        async with httpx.AsyncClient(timeout=self.timeout, transport=self.transport) as client:
+            for i in range(0, len(texts), batch_size):
+                chunk = texts[i : i + batch_size]
+                requests_payload = []
+                for t in chunk:
+                    clean_t = t if t and t.strip() else " "
+                    requests_payload.append({
+                        "model": f"models/{self.model_short}",
+                        "content": {"parts": [{"text": clean_t}]}
+                    })
+
+                url = f"{self.base_url}/models/{self.model_short}:batchEmbedContents?key={self.api_key}"
+                resp = await client.post(url, json={"requests": requests_payload})
+                if resp.status_code == 200:
+                    data = resp.json()
+                    raw_embeddings = data.get("embeddings", [])
+                    for idx, emb_item in enumerate(raw_embeddings):
+                        orig_text = chunk[idx]
+                        if not orig_text or not orig_text.strip():
+                            results.append([0.0] * self._dim)
+                        else:
+                            vals = emb_item.get("values", [])
+                            if vals:
+                                self._dim = len(vals)
+                            results.append(vals or [0.0] * self._dim)
+                elif resp.status_code == 429:
+                    raise RuntimeError(f"Gemini embedding rate limit exceeded: {resp.text}")
+                elif resp.status_code in (401, 403):
+                    raise RuntimeError(f"Gemini embedding authentication error: {resp.text}")
+                else:
+                    raise RuntimeError(f"Gemini batch embedding API error ({resp.status_code}): {resp.text}")
+
+        return results
+
+
+def get_embedding_provider(
+    provider_name: Optional[str] = None,
+    api_key: Optional[str] = None,
+    model: Optional[str] = None,
+    transport: Optional[httpx.AsyncBaseTransport] = None,
+) -> IEmbeddingProvider:
+    """Factory returning configured vector embedding provider.
+
+    Returns GeminiEmbeddingProvider when provider is 'gemini' and an API key is present.
+    Falls back safely to LocalDeterministicEmbeddingProvider when offline or unconfigured.
+    """
+    from app.core.config import Settings
+    settings = Settings()
+
+    prov = (provider_name or settings.EMBEDDING_PROVIDER or "local").lower()
+    key = api_key if api_key is not None else settings.EMBEDDING_API_KEY
+    mdl = model or settings.EMBEDDING_MODEL or "gemini-embedding-2"
+
+    if prov == "gemini" and key:
+        return GeminiEmbeddingProvider(api_key=key, model=mdl, transport=transport)
+
+    return LocalDeterministicEmbeddingProvider()
 
 
 # ==============================================================================

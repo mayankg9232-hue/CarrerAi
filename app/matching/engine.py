@@ -10,6 +10,7 @@ from app.retrieval.embeddings import (
     IEmbeddingProvider,
     LocalDeterministicEmbeddingProvider,
     cosine_similarity,
+    get_embedding_provider,
     prepare_candidate_embedding_text,
     prepare_job_embedding_text,
 )
@@ -33,7 +34,7 @@ class MatchingEngine:
         self.scorer = scorer or DeterministicScorer()
         self.gap_analyzer = gap_analyzer or GapAnalyzer()
         self.explainer = explainer or MatchExplainer()
-        self.embedder = embedding_provider or LocalDeterministicEmbeddingProvider()
+        self.embedder = embedding_provider or get_embedding_provider()
         self.job_repo = job_repository or get_job_repository()
         self.retriever = JobRetriever(job_repository=self.job_repo, embedding_provider=self.embedder)
 

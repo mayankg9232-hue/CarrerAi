@@ -65,6 +65,11 @@ class Settings(BaseSettings):
     SECONDARY_LLM_API_KEY: str = ""
     SECONDARY_LLM_MODEL: str = "gemini-1.5-flash"
 
+    # Vector Embeddings (Gemini Embedding 2 / Local)
+    EMBEDDING_PROVIDER: str = "gemini"
+    EMBEDDING_API_KEY: str = ""
+    EMBEDDING_MODEL: str = "gemini-embedding-2"
+
     # Firecrawl & Job Ingestion (Phase 3)
     FIRECRAWL_API_KEY: str = ""
     FIRECRAWL_BASE_URL: str = "https://api.firecrawl.dev"

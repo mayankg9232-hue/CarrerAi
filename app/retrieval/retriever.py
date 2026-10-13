@@ -7,6 +7,7 @@ from app.retrieval.embeddings import (
     IEmbeddingProvider,
     LocalDeterministicEmbeddingProvider,
     cosine_similarity,
+    get_embedding_provider,
     prepare_candidate_embedding_text,
     prepare_job_embedding_text,
 )
@@ -23,7 +24,7 @@ class JobRetriever:
         embedding_provider: Optional[IEmbeddingProvider] = None,
     ) -> None:
         self.job_repo = job_repository or get_job_repository()
-        self.embedder = embedding_provider or LocalDeterministicEmbeddingProvider()
+        self.embedder = embedding_provider or get_embedding_provider()
         self._job_embedding_cache: Dict[str, List[float]] = {}
 
     async def get_or_create_job_embedding(self, job: Job) -> List[float]:
