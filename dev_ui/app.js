@@ -299,6 +299,123 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- Phase 4 LLM Actions (Developer A) ---
+  const btnLlmExtractResume = document.getElementById("btnLlmExtractResume");
+  if (btnLlmExtractResume) {
+    btnLlmExtractResume.addEventListener("click", async () => {
+      const text = document.getElementById("llmResumeTextInput").value.trim();
+      const headers = { "Content-Type": "application/json" };
+      if (storedBearerToken) headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      await executeRequest("/api/v1/llm/extract-resume", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ resume_text: text }),
+      });
+    });
+  }
+
+  const btnLlmExplainMatch = document.getElementById("btnLlmExplainMatch");
+  if (btnLlmExplainMatch) {
+    btnLlmExplainMatch.addEventListener("click", async () => {
+      const text = document.getElementById("llmResumeTextInput").value.trim();
+      const headers = { "Content-Type": "application/json" };
+      if (storedBearerToken) headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      await executeRequest("/api/v1/llm/explain-match", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          resume_text: text,
+          job_description: "Senior Python Developer with FastAPI and Docker experience.",
+        }),
+      });
+    });
+  }
+
+  const btnLlmReview = document.getElementById("btnLlmReview");
+  if (btnLlmReview) {
+    btnLlmReview.addEventListener("click", async () => {
+      const headers = { "Content-Type": "application/json" };
+      if (storedBearerToken) headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      await executeRequest("/api/v1/llm/review", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          task_context: "Audit extracted skills for veracity against source CV",
+          output_to_review: {
+            extracted_skills: ["Python", "FastAPI", "Docker"],
+            candidate_claimed_level: "Senior",
+          },
+        }),
+      });
+    });
+  }
+
+  const btnLlmStatus = document.getElementById("btnLlmStatus");
+  if (btnLlmStatus) {
+    btnLlmStatus.addEventListener("click", async () => {
+      const headers = {};
+      if (storedBearerToken) headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      await executeRequest("/api/v1/llm/status", { method: "GET", headers });
+    });
+  }
+
+  // --- Phase 5 Matching Actions (Developer A) ---
+  const btnMatchCandidateJob = document.getElementById("btnMatchCandidateJob");
+  if (btnMatchCandidateJob) {
+    btnMatchCandidateJob.addEventListener("click", async () => {
+      const candidateId = document.getElementById("matchCandidateId").value.trim();
+      const jobId = document.getElementById("matchJobId").value.trim();
+      if (!candidateId || !jobId) {
+        alert("Please enter both Candidate Profile ID and Job ID");
+        return;
+      }
+      const headers = {};
+      if (storedBearerToken) headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      await executeRequest(`/api/v1/matching/${encodeURIComponent(candidateId)}/jobs/${encodeURIComponent(jobId)}`, {
+        method: "POST",
+        headers,
+      });
+    });
+  }
+
+  const btnGetRecommendations = document.getElementById("btnGetRecommendations");
+  if (btnGetRecommendations) {
+    btnGetRecommendations.addEventListener("click", async () => {
+      const candidateId = document.getElementById("matchCandidateId").value.trim();
+      if (!candidateId) {
+        alert("Please enter Candidate Profile ID");
+        return;
+      }
+      const minScore = document.getElementById("matchMinScore").value.trim() || "60";
+      const limit = document.getElementById("matchLimit").value.trim() || "10";
+      const headers = {};
+      if (storedBearerToken) headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      await executeRequest(`/api/v1/matching/${encodeURIComponent(candidateId)}/recommendations?min_score=${encodeURIComponent(minScore)}&limit=${encodeURIComponent(limit)}`, {
+        method: "GET",
+        headers,
+      });
+    });
+  }
+
+  const btnGetRagContext = document.getElementById("btnGetRagContext");
+  if (btnGetRagContext) {
+    btnGetRagContext.addEventListener("click", async () => {
+      const candidateId = document.getElementById("matchCandidateId").value.trim();
+      const jobId = document.getElementById("matchJobId").value.trim();
+      if (!candidateId || !jobId) {
+        alert("Please enter both Candidate Profile ID and Job ID");
+        return;
+      }
+      const headers = {};
+      if (storedBearerToken) headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      await executeRequest(`/api/v1/matching/${encodeURIComponent(candidateId)}/jobs/${encodeURIComponent(jobId)}/rag-context`, {
+        method: "GET",
+        headers,
+      });
+    });
+  }
+
   // Auto-ping health on initial load
   executeRequest("/api/v1/health");
+
 });

@@ -15,6 +15,13 @@ from app.schemas.job import Job, JobIngestRequest, JobIngestResponse
 router = APIRouter()
 
 
+def get_job_pipeline(
+    repo: IJobRepository = Depends(get_job_repository),
+) -> JobIngestionPipeline:
+    """Dependency provider for JobIngestionPipeline."""
+    return JobIngestionPipeline(repo=repo)
+
+
 @router.post(
     "/ingest",
     response_model=StandardResponse[JobIngestResponse],
@@ -25,15 +32,15 @@ router = APIRouter()
 async def ingest_jobs(
     payload: JobIngestRequest,
     current_user: AuthenticatedPrincipal = Depends(RequireRole("admin", "recruiter")),
-    repo: IJobRepository = Depends(get_job_repository),
+    pipeline: JobIngestionPipeline = Depends(get_job_pipeline),
 ) -> StandardResponse[JobIngestResponse]:
     """Ingest job listings from approved URLs."""
-    pipeline = JobIngestionPipeline(repo=repo)
     result = await pipeline.ingest_jobs(payload)
     return StandardResponse(
         data=result,
         message=f"Ingestion completed: {result.ingested_count} added, {result.skipped_duplicates} duplicate(s) skipped.",
     )
+
 
 
 @router.get(

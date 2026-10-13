@@ -12,82 +12,17 @@ import httpx
 from app.core.config import Settings, get_settings
 
 
-class FirecrawlError(Exception):
-    """Base exception for Firecrawl source adapter errors."""
-    pass
-
-
-class SourceTimeoutError(FirecrawlError):
-    """Raised when upstream job source request times out."""
-    pass
-
-
-class SourceRateLimitError(FirecrawlError):
-    """Raised when upstream job source rate limit is exceeded (HTTP 429)."""
-    pass
-
-
-class SourceMalformedError(FirecrawlError):
-    """Raised when upstream source returns malformed or unparseable job content."""
-    pass
-
-
-class SSRFBlockedError(FirecrawlError):
-    """Raised when a requested URL resolves to an internal or private network IP."""
-    pass
-
-
-class DomainNotApprovedError(FirecrawlError):
-    """Raised when target domain is not in the approved job domains allowlist."""
-    pass
-
-
-class IFirecrawlAdapter(ABC):
-    """Abstract interface for external job scraping and ingestion."""
-
-    @abstractmethod
-    async def scrape_job(self, url: str) -> Dict[str, Any]:
-        """Scrape structured or semi-structured job listing from an approved URL."""
-        pass
-
-
-def validate_source_url(url: str, approved_domains: List[str]) -> str:
-    """Validate URL syntax, ensure domain is allowlisted, and reject private/SSRF targets."""
-    if not url or not isinstance(url, str):
-        raise DomainNotApprovedError("Target URL must be a non-empty string.")
-
-    parsed = urlparse(url.strip())
-    if parsed.scheme not in ("http", "https"):
-        raise DomainNotApprovedError(f"Unsupported URL scheme '{parsed.scheme}'. Only HTTP and HTTPS are permitted.")
-
-    hostname = (parsed.hostname or "").lower()
-    if not hostname:
-        raise DomainNotApprovedError("Invalid URL: missing hostname.")
-
-    # Prevent SSRF: loopback, private ranges, link-local, AWS metadata
-    if hostname in ("localhost", "127.0.0.1", "::1", "169.254.169.254", "0.0.0.0"):
-        raise SSRFBlockedError(f"Access to private/loopback host '{hostname}' is blocked.")
-
-    try:
-        ip = ipaddress.ip_address(hostname)
-        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
-            raise SSRFBlockedError(f"Access to private IP range '{hostname}' is blocked.")
-    except ValueError:
-        # Not a raw IP address; hostname is a domain name
-        pass
-
-    # Check allowlist
-    approved_lower = [d.lower() for d in approved_domains]
-    is_approved = any(hostname == approved or hostname.endswith(f".{approved}") for approved in approved_lower)
-    if not is_approved:
-        raise DomainNotApprovedError(
-            f"Domain '{hostname}' is not in the approved job source allowlist: {approved_domains}"
-        )
-
-    return url.strip()
-
-
-from app.integrations.firecrawl.source_adapter import FirecrawlSourceAdapter
+from app.integrations.firecrawl.source_adapter import (
+    DomainNotApprovedError,
+    FirecrawlError,
+    FirecrawlSourceAdapter,
+    IFirecrawlAdapter,
+    SSRFBlockedError,
+    SourceMalformedError,
+    SourceRateLimitError,
+    SourceTimeoutError,
+    validate_source_url,
+)
 
 
 class FirecrawlAdapter(FirecrawlSourceAdapter):

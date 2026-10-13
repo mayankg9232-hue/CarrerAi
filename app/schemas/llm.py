@@ -84,3 +84,52 @@ class LLMMatchExplanationResult(BaseModel):
         default="This match score is an automated estimate and does not guarantee an interview or employment offer.",
         description="Mandatory caveat required by rulebook",
     )
+
+
+# ==============================================================================
+# API REQUEST & RESPONSE ENVELOPES (Developer A)
+# ==============================================================================
+
+class LLMResumeExtractionRequest(BaseModel):
+    """Request payload to perform LLM structured extraction from resume."""
+
+    resume_text: Optional[str] = Field(None, max_length=50000, description="Raw CV/resume text to extract")
+    resume_id: Optional[str] = Field(None, description="Profile ID of previously stored resume")
+    task_name: Optional[str] = Field("resume_extraction", description="Logical task name for audit logging")
+
+
+class LLMMatchExplanationRequest(BaseModel):
+    """Request payload to produce grounded LLM match explanation and gap analysis."""
+
+    resume_id: Optional[str] = Field(None, description="Profile ID of candidate resume")
+    job_id: Optional[str] = Field(None, description="Job listing ID")
+    resume_text: Optional[str] = Field(None, max_length=50000, description="Inline CV text if not using resume_id")
+    job_description: Optional[str] = Field(None, max_length=50000, description="Inline job description if not using job_id")
+    task_name: Optional[str] = Field("match_explanation", description="Logical task name for audit logging")
+
+
+class LLMReviewRequest(BaseModel):
+    """Request payload to invoke secondary model for dedicated critique/review."""
+
+    task_context: str = Field(..., min_length=5, max_length=20000, description="Context or baseline requirements")
+    output_to_review: Dict[str, Any] = Field(..., description="Structured dictionary or JSON output to evaluate")
+    task_name: Optional[str] = Field("secondary_review", description="Logical task name for audit logging")
+
+
+class LLMServiceStatus(BaseModel):
+    """Diagnostic status for LLM service and providers."""
+
+    primary_provider: str = Field(..., description="Configured primary model provider name")
+    primary_model: str = Field(..., description="Configured primary model name")
+    secondary_provider: Optional[str] = Field(None, description="Configured secondary provider name")
+    secondary_model: Optional[str] = Field(None, description="Configured secondary model name")
+    fallback_enabled: bool = Field(False, description="Whether fallback to secondary is enabled on outage")
+    status: str = Field("ready", description="Operational status ('ready', 'unconfigured', 'degraded')")
+
+
+class LLMResultEnvelope(BaseModel):
+    """Response envelope pairing structured output with provider execution metadata."""
+
+    result: Any = Field(..., description="Parsed and validated domain model output")
+    metadata: LLMResponseMetadata = Field(..., description="Provider, model, token, and latency metadata")
+

@@ -131,6 +131,8 @@
               <button class="btn btn-secondary" id="btnFirebaseLogin">Firebase Sign In</button>
               <button class="btn btn-outline" id="btnFirebaseConfig">Fetch Config</button>
             </div>
+          </div>
+
           <!-- Phase 3 Resume Pipeline & Extraction (Developer A) -->
           <div class="action-item" style="border-top: 1px solid var(--border-color, #27272a); padding-top: 1.25rem;">
             <div class="action-header">
@@ -164,6 +166,46 @@
             <div class="button-row" style="margin-top: 0.5rem;">
               <button class="btn btn-secondary" id="btnIngestJob">Ingest Job (Admin/Recruiter)</button>
               <button class="btn btn-outline" id="btnSearchJobs">Search Jobs</button>
+            </div>
+          </div>
+
+          <!-- Phase 4 LLM Provider & Structured Output (Developer A) -->
+          <div class="action-item" style="border-top: 1px solid var(--border-color, #27272a); padding-top: 1.25rem;">
+            <div class="action-header">
+              <span class="method post">POST</span>
+              <span class="endpoint">/api/v1/llm/*</span>
+            </div>
+            <p class="action-desc">Phase 4 Two-Model LLM structured extraction, match explanation & review.</p>
+            <div class="form-row">
+              <textarea id="llmResumeTextInput" rows="2" placeholder="Resume text or skills summary..." style="width:100%; background:#18181b; color:#fff; padding:0.4rem; border:1px solid #3f3f46; border-radius:6px; font-family:inherit;">Jane Developer&#10;Skills: Python, FastAPI, Docker, PostgreSQL&#10;Experience: 4 years backend engineering.</textarea>
+            </div>
+            <div class="button-row" style="margin-top: 0.5rem;">
+              <button class="btn btn-primary" id="btnLlmExtractResume">Extract CV via LLM</button>
+              <button class="btn btn-secondary" id="btnLlmExplainMatch">Explain Match</button>
+              <button class="btn btn-outline" id="btnLlmReview">Secondary Review</button>
+              <button class="btn btn-outline" id="btnLlmStatus">LLM Status</button>
+            </div>
+          </div>
+
+          <!-- Phase 5 Matching, Embeddings & Recommendations (Developer A) -->
+          <div class="action-item" style="border-top: 1px solid var(--border-color, #27272a); padding-top: 1.25rem;">
+            <div class="action-header">
+              <span class="method post">POST</span>
+              <span class="endpoint">/api/v1/matching/*</span>
+            </div>
+            <p class="action-desc">Phase 5 Matching, gap analysis, embeddings & ranked job recommendations.</p>
+            <div class="form-row">
+              <input type="text" id="matchCandidateId" placeholder="Candidate Profile ID (e.g. cand_123)">
+              <input type="text" id="matchJobId" placeholder="Job ID (e.g. job_123)">
+            </div>
+            <div class="form-row" style="margin-top: 0.5rem;">
+              <input type="number" id="matchMinScore" placeholder="Min Score (default 60)" value="60" min="0" max="100">
+              <input type="number" id="matchLimit" placeholder="Limit (default 10)" value="10" min="1" max="50">
+            </div>
+            <div class="button-row" style="margin-top: 0.5rem;">
+              <button class="btn btn-primary" id="btnMatchCandidateJob">Match to Job</button>
+              <button class="btn btn-secondary" id="btnGetRecommendations">Get Recommendations</button>
+              <button class="btn btn-outline" id="btnGetRagContext">Grounded RAG Context</button>
             </div>
           </div>
         </div>

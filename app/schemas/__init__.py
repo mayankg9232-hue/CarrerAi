@@ -34,11 +34,16 @@ from app.schemas.matching import (
     ScoreBreakdown,
 )
 from app.schemas.llm import (
+    LLMMatchExplanationRequest,
     LLMMatchExplanationResult,
     LLMResponseMetadata,
+    LLMResultEnvelope,
+    LLMResumeExtractionRequest,
     LLMResumeExtractionResult,
+    LLMReviewRequest,
     LLMReviewResponse,
     LLMReviewVerdict,
+    LLMServiceStatus,
     LLMSkillExtractionItem,
 )
 
@@ -76,5 +81,10 @@ __all__ = [
     "LLMSkillExtractionItem",
     "LLMResumeExtractionResult",
     "LLMMatchExplanationResult",
+    "LLMResumeExtractionRequest",
+    "LLMMatchExplanationRequest",
+    "LLMReviewRequest",
+    "LLMServiceStatus",
+    "LLMResultEnvelope",
 ]
 

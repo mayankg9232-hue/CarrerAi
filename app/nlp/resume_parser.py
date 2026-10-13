@@ -216,8 +216,9 @@ class NLPResumeParser(IResumeParser):
 
         # 2. Summary
         summary = sections.get("summary")
-        if not summary and len(lines) > 1 and len(lines[1]) > 20:
+        if not summary and len(lines) > 1 and len(lines[1]) > 20 and "@" not in lines[1]:
             summary = lines[1]
+
 
         # 3. Skills Extraction via Taxonomy
         # First check dedicated skills section
@@ -242,11 +243,13 @@ class NLPResumeParser(IResumeParser):
         education_text = sections.get("education", "")
         education = self._parse_education(education_text or full_text)
 
+        clean_summary = summary.strip() if summary and summary.strip() else None
+
         return {
             "full_name": full_name or "Anonymous Candidate",
             "email": email,
             "phone": phone,
-            "summary": summary,
+            "summary": clean_summary,
             "skills": extracted_skills,
             "experience": experience,
             "education": education,
