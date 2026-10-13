@@ -97,6 +97,17 @@ class PolicyGate:
         if not principal.is_active:
             raise AuthorizationError("Account is inactive or disabled")
 
+        # 3b. Role Permission Gate (Rulebook Section 5 & 16: Tool call without required permission is denied)
+        if tool.required_permission == "jobs:ingest" and principal.role not in ("recruiter", "admin"):
+            raise AuthorizationError(
+                f"Permission denied: role '{principal.role}' is not authorized to invoke tool '{tool.name}' requiring '{tool.required_permission}'."
+            )
+        if tool.required_permission.startswith("admin:") and principal.role != "admin":
+            raise AuthorizationError(
+                f"Permission denied: role '{principal.role}' is not authorized to invoke tool '{tool.name}' requiring '{tool.required_permission}'."
+            )
+
+
         # 4. Strict Pydantic Argument Validation Gate
         try:
             validated_args = tool.input_schema.model_validate(arguments)

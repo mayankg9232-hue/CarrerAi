@@ -115,12 +115,19 @@ class ToolRegistry:
         resume_repo: Optional[IResumeRepository] = None,
         job_repo: Optional[IJobRepository] = None,
         matching_engine: Optional[MatchingEngine] = None,
+        llm_service: Optional[Any] = None,
+        job_retriever: Optional[Any] = None,
+        firecrawl_adapter: Optional[Any] = None,
     ) -> None:
         self.resume_repo = resume_repo or get_resume_repository()
         self.job_repo = job_repo or get_job_repository()
         self.matching_engine = matching_engine or MatchingEngine(job_repository=self.job_repo)
+        self.llm_service = llm_service
+        self.job_retriever = job_retriever
+        self.firecrawl_adapter = firecrawl_adapter
         self._tools: Dict[str, ToolDefinition] = {}
         self._register_default_tools()
+        self._register_developer_b_tools()
 
     def register_tool(self, tool: ToolDefinition) -> None:
         """Register an approved tool into the allowlist."""
@@ -289,8 +296,24 @@ class ToolRegistry:
             )
         )
 
+    def _register_developer_b_tools(self) -> None:
+        """Register Developer B's approved domain capabilities (NLP, Firecrawl, RAG, and Advice)."""
+        from app.agents.tools.developer_b_tools import create_developer_b_tools
+
+        b_tools = create_developer_b_tools(
+            resume_repo=self.resume_repo,
+            job_repo=self.job_repo,
+            matching_engine=self.matching_engine,
+            llm_service=self.llm_service,
+            job_retriever=self.job_retriever,
+            firecrawl_adapter=self.firecrawl_adapter,
+        )
+        for tool in b_tools:
+            self.register_tool(tool)
+
 
 _global_tool_registry: Optional[ToolRegistry] = None
+
 
 
 def get_tool_registry() -> ToolRegistry:

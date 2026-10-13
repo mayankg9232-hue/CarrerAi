@@ -296,6 +296,21 @@ class AgentOrchestrator:
 
         # 1. Candidate-Job Match Workflow
         if request.candidate_id and request.job_id:
+            if "match" in task_lower:
+                planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
+                planned.append(("get_job_details", {"job_id": request.job_id}))
+                planned.append(("match_candidate_to_job", {"candidate_id": request.candidate_id, "job_id": request.job_id}))
+                return planned
+            if any(w in task_lower for w in ["improve", "suggestion", "advice"]):
+                planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
+                planned.append(("get_job_details", {"job_id": request.job_id}))
+                planned.append(("generate_truthful_resume_suggestions", {"candidate_id": request.candidate_id, "job_id": request.job_id}))
+                return planned
+            if any(w in task_lower for w in ["synthesize", "explain"]):
+                planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
+                planned.append(("get_job_details", {"job_id": request.job_id}))
+                planned.append(("synthesize_grounded_match_explanation", {"candidate_id": request.candidate_id, "job_id": request.job_id}))
+                return planned
             planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
             planned.append(("get_job_details", {"job_id": request.job_id}))
             planned.append(("match_candidate_to_job", {"candidate_id": request.candidate_id, "job_id": request.job_id}))
@@ -307,19 +322,33 @@ class AgentOrchestrator:
             planned.append(("recommend_jobs_for_candidate", {"candidate_id": request.candidate_id, "min_score": 50.0, "limit": 5}))
             return planned
 
-        # 3. Skill Gap Analysis
+        # 3. Semantic / Vector Search Workflow
+        if any(w in task_lower for w in ["semantic", "vector", "similarity"]):
+            if request.candidate_id:
+                planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
+                planned.append(("semantic_search_jobs", {"candidate_id": request.candidate_id, "limit": 5}))
+                return planned
+            planned.append(("semantic_search_jobs", {"query_text": request.task[:100], "limit": 5}))
+            return planned
+
+        # 4. Skill Gap Analysis
         if request.candidate_id and "gap" in task_lower:
             planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
             if request.job_id:
                 planned.append(("analyze_skill_gaps", {"candidate_id": request.candidate_id, "job_id": request.job_id}))
             return planned
 
-        # 4. Profile Facts Retrieval
+        # 5. Extract Skills from text
+        if "extract" in task_lower and "skill" in task_lower:
+            planned.append(("extract_skills_from_text", {"text": request.task[:500]}))
+            return planned
+
+        # 6. Profile Facts Retrieval
         if request.candidate_id:
             planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
             return planned
 
-        # 5. Job Search
+        # 7. Job Search
         if "search" in task_lower or "job" in task_lower:
             planned.append(("query_jobs", {"q": request.task[:50], "limit": 5}))
             return planned
@@ -362,6 +391,15 @@ class AgentOrchestrator:
         if not results:
             return "Task completed. No matching records or results were found."
 
+        from app.agents.tools.developer_b_tools import (
+            ExtractedSkillsOutput,
+            ParsedResumeFactsOutput,
+            SemanticJobSearchOutput,
+            IngestJobOutput,
+            TruthfulResumeSuggestionsOutput,
+            SynthesizedMatchExplanationOutput,
+        )
+
         parts: List[str] = []
         for r in results:
             if isinstance(r, MatchResult):
@@ -382,8 +420,44 @@ class AgentOrchestrator:
             elif isinstance(r, CandidateProfile):
                 skills_list = ", ".join([s.name for s in r.skills[:5]])
                 parts.append(f"Candidate Profile facts retrieved for {r.full_name}: Skills include {skills_list}.")
+            elif isinstance(r, TruthfulResumeSuggestionsOutput):
+                sugg_text = "\n".join([f"- {s}" for s in r.suggestions])
+                parts.append(
+                    f"Truthful Resume Improvement Suggestions for Candidate {r.candidate_id} and Job {r.job_id}:\n"
+                    f"{sugg_text}\n"
+                    f"Note: {r.anti_hallucination_note}"
+                )
+            elif isinstance(r, SynthesizedMatchExplanationOutput):
+                caveats_str = f"\n- Caveats: {', '.join(r.caveats)}" if r.caveats else ""
+                parts.append(
+                    f"Grounded Match Synthesis for Candidate {r.candidate_id} and Job {r.job_id}:\n"
+                    f"- Overall Alignment Score: {r.overall_score:.1f}/100\n"
+                    f"- {r.grounded_summary}"
+                    f"{caveats_str}"
+                )
+            elif isinstance(r, SemanticJobSearchOutput):
+                top_items = [f"{m.title} at {m.company} ({m.similarity_score:.2f})" for m in r.matches[:3]]
+                parts.append(
+                    f"Semantic Job Search Results for '{r.query}':\n"
+                    f"- Top Matches: {', '.join(top_items) if top_items else 'No semantic matches found'}\n"
+                    f"- Total Found: {r.total_found}"
+                )
+            elif isinstance(r, ExtractedSkillsOutput):
+                skills_str = ", ".join([s.name for s in r.skills])
+                parts.append(f"Extracted {r.total_extracted} skills: {skills_str}.")
+            elif isinstance(r, ParsedResumeFactsOutput):
+                parts.append(
+                    f"Parsed Resume Facts: {len(r.skills)} skills extracted, "
+                    f"estimated {r.detected_years_experience:.1f} years experience."
+                )
+            elif isinstance(r, IngestJobOutput):
+                status_str = "New listing" if r.is_new else "Updated listing"
+                parts.append(
+                    f"Job Ingestion: '{r.title}' at {r.company} (ID: {r.job_id}). Status: {status_str}."
+                )
 
         return "\n\n".join(parts) if parts else "Task execution completed successfully."
+
 
     def _build_response(
         self,
