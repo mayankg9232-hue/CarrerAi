@@ -38,9 +38,11 @@ class TwoModelLLMService:
         self,
         primary_provider: LLMProviderInterface,
         secondary_provider: Optional[LLMProviderInterface] = None,
+        backup_provider: Optional[LLMProviderInterface] = None,
     ) -> None:
         self.primary_provider = primary_provider
         self.secondary_provider = secondary_provider
+        self.backup_provider = backup_provider
         self.last_metadata: Optional[LLMResponseMetadata] = None
 
     async def generate_structured(
@@ -89,20 +91,21 @@ class TwoModelLLMService:
             return result, metadata
 
         except (LLMUnavailableError, LLMTimeoutError, LLMCredentialsMissingError) as exc:
-            if not allow_fallback or self.secondary_provider is None:
+            if not allow_fallback or (self.secondary_provider is None and self.backup_provider is None):
                 logger.warning(
                     f"Primary provider '{self.primary_provider.provider_name}' failed ({type(exc).__name__}), "
                     f"fallback disabled or secondary provider unavailable."
                 )
                 raise
 
+            fallback_provider = self.secondary_provider or self.backup_provider
             logger.warning(
                 f"Primary provider '{self.primary_provider.provider_name}' experienced outage ({str(exc)}). "
-                f"Initiating bounded fallback to secondary provider '{self.secondary_provider.provider_name}'."
+                f"Initiating bounded fallback to provider '{fallback_provider.provider_name}'."
             )
 
             try:
-                result, sec_metadata = await self.secondary_provider.generate_structured_with_meta(
+                result, sec_metadata = await fallback_provider.generate_structured_with_meta(
                     system_prompt=system_prompt,
                     user_prompt=user_prompt,
                     response_model=response_model,
@@ -115,12 +118,35 @@ class TwoModelLLMService:
                 self.last_metadata = sec_metadata
                 return result, sec_metadata
             except Exception as sec_exc:
+                if self.backup_provider and fallback_provider != self.backup_provider:
+                    logger.warning(
+                        f"Secondary provider '{fallback_provider.provider_name}' failed ({str(sec_exc)}). "
+                        f"Attempting tertiary fallback to backup provider '{self.backup_provider.provider_name}'."
+                    )
+                    try:
+                        result, bkp_meta = await self.backup_provider.generate_structured_with_meta(
+                            system_prompt=system_prompt,
+                            user_prompt=user_prompt,
+                            response_model=response_model,
+                            temperature=temperature,
+                            max_tokens=max_tokens,
+                            task_name=f"{task_name or 'unnamed'}_backup",
+                        )
+                        bkp_meta.fallback_triggered = True
+                        bkp_meta.secondary_used = True
+                        self.last_metadata = bkp_meta
+                        return result, bkp_meta
+                    except Exception as bkp_exc:
+                        raise LLMUnavailableError(
+                            f"All providers (primary, secondary, and backup) failed: {str(bkp_exc)}"
+                        ) from bkp_exc
+
                 logger.error(
-                    f"Secondary provider '{self.secondary_provider.provider_name}' also failed during fallback: {str(sec_exc)}"
+                    f"Secondary provider '{fallback_provider.provider_name}' also failed during fallback: {str(sec_exc)}"
                 )
                 raise LLMUnavailableError(
                     f"Both primary ({self.primary_provider.provider_name}) and secondary "
-                    f"({self.secondary_provider.provider_name}) providers failed: {str(sec_exc)}"
+                    f"({fallback_provider.provider_name}) providers failed: {str(sec_exc)}"
                 ) from sec_exc
 
     async def generate_text(
@@ -142,19 +168,31 @@ class TwoModelLLMService:
                 task_name=task_name,
             )
         except (LLMUnavailableError, LLMTimeoutError, LLMCredentialsMissingError) as exc:
-            if not allow_fallback or self.secondary_provider is None:
+            if not allow_fallback or (self.secondary_provider is None and self.backup_provider is None):
                 raise
 
+            fallback_provider = self.secondary_provider or self.backup_provider
             logger.warning(
-                f"Primary text generation failed ({str(exc)}). Falling back to secondary '{self.secondary_provider.provider_name}'."
+                f"Primary text generation failed ({str(exc)}). Falling back to '{fallback_provider.provider_name}'."
             )
-            return await self.secondary_provider.generate_text(
-                system_prompt=system_prompt,
-                user_prompt=user_prompt,
-                temperature=temperature,
-                max_tokens=max_tokens,
-                task_name=f"{task_name or 'unnamed'}_fallback",
-            )
+            try:
+                return await fallback_provider.generate_text(
+                    system_prompt=system_prompt,
+                    user_prompt=user_prompt,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                    task_name=f"{task_name or 'unnamed'}_fallback",
+                )
+            except Exception as sec_exc:
+                if self.backup_provider and fallback_provider != self.backup_provider:
+                    return await self.backup_provider.generate_text(
+                        system_prompt=system_prompt,
+                        user_prompt=user_prompt,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        task_name=f"{task_name or 'unnamed'}_backup",
+                    )
+                raise
 
     async def review_structured_output(
         self,
@@ -238,8 +276,29 @@ def get_llm_service(settings: Optional[Settings] = None) -> TwoModelLLMService:
             model=cfg.SECONDARY_LLM_MODEL,
             provider_name=secondary_name,
         )
+    # Determine backup adapter
+    backup_name = (cfg.BACKUP_LLM_PROVIDER or "").lower()
+    backup: Optional[LLMProviderInterface] = None
+    if backup_name == "mock" or cfg.APP_ENV == "testing":
+        backup = MockLLMAdapter(provider_name="mock-backup", model_name=cfg.BACKUP_LLM_MODEL or "mock-backup")
+    elif backup_name == "gemini":
+        backup = SecondaryLLMAdapter(
+            api_key=cfg.BACKUP_LLM_API_KEY,
+            model=cfg.BACKUP_LLM_MODEL or "gemini-3.6-flash",
+            provider_name="gemini-backup",
+        )
+    elif backup_name:
+        backup = PrimaryLLMAdapter(
+            api_key=cfg.BACKUP_LLM_API_KEY,
+            model=cfg.BACKUP_LLM_MODEL,
+            provider_name=backup_name,
+        )
 
-    _llm_service_instance = TwoModelLLMService(primary_provider=primary, secondary_provider=secondary)
+    _llm_service_instance = TwoModelLLMService(
+        primary_provider=primary,
+        secondary_provider=secondary,
+        backup_provider=backup,
+    )
     return _llm_service_instance
 
 

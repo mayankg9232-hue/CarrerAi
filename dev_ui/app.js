@@ -415,6 +415,48 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // --- Phase 6 Agentic AI Actions (Developer A) ---
+  const btnRunAgentTask = document.getElementById("btnRunAgentTask");
+  if (btnRunAgentTask) {
+    btnRunAgentTask.addEventListener("click", async () => {
+      const task = document.getElementById("agentTaskInput").value.trim();
+      const candidateId = document.getElementById("agentCandidateId").value.trim() || null;
+      const jobId = document.getElementById("agentJobId").value.trim() || null;
+      const maxSteps = parseInt(document.getElementById("agentMaxSteps").value.trim(), 10) || 8;
+
+      if (!task) {
+        alert("Please enter an agent task prompt.");
+        return;
+      }
+
+      const headers = { "Content-Type": "application/json" };
+      if (storedBearerToken) headers["Authorization"] = `Bearer ${storedBearerToken}`;
+
+      await executeRequest("/api/v1/agent/run", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          task,
+          candidate_id: candidateId,
+          job_id: jobId,
+          max_steps: maxSteps,
+        }),
+      });
+    });
+  }
+
+  const btnListAgentTools = document.getElementById("btnListAgentTools");
+  if (btnListAgentTools) {
+    btnListAgentTools.addEventListener("click", async () => {
+      const headers = {};
+      if (storedBearerToken) headers["Authorization"] = `Bearer ${storedBearerToken}`;
+      await executeRequest("/api/v1/agent/tools", {
+        method: "GET",
+        headers,
+      });
+    });
+  }
+
   // Auto-ping health on initial load
   executeRequest("/api/v1/health");
 

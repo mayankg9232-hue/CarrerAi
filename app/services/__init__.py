@@ -1,5 +1,9 @@
 """Application services package."""
 
+from app.services.agent_service import (
+    AgentApplicationService,
+    get_agent_app_service,
+)
 from app.services.llm_service import LLMApplicationService, get_llm_app_service
 from app.services.matching_service import (
     MatchingApplicationService,
@@ -7,6 +11,8 @@ from app.services.matching_service import (
 )
 
 __all__ = [
+    "AgentApplicationService",
+    "get_agent_app_service",
     "LLMApplicationService",
     "get_llm_app_service",
     "MatchingApplicationService",

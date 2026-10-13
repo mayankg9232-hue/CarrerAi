@@ -47,6 +47,13 @@ from app.schemas.llm import (
     LLMSkillExtractionItem,
 )
 
+from app.schemas.agent import (
+    AgentStepEvent,
+    AgentTaskRequest,
+    AgentTaskResponse,
+    ToolMetadata,
+)
+
 __all__ = [
     # Common
     "StandardResponse",
@@ -86,5 +93,11 @@ __all__ = [
     "LLMReviewRequest",
     "LLMServiceStatus",
     "LLMResultEnvelope",
+    # Agent
+    "AgentTaskRequest",
+    "AgentTaskResponse",
+    "AgentStepEvent",
+    "ToolMetadata",
 ]
+
 

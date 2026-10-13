@@ -57,13 +57,15 @@ class Settings(BaseSettings):
         "http://localhost:8000",
     ]
 
-    # External LLM Providers (Introduced Phase 4)
-    PRIMARY_LLM_PROVIDER: str = "openai"
+    PRIMARY_LLM_PROVIDER: str = "gemini"
     PRIMARY_LLM_API_KEY: str = ""
-    PRIMARY_LLM_MODEL: str = "gpt-4o-mini"
+    PRIMARY_LLM_MODEL: str = "gemini-3.8-flash"
     SECONDARY_LLM_PROVIDER: str = "gemini"
     SECONDARY_LLM_API_KEY: str = ""
-    SECONDARY_LLM_MODEL: str = "gemini-1.5-flash"
+    SECONDARY_LLM_MODEL: str = "gemini-3.7-flash"
+    BACKUP_LLM_PROVIDER: str = "gemini"
+    BACKUP_LLM_API_KEY: str = ""
+    BACKUP_LLM_MODEL: str = "gemini-3.6-flash"
 
     # Vector Embeddings (Gemini Embedding 2 / Local)
     EMBEDDING_PROVIDER: str = "gemini"

@@ -1,7 +1,15 @@
 """Aggregated router for API version 1."""
 
 from fastapi import APIRouter
-from app.api.v1.endpoints import auth, health, jobs, llm, matching, resumes
+from app.api.v1.endpoints import (
+    agent,
+    auth,
+    health,
+    jobs,
+    llm,
+    matching,
+    resumes,
+)
 
 api_v1_router = APIRouter()
 
@@ -22,4 +30,7 @@ api_v1_router.include_router(llm.router, prefix="/llm", tags=["LLM"])
 
 # Register matching and recommendation engine (Phase 5 Developer A)
 api_v1_router.include_router(matching.router, prefix="/matching", tags=["Matching"])
+
+# Register Agentic AI orchestrator (Phase 6 Developer A)
+api_v1_router.include_router(agent.router, prefix="/agent", tags=["Agent"])
 

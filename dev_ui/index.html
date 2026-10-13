@@ -208,6 +208,27 @@
               <button class="btn btn-outline" id="btnGetRagContext">Grounded RAG Context</button>
             </div>
           </div>
+
+          <!-- Phase 6 Agentic AI & Tool Permissions (Developer A) -->
+          <div class="action-item" style="border-top: 1px solid var(--border-color, #27272a); padding-top: 1.25rem;">
+            <div class="action-header">
+              <span class="method post">POST</span>
+              <span class="endpoint">/api/v1/agent/*</span>
+            </div>
+            <p class="action-desc">Phase 6 Bounded Agentic AI orchestrator with allowlisted tools & policy gate.</p>
+            <div class="form-row">
+              <input type="text" id="agentTaskInput" placeholder="Agent Task (e.g. Find best matching jobs and explain gaps)" value="Match candidate to job and explain key gaps">
+            </div>
+            <div class="form-row" style="margin-top: 0.5rem;">
+              <input type="text" id="agentCandidateId" placeholder="Candidate ID (optional)">
+              <input type="text" id="agentJobId" placeholder="Job ID (optional)">
+              <input type="number" id="agentMaxSteps" placeholder="Max Steps (default 8)" value="8" min="1" max="16" style="width: 120px;">
+            </div>
+            <div class="button-row" style="margin-top: 0.5rem;">
+              <button class="btn btn-primary" id="btnRunAgentTask">Run Agent Task</button>
+              <button class="btn btn-outline" id="btnListAgentTools">List Allowlisted Tools</button>
+            </div>
+          </div>
         </div>
       </section>
 
