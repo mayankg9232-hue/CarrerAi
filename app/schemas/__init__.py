@@ -33,6 +33,14 @@ from app.schemas.matching import (
     RecommendedMatchesResponse,
     ScoreBreakdown,
 )
+from app.schemas.llm import (
+    LLMMatchExplanationResult,
+    LLMResponseMetadata,
+    LLMResumeExtractionResult,
+    LLMReviewResponse,
+    LLMReviewVerdict,
+    LLMSkillExtractionItem,
+)
 
 __all__ = [
     # Common
@@ -61,4 +69,12 @@ __all__ = [
     "MatchResult",
     "MatchRequest",
     "RecommendedMatchesResponse",
+    # LLM
+    "LLMResponseMetadata",
+    "LLMReviewVerdict",
+    "LLMReviewResponse",
+    "LLMSkillExtractionItem",
+    "LLMResumeExtractionResult",
+    "LLMMatchExplanationResult",
 ]
+
