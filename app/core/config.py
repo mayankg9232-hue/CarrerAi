@@ -106,6 +106,9 @@ class Settings(BaseSettings):
     SANDBOX_PROVIDER: str = "mock"
     SANDBOX_TIMEOUT_SECONDS: int = 5
     SANDBOX_MEMORY_MB: int = 128
+    SANDBOX_DOCKER_PYTHON_IMAGE: str = "ai-job-matcher-sandbox-python:3.11"
+    SANDBOX_DOCKER_CPUS: float = 1.0
+    SANDBOX_DOCKER_PIDS_LIMIT: int = 32
 
     @field_validator("ALLOWED_ORIGINS", "APPROVED_JOB_DOMAINS", "ALLOWED_CV_MIME_TYPES", mode="before")
     @classmethod

@@ -53,6 +53,16 @@ from app.schemas.agent import (
     AgentTaskResponse,
     ToolMetadata,
 )
+from app.schemas.assessment import (
+    AssessmentLimits,
+    AssessmentResult,
+    AssessmentSubmissionRequest,
+    ExecutionStatus,
+    SupportedLanguage,
+    SupportedLanguageSpec,
+    TestCase,
+    TestCaseResult,
+)
 
 __all__ = [
     # Common
@@ -98,6 +108,15 @@ __all__ = [
     "AgentTaskResponse",
     "AgentStepEvent",
     "ToolMetadata",
+    # Assessment
+    "SupportedLanguage",
+    "ExecutionStatus",
+    "AssessmentLimits",
+    "TestCase",
+    "TestCaseResult",
+    "AssessmentSubmissionRequest",
+    "AssessmentResult",
+    "SupportedLanguageSpec",
 ]
 
 

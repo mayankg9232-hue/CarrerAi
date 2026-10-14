@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     agent,
+    assessments,
     auth,
     health,
     jobs,
@@ -33,4 +34,7 @@ api_v1_router.include_router(matching.router, prefix="/matching", tags=["Matchin
 
 # Register Agentic AI orchestrator (Phase 6 Developer A)
 api_v1_router.include_router(agent.router, prefix="/agent", tags=["Agent"])
+
+# Register Candidate Assessment Sandbox (Phase 7 Developer A)
+api_v1_router.include_router(assessments.router, prefix="/assessments", tags=["Assessments"])
 

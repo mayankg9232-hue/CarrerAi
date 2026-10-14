@@ -259,13 +259,13 @@ async def test_redis_ttl_expiration_and_invalidation(cache_service: CacheService
         )
     ]
 
-    # Set with 1-second TTL
-    await cache_service.set_cached_jobs_query(jobs, ttl=1, **params)
+    # Set with 2-second TTL to accommodate network roundtrips to Upstash
+    await cache_service.set_cached_jobs_query(jobs, ttl=2, **params)
     cached_immediate = await cache_service.get_cached_jobs_query(**params)
     assert cached_immediate is not None
 
-    # Wait 1.3 seconds for TTL to elapse
-    await asyncio.sleep(1.3)
+    # Wait 2.3 seconds for TTL to elapse
+    await asyncio.sleep(2.3)
     cached_after_ttl = await cache_service.get_cached_jobs_query(**params)
     assert cached_after_ttl is None
 

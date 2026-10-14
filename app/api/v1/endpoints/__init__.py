@@ -2,6 +2,7 @@
 
 from app.api.v1.endpoints import (
     agent,
+    assessments,
     auth,
     health,
     jobs,
@@ -12,6 +13,7 @@ from app.api.v1.endpoints import (
 
 __all__ = [
     "agent",
+    "assessments",
     "auth",
     "health",
     "jobs",
