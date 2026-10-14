@@ -134,8 +134,16 @@ class FirecrawlSourceAdapter(IFirecrawlAdapter):
         metadata = result_data.get("metadata", {})
         markdown = result_data.get("markdown", "")
         title = metadata.get("title") or result_data.get("title")
-        company = metadata.get("og:site_name") or metadata.get("company") or "Unknown Organization"
+        company = metadata.get("og:site_name") or metadata.get("company")
         description = sanitize_text(markdown or result_data.get("content", ""))
+
+        if not company:
+            company_match = re.search(
+                r"(?:\*\*Company\*\*|Company):\s*([^\n\r]+)",
+                description,
+                re.IGNORECASE,
+            )
+            company = company_match.group(1).strip() if company_match else "Unknown Organization"
 
         if not title or len(description) < 10:
             raise SourceMalformedError("Scraped page does not contain valid job listing content.")
@@ -150,6 +158,75 @@ class FirecrawlSourceAdapter(IFirecrawlAdapter):
             if len(inferred_skills) > 8:
                 preferred_skills = [s["name"] for s in inferred_skills[8:14]]
 
+        # Extract salary / compensation if present in metadata or description
+        salary = metadata.get("salary")
+        if not salary:
+            salary_match = re.search(
+                r"(\$\s*\d{2,3}(?:,\d{3})*(?:\s*[-–—to]+\s*\$?\s*\d{2,3}(?:,\d{3})*)?\s*(?:(?:k|K)\b|/(?:yr|year|hr|hour|annum))?)",
+                description,
+                re.IGNORECASE,
+            )
+            if salary_match:
+                salary = salary_match.group(1).strip()
+
+        # Extract required experience years
+        experience_years_required = metadata.get("experience_years_required")
+        if experience_years_required is None:
+            exp_match = re.search(
+                r"(\d+(?:\.\d+)?)\s*\+?\s*(?:years?|yrs?)(?:\s+of)?(?:\s+[\w/]+){0,3}\s+experience",
+                description,
+                re.IGNORECASE,
+            )
+            if exp_match:
+                try:
+                    experience_years_required = float(exp_match.group(1))
+                except ValueError:
+                    pass
+
+        # Extract education requirements
+        education_required = metadata.get("education_required")
+        if not education_required:
+            desc_lower = description.lower()
+            if any(term in desc_lower for term in ["ph.d", "phd", "doctorate"]):
+                education_required = "Ph.D. or Doctorate"
+            elif any(term in desc_lower for term in ["master's", "masters", "m.s.", "msc"]):
+                education_required = "Master's Degree"
+            elif any(term in desc_lower for term in ["bachelor's", "bachelors", "b.s.", "bsc", "degree in computer science"]):
+                education_required = "Bachelor's Degree"
+
+        # Extract responsibilities bullet points
+        responsibilities = metadata.get("responsibilities", [])
+        if not responsibilities:
+            resp_block = re.search(
+                r"(?:responsibilities|what you'?ll do|key responsibilities|the role):\s*(.*?)(?=\n\n|\n[A-Z]|\Z)",
+                description,
+                re.IGNORECASE | re.DOTALL,
+            )
+            if resp_block:
+                bullets = [
+                    re.sub(r"^[-*•\d.]+\s*", "", line).strip()
+                    for line in resp_block.group(1).split("\n")
+                    if len(line.strip()) > 10
+                ]
+                responsibilities = bullets[:6]
+
+        # Extract domain
+        domain = metadata.get("domain")
+        if not domain:
+            combined_text = f"{title} {description}".lower()
+            if any(d in combined_text for d in ["machine learning", "ai", "artificial intelligence", "deep learning", "llm"]):
+                domain = "AI & Machine Learning"
+            elif any(d in combined_text for d in ["cloud", "devops", "kubernetes", "infrastructure", "sre"]):
+                domain = "Cloud & DevOps"
+            elif any(d in combined_text for d in ["frontend", "ui", "ux", "react", "vue"]):
+                domain = "Frontend Engineering"
+            elif any(d in combined_text for d in ["backend", "api", "microservices", "distributed"]):
+                domain = "Backend Engineering"
+            elif any(d in combined_text for d in ["data engineer", "etl", "spark", "warehouse"]):
+                domain = "Data Engineering"
+            else:
+                domain = "Software Engineering"
+
         return {
             "title": title.strip(),
             "company": company.strip(),
@@ -158,6 +235,11 @@ class FirecrawlSourceAdapter(IFirecrawlAdapter):
             "required_skills": required_skills,
             "preferred_skills": preferred_skills,
             "experience_level": metadata.get("experience_level"),
+            "salary": salary,
+            "experience_years_required": experience_years_required,
+            "education_required": education_required,
+            "responsibilities": responsibilities,
+            "domain": domain,
             "source_url": validated_url,
             "source": "firecrawl",
             "collected_at": datetime.now(timezone.utc),
@@ -210,6 +292,11 @@ class MockFirecrawlAdapter(IFirecrawlAdapter):
             "required_skills": ["Python", "FastAPI"],
             "preferred_skills": ["Docker", "PostgreSQL"],
             "experience_level": "mid",
+            "salary": "$135,000 – $165,000 / year",
+            "experience_years_required": 3.0,
+            "education_required": "Bachelor's Degree",
+            "responsibilities": ["Design REST APIs using FastAPI", "Write automated tests", "Manage container deployments"],
+            "domain": "Backend Engineering",
             "source_url": url,
             "source": "firecrawl",
             "collected_at": datetime.now(timezone.utc),

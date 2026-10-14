@@ -37,12 +37,12 @@ class Settings(BaseSettings):
     MAX_PAYLOAD_SIZE_BYTES: int = 5 * 1024 * 1024  # 5 MB
 
     # Firebase Authentication
-    FIREBASE_API_KEY: str = ""
+    FIREBASE_API_KEY: str = "AIzaSyBcuGpHGfq2dO0-3o8j1qtc2ctWbgxK9Uo"
     FIREBASE_AUTH_DOMAIN: str = "aihiring-3d070.firebaseapp.com"
     FIREBASE_PROJECT_ID: str = "aihiring-3d070"
     FIREBASE_STORAGE_BUCKET: str = "aihiring-3d070.firebasestorage.app"
     FIREBASE_MESSAGING_SENDER_ID: str = "14319993219"
-    FIREBASE_APP_ID: str = ""
+    FIREBASE_APP_ID: str = "1:14319993219:web:39f05a13de221b4bfb36b6"
     FIREBASE_MEASUREMENT_ID: str = "G-EMPGKM4ZG6"
     FIREBASE_SERVICE_ACCOUNT_PATH: str = ""
     AUTH_PROVIDER: str = "hybrid"  # "local", "firebase", or "hybrid"
@@ -86,6 +86,17 @@ class Settings(BaseSettings):
     APPROVED_JOB_DOMAINS: Union[str, List[str]] = [
         "approved-board.example.com",
         "careers.techcompany.com",
+        "boards.greenhouse.io",
+        "greenhouse.io",
+        "jobs.lever.co",
+        "lever.co",
+        "jobs.ashbyhq.com",
+        "ashbyhq.com",
+        "apply.workable.com",
+        "workable.com",
+        "remoteok.com",
+        "weworkremotely.com",
+        "news.ycombinator.com",
     ]
     STALE_JOB_DAYS_THRESHOLD: int = 30
 

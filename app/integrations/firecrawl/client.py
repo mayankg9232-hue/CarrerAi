@@ -59,6 +59,11 @@ class FirecrawlClient:
         Returns:
             Dictionary containing extracted data from Firecrawl API.
         """
+        if not self.api_key or not self.api_key.strip():
+            raise FirecrawlAuthenticationError(
+                "Firecrawl API key is missing or not configured. Please configure FIRECRAWL_API_KEY in your local .env file."
+            )
+
         endpoint = f"{self.base_url}/v1/scrape"
         payload = {
             "url": target_url,
@@ -66,10 +71,10 @@ class FirecrawlClient:
         }
         headers = {
             "Accept": "application/json",
+            "Content-Type": "application/json",
             "User-Agent": "AIJobMatcher-Crawler/1.0",
+            "Authorization": f"Bearer {self.api_key.strip()}",
         }
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
 
         last_exception: Optional[Exception] = None
 

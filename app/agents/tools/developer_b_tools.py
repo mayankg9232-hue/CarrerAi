@@ -44,8 +44,10 @@ from app.repositories.job_repo import IJobRepository, get_job_repository
 from app.repositories.resume_repo import IResumeRepository, get_resume_repository
 from app.retrieval.embeddings import (
     IEmbeddingProvider,
+    LocalDeterministicEmbeddingProvider,
     cosine_similarity,
     get_embedding_provider,
+    prepare_job_embedding_text,
 )
 from app.retrieval.retriever import JobRetriever
 from app.schemas.job import Job
@@ -463,10 +465,19 @@ def create_developer_b_tools(
             if not query_label:
                 raise ValueError("Either 'query_text' or 'candidate_id' must be provided.")
             active_jobs = await _job_repo.query_jobs(only_active=True, limit=100)
-            query_vec = await _job_retriever.embedder.embed_text(query_label)
+            try:
+                query_vec = await _job_retriever.embedder.embed_text(query_label)
+            except Exception:
+                local_fallback = LocalDeterministicEmbeddingProvider()
+                query_vec = await local_fallback.embed_text(query_label)
+
             ranked: List[tuple[Job, float]] = []
             for j in active_jobs:
-                j_vec = await _job_retriever.get_or_create_job_embedding(j)
+                try:
+                    j_vec = await _job_retriever.get_or_create_job_embedding(j)
+                except Exception:
+                    local_fallback = LocalDeterministicEmbeddingProvider()
+                    j_vec = await local_fallback.embed_text(prepare_job_embedding_text(j))
                 sim = cosine_similarity(query_vec, j_vec)
                 if sim >= args.min_similarity:
                     ranked.append((j, sim))

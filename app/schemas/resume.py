@@ -46,6 +46,7 @@ class CandidateProfile(BaseModel):
     user_id: str = Field(description="Associated user identifier (data isolation key)")
     raw_hash: str = Field(description="SHA-256 hash of original resume content for deduplication and audit")
     full_name: Optional[str] = Field(default=None, description="Extracted candidate full name")
+    headline: Optional[str] = Field(default=None, description="Professional headline / target title")
     email: Optional[str] = Field(default=None, description="Extracted candidate contact email")
     summary: Optional[str] = Field(default=None, description="Professional executive summary")
     skills: List[SkillItem] = Field(default_factory=list, description="Validated technical and soft skills")

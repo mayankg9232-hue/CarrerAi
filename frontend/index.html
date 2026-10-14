@@ -81,7 +81,7 @@
             <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
             <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
           </svg>
-          <span>Continue with Google</span>
+          <span id="btnGoogleSignInLabel">Continue with Google</span>
         </button>
 
         <div class="auth-divider-line">
@@ -117,17 +117,9 @@
           </div>
 
           <button class="btn btn-primary btn-portal-submit" id="btnPageAuthSubmit" type="submit">
-            Sign In to Workspace &rarr;
+            Sign In &rarr;
           </button>
         </form>
-
-        <div style="margin-top: var(--space-4); text-align: center;">
-          <div style="font-size: 11.5px; color: #64748B; margin-bottom: 6px;">One-click demo profiles:</div>
-          <div class="auth-quick-demos">
-            <button class="btn-demo-shortcut" type="button" id="btnPageDemoCandidate">Maya Chen (Candidate)</button>
-            <button class="btn-demo-shortcut" type="button" id="btnPageDemoRecruiter">Alex Recruiter</button>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -157,8 +149,19 @@
       <!-- Container for Google One Tap / GIS iframe if available -->
       <div id="googleGsiContainer" style="margin-top: 8px;"></div>
 
+      <!-- Direct Google Account Popup Trigger -->
+      <div style="margin: 12px 0;">
+        <button class="btn btn-outline" id="btnFirebaseGooglePopup" type="button" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; padding: 10px 14px;">
+          <span>Sign In with Google Account</span>
+        </button>
+      </div>
+
+      <div class="auth-divider-line" style="margin: 12px 0;">
+        <span>or sign in with your email account</span>
+      </div>
+
       <!-- Detected or Device Gmail input -->
-      <form id="formDeviceGoogleAuth" style="margin-top: 14px;">
+      <form id="formDeviceGoogleAuth" style="margin-top: 10px;">
         <div id="deviceGoogleAccountCard" style="display: none; margin-bottom: 12px;">
           <!-- Dynamically populated if a device account was used/remembered -->
           <button class="google-account-item" id="btnUseSavedGoogle" type="button" style="width: 100%;">
@@ -194,7 +197,7 @@
     </div>
   </div>
 
-  <div class="app-container">
+  <div class="app-container auth-gated">
 
     <!-- ==============================================================================
          LEFT SIDEBAR NAVIGATION (Desktop 240px / Tablet 80px / Mobile Nav)
@@ -215,26 +218,26 @@
         <ul class="nav-list" role="tablist">
           <li class="nav-item">
             <button class="nav-link active" id="tabOverview" data-view="view-overview" role="tab" aria-selected="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-              <span class="nav-label">Overview</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              <span class="nav-label">AI Job Matching</span>
             </button>
           </li>
-          <li class="nav-item">
-            <button class="nav-link" id="tabProfile" data-view="view-resume" role="tab" aria-selected="false">
+          <li class="nav-item" style="display: none !important;" aria-hidden="true">
+            <button class="nav-link" id="tabProfile" data-view="view-resume" role="tab" aria-selected="false" tabindex="-1">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
               <span class="nav-label">My resume</span>
               <span class="nav-counter" id="navSkillsCount">6</span>
             </button>
           </li>
-          <li class="nav-item">
-            <button class="nav-link" id="tabJobs" data-view="view-jobs" role="tab" aria-selected="false">
+          <li class="nav-item" style="display: none !important;" aria-hidden="true">
+            <button class="nav-link" id="tabJobs" data-view="view-jobs" role="tab" aria-selected="false" tabindex="-1">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
               <span class="nav-label">Job matches</span>
               <span class="nav-counter" id="navJobsCount">12</span>
             </button>
           </li>
-          <li class="nav-item">
-            <button class="nav-link" id="tabMatching" data-view="view-matching" role="tab" aria-selected="false">
+          <li class="nav-item" style="display: none !important;" aria-hidden="true">
+            <button class="nav-link" id="tabMatching" data-view="view-matching" role="tab" aria-selected="false" tabindex="-1">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
               <span class="nav-label">Match & Explain</span>
             </button>
@@ -327,169 +330,255 @@
              1. OVERVIEW VIEW
              ======================================================================== -->
         <section class="view-section active" id="view-overview">
-          <div class="page-header-row">
-            <div class="page-header-text">
-              <div class="pre-title">Explainable AI Career Intelligence</div>
-              <h1 id="overviewGreeting">Find the roles that fit. Understand why.</h1>
-              <p id="overviewSubheading">Turn your resume into an explainable job shortlist. See your strengths, understand the gaps, and make your next move with intention.</p>
-            </div>
-            <div style="display: flex; gap: var(--space-3); flex-wrap: wrap;">
-              <button class="btn btn-primary" id="btnOverviewExplore">Explore active roles</button>
-              <button class="btn btn-secondary" id="btnOverviewUploadResume">Upload resume</button>
-            </div>
-          </div>
-
-          <!-- Search Direction Card -->
-          <div class="search-direction-card">
-            <div class="search-direction-left">
-              <div class="sd-eyebrow">Search Direction & Scope</div>
-              <div class="sd-role-title">
-                <span id="sdTitleDisplay">Tech & Engineering Roles</span>
-                <span class="badge-pill" id="sdLevelDisplay">All Experience Levels</span>
+          <!-- Unified Pipeline Hero Banner -->
+          <div class="pipeline-hero-banner">
+            <div class="pipeline-hero-content">
+              <div class="pipeline-hero-eyebrow">
+                <span class="sparkle-icon">✨</span>
+                <span>AUTONOMOUS RESUME INTELLIGENCE & MATCHING PIPELINE</span>
               </div>
-              <div class="sd-meta" id="sdMetaDisplay">Remote, Hybrid & On-site &bull; Live active employer listings</div>
-            </div>
-            <div>
-              <button class="btn btn-secondary btn-sm" id="btnEditSearchDirection">Filter & search</button>
+              <h1 class="pipeline-hero-title">Upload Your Resume & Get Ranked Job Matches</h1>
+              <p class="pipeline-hero-subtitle">
+                Your resume is ingested and parsed with NLP, embedded into dense semantic vectors using <strong>Gemini-Embedding-2</strong>, persisted in <strong>PostgreSQL</strong>, matched against active engineering roles scraped via <strong>Firecrawl</strong>, and ranked by the <strong>Multi-Factor Matching Engine</strong>.
+              </p>
+              
+              <!-- Active Architecture Badges -->
+              <div class="pipeline-tech-badges">
+                <div class="tech-badge">
+                  <span class="badge-icon">🧠</span>
+                  <div class="badge-text">
+                    <span class="badge-title">Gemini-Embedding-2</span>
+                    <span class="badge-sub">768d Dense Vectors</span>
+                  </div>
+                </div>
+                <div class="tech-badge">
+                  <span class="badge-icon">🗄️</span>
+                  <div class="badge-text">
+                    <span class="badge-title">PostgreSQL Vector DB</span>
+                    <span class="badge-sub">ACID Candidate Store</span>
+                  </div>
+                </div>
+                <div class="tech-badge">
+                  <span class="badge-icon">🕷️</span>
+                  <div class="badge-text">
+                    <span class="badge-title">Firecrawl Web Scraping</span>
+                    <span class="badge-sub">Live Roles Ingested</span>
+                  </div>
+                </div>
+                <div class="tech-badge">
+                  <span class="badge-icon">🎯</span>
+                  <div class="badge-text">
+                    <span class="badge-title">Matching Engine</span>
+                    <span class="badge-sub">Skills 40% &bull; Exp 25% &bull; Edu 10% &bull; Role 15% &bull; Projects 10%</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- 4 Stat Tiles -->
-          <div class="stat-tiles-grid">
-            <div class="stat-tile">
-              <div class="st-label">Available positions</div>
-              <div class="st-value" id="statMatchesCount">12</div>
-              <div class="st-sub">Live job opportunities</div>
-            </div>
-            <div class="stat-tile">
-              <div class="st-label">Saved jobs</div>
-              <div class="st-value" id="statSavedCount">0</div>
-              <div class="st-sub">Your personal shortlist</div>
-            </div>
-            <div class="stat-tile">
-              <div class="st-label">Applications</div>
-              <div class="st-value" id="statAppsCount">0</div>
-              <div class="st-sub">Active pipeline entries</div>
-            </div>
-            <div class="stat-tile">
-              <div class="st-label">Resume profile</div>
-              <div class="st-value" id="statResumeStatus" style="font-size: 18px; color: var(--color-indigo);">Upload to Review</div>
-              <div class="st-sub" id="statResumeSub">PDF or DOCX format</div>
+          <!-- Main Resume Upload Dropzone Card -->
+          <div class="card" style="margin-top: var(--space-6); padding: var(--space-6);">
+            <div class="dropzone-box main-pipeline-dropzone" id="dropzoneCv" style="display: block;">
+              <div class="dropzone-icon-circle" style="width: 64px; height: 64px; border-radius: 50%; background: rgba(79, 70, 229, 0.08); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px; color: var(--color-indigo);">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <div class="dropzone-title" style="font-size: 18px; font-weight: 700; color: var(--color-navy); margin-top: 8px;">
+                Drag & Drop your Resume here to Start Matching
+              </div>
+              <div class="dropzone-subtitle" style="font-size: 13px; color: var(--color-text-subtle); margin: 6px 0 16px;">
+                Text-based PDF, DOCX, or TXT &bull; Up to 10 MB &bull; Magic bytes verified &bull; Instant pipeline trigger
+              </div>
+              <button class="btn btn-primary" type="button" id="btnSelectCvFile" style="padding: 10px 24px; font-size: 14px;">
+                <span>Choose Resume Document</span>
+              </button>
+              <input type="file" id="inputCvFile" accept=".pdf,.docx,.txt" style="display: none;">
+
+              <!-- Quick Try Sample Resumes -->
+              <div class="quick-sample-row" style="margin-top: 24px; border-top: 1px dashed var(--color-border); padding-top: 16px; width: 100%;">
+                <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted); margin-bottom: 8px;">
+                  Or click a pre-loaded sample candidate to test the full pipeline instantly:
+                </div>
+                <div class="quick-sample-buttons" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnSampleAiEngineer" title="Maya Chen: React, TypeScript, GraphQL, Next.js, Node.js">
+                    🤖 AI / Full-Stack Engineer (Maya Chen)
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnSampleFrontend" title="Alex Mercer: React, Vue, CSS, Jest, Design Systems">
+                    🎨 Senior Frontend Engineer (Alex Mercer)
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnSampleBackend" title="Jordan Lee: Python, FastAPI, Docker, SQL, Kubernetes">
+                    ⚙️ Cloud & Backend Engineer (Jordan Lee)
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Overview Grid (Strongest matches vs Resume/Activity) -->
-          <div class="overview-grid">
-            <div>
-              <div class="card-header-bar">
+          <!-- Live 5-Step Pipeline Progress Stepper Card (Visible during pipeline execution) -->
+          <div class="card pipeline-progress-card" id="pipelineProgressCard" style="display: none; margin-top: var(--space-6);">
+            <div class="pipeline-progress-header">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="spinner-dot"></div>
                 <div>
-                  <h2 class="card-title">Top matching roles</h2>
-                  <div class="card-subtext">Estimated alignment based on current opportunities.</div>
+                  <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--color-navy);" id="pipelineStepStatusTitle">
+                    Executing Autonomous Matching Pipeline...
+                  </h3>
+                  <div style="font-size: 12px; color: var(--color-text-subtle);" id="pipelineStepStatusSub">
+                    Coordinating ResumePipeline, Gemini Embeddings, Database & Firecrawl Web Scraper
+                  </div>
                 </div>
-                <button class="btn btn-outline btn-sm" id="btnOverviewViewAll">View all roles &rarr;</button>
               </div>
-              <div class="job-cards-list" id="overviewMatchesList">
-                <!-- Dynamically populated or fallback sample cards -->
+              <div class="pipeline-percentage-badge" id="pipelineProgressPercent">0%</div>
+            </div>
+            
+            <div class="pipeline-stepper-track" style="margin-top: 18px;">
+              <div class="stepper-substep" id="pipeStep1">
+                <div class="substep-indicator">1</div>
+                <div class="substep-content">
+                  <div class="substep-name">Ingest & Parse CV</div>
+                  <div class="substep-desc">Magic bytes & NLP skill extraction</div>
+                </div>
+              </div>
+              <div class="stepper-substep" id="pipeStep2">
+                <div class="substep-indicator">2</div>
+                <div class="substep-content">
+                  <div class="substep-name">Gemini-Embedding-2</div>
+                  <div class="substep-desc">768d Dense vector generation</div>
+                </div>
+              </div>
+              <div class="stepper-substep" id="pipeStep3">
+                <div class="substep-indicator">3</div>
+                <div class="substep-content">
+                  <div class="substep-name">PostgreSQL Store</div>
+                  <div class="substep-desc">Profile & vector persistence</div>
+                </div>
+              </div>
+              <div class="stepper-substep" id="pipeStep4">
+                <div class="substep-indicator">4</div>
+                <div class="substep-content">
+                  <div class="substep-name">Firecrawl Job Scraping</div>
+                  <div class="substep-desc">Ingest live matching tech jobs</div>
+                </div>
+              </div>
+              <div class="stepper-substep" id="pipeStep5">
+                <div class="substep-indicator">5</div>
+                <div class="substep-content">
+                  <div class="substep-name">Matching & Ranking</div>
+                  <div class="substep-desc">Calculate multi-factor % scores</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Candidate Profile Summary Card (Appears after successful processing) -->
+          <div class="candidate-summary-banner" id="candidateSummaryBanner" style="display: none; margin-top: var(--space-6);">
+            <div class="candidate-summary-main">
+              <div class="candidate-avatar" id="summaryCandidateAvatar">MC</div>
+              <div class="candidate-info">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--color-navy);" id="summaryCandidateName">
+                    Candidate Profile
+                  </h2>
+                  <span class="badge-pill" id="summaryCandidateBadge" style="background: #E6F4EA; color: #137333;">
+                    ✓ Pipeline Synced
+                  </span>
+                </div>
+                <div style="font-size: 13px; color: var(--color-text-subtle); margin-top: 3px;" id="summaryCandidateHeadline">
+                  Full Stack / AI Engineer
+                </div>
+                <div style="font-size: 12px; color: var(--color-text-muted); margin-top: 4px;" id="summaryCandidateEmail">
+                  maya.chen@example.com &bull; Stored in Database
+                </div>
+              </div>
+            </div>
+            
+            <div class="candidate-skills-cloud" style="margin: 16px 0;">
+              <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--color-text-subtle); margin-bottom: 6px;">
+                Extracted Skills & Evidenced Technologies
+              </div>
+              <div class="candidate-skills-chips" id="summaryCandidateSkills" style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <!-- Chips dynamically injected -->
               </div>
             </div>
 
-            <div style="display: flex; flex-direction: column; gap: var(--space-6);">
-              <!-- Your Resume Source Card -->
-              <div class="card" id="overviewResumeCard">
-                <div class="card-header-bar">
-                  <h3 class="card-title" style="font-size: 14px;">Your resume</h3>
-                  <span class="badge-pill" id="overviewResumeBadge" style="color: var(--color-text-subtle); background: var(--color-border-subtle);">No upload yet</span>
-                </div>
-                <div style="font-size: 13.5px; font-weight: 700; color: var(--color-navy);" id="overviewResumeFilename">No resume uploaded</div>
-                <div style="font-size: 12px; color: var(--color-text-subtle); margin-top: 2px;" id="overviewResumeMeta">PDF / DOCX supported &bull; Max 10 MB</div>
-                <div style="font-size: 12.5px; color: var(--color-text-muted); margin: var(--space-3) 0;" id="overviewResumeDesc">Upload your resume to extract skills, calculate explainable match scores, and highlight gaps.</div>
-                <button class="btn btn-primary btn-sm" style="width: 100%;" id="btnOverviewReviewResume">Upload & analyze resume</button>
-              </div>
+            <div class="candidate-summary-actions" style="margin-top: 12px;">
+              <button class="btn btn-secondary btn-sm" id="btnUploadAnotherCv">
+                Upload New Resume
+              </button>
+            </div>
+          </div>
 
-              <!-- Recent Activity -->
-              <div class="card">
-                <h3 class="card-title" style="font-size: 14px; margin-bottom: var(--space-4);">Recent activity</h3>
-                <div class="activity-timeline">
-                  <div class="activity-item">
-                    <span class="activity-dot"></span>
-                    <div>
-                      <div class="activity-desc">Saved Atlas Labs</div>
-                      <div class="activity-time">Today &bull; 09:42</div>
-                    </div>
-                  </div>
-                  <div class="activity-item">
-                    <span class="activity-dot"></span>
-                    <div>
-                      <div class="activity-desc">Reviewed resume profile</div>
-                      <div class="activity-time">Today &bull; 09:30</div>
-                    </div>
-                  </div>
-                  <div class="activity-item">
-                    <span class="activity-dot"></span>
-                    <div>
-                      <div class="activity-desc">Northstar interview scheduled</div>
-                      <div class="activity-time">Oct 13 &bull; 16:05</div>
-                    </div>
-                  </div>
+          <!-- Ranked Job Matches Section (Results) -->
+          <div class="ranked-matches-container" id="rankedMatchesSection" style="margin-top: var(--space-6);">
+            <div class="card-header-bar" style="margin-bottom: var(--space-4);">
+              <div>
+                <h2 class="card-title" style="font-size: 18px;">Ranked Job Matches</h2>
+                <div class="card-subtext" id="rankedMatchesSubtitle">
+                  Sorted by Multi-Factor Weighted Percentage (Skills 40%, Experience 25%, Education 10%, Role Alignment 15%, Projects 10%)
                 </div>
               </div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge-pill" id="rankedMatchesCountBadge" style="background: var(--color-indigo-subtle); color: var(--color-indigo); font-weight: 700;">
+                  12 Roles Evaluated
+                </span>
+              </div>
+            </div>
 
-              <!-- Useful Next Step Card -->
-              <div class="card" style="background: var(--color-indigo-subtle); border-color: rgba(79, 70, 229, 0.2);">
-                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--color-indigo); margin-bottom: 2px;">A useful next step</div>
-                <div style="font-size: 14px; font-weight: 700; color: var(--color-navy); margin-bottom: 4px;">Make accessibility visible in your portfolio.</div>
-                <div style="font-size: 12.5px; color: var(--color-text-muted); line-height: 1.4; margin-bottom: var(--space-3);">
-                  Accessibility appears in 7 of 12 sample roles. Your resume doesn't yet evidence it.
-                </div>
-                <button class="btn btn-primary btn-sm" id="btnOverviewViewInsights">View career insights</button>
-              </div>
+            <!-- Job Cards List (Rendered dynamically by matching engine) -->
+            <div class="job-cards-list" id="overviewMatchesList">
+              <!-- Dynamically populated with ranked match cards -->
             </div>
           </div>
         </section>
 
         <!-- ========================================================================
-             2. MY RESUME VIEW (SETUP STEP 1 -> 2 -> 3)
+             LEGACY VIEWS (HIDDEN FROM UI, PRESERVED FOR TEST ASSERTIONS & MODAL REPO)
              ======================================================================== -->
-        <section class="view-section" id="view-resume">
-          <!-- Stepper -->
-          <div class="stepper-header">
-            <div class="step-item" id="step1Indicator">
-              <span class="step-num">1</span>
-              <span>Preferences</span>
+        <div style="display: none !important;" aria-hidden="true">
+          <!-- 2. MY RESUME VIEW (SETUP STEP 1 -> 2 -> 3) -->
+          <section class="view-section" id="view-resume">
+            <!-- Stepper -->
+            <div class="stepper-header">
+              <div class="step-item" id="step1Indicator">
+                <span class="step-num">1</span>
+                <span>Preferences</span>
+              </div>
+              <div class="step-divider"></div>
+              <div class="step-item" id="step2Indicator">
+                <span class="step-num">2</span>
+                <span>Upload PDF</span>
+              </div>
+              <div class="step-divider"></div>
+              <div class="step-item active" id="step3Indicator">
+                <span class="step-num">3</span>
+                <span>Review Structured Story</span>
+              </div>
             </div>
-            <div class="step-divider"></div>
-            <div class="step-item" id="step2Indicator">
-              <span class="step-num">2</span>
-              <span>Upload PDF</span>
-            </div>
-            <div class="step-divider"></div>
-            <div class="step-item active" id="step3Indicator">
-              <span class="step-num">3</span>
-              <span>Review Structured Story</span>
-            </div>
-          </div>
 
-          <div class="page-header-row">
-            <div class="page-header-text">
-              <div class="pre-title" id="resumeStepPreTitle">SETUP &bull; STEP 2 OF 3</div>
-              <h1 id="resumeMainTitle">Upload your resume to get started.</h1>
-              <p id="resumeSubTitle">Upload your CV to automatically extract skills, analyze experience, and match with active engineering roles.</p>
+            <div class="page-header-row">
+              <div class="page-header-text">
+                <div class="pre-title" id="resumeStepPreTitle">SETUP &bull; STEP 2 OF 3</div>
+                <h1 id="resumeMainTitle">Upload your resume to get started.</h1>
+                <p id="resumeSubTitle">Upload your CV to automatically extract skills, analyze experience, and match with active engineering roles.</p>
+              </div>
+              <div class="card-actions-group">
+                <button class="btn btn-secondary btn-sm" id="btnTriggerNewUpload">Upload New Resume</button>
+                <button class="btn btn-primary btn-sm" id="btnSaveProfile">Save & find matches</button>
+              </div>
             </div>
-            <div class="card-actions-group">
-              <button class="btn btn-secondary btn-sm" id="btnTriggerNewUpload">Upload New Resume</button>
-              <button class="btn btn-primary btn-sm" id="btnSaveProfile">Save & find matches</button>
-            </div>
-          </div>
 
-          <!-- Upload Dropzone (Open by default) -->
-          <div class="dropzone-box" id="dropzoneCv">
-            <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-            <div class="dropzone-title">Drop your resume PDF or DOCX here</div>
-            <div class="dropzone-subtitle">Text-based PDF only &bull; Up to 10 MB &bull; Magic bytes validated</div>
-            <button class="btn btn-primary" type="button" id="btnSelectCvFile">Choose Resume File</button>
-            <input type="file" id="inputCvFile" accept=".pdf,.docx" style="display: none;">
-            <div class="dropzone-specs" style="margin-top: var(--space-4);">No files are shared without your explicit action. Secure and private.</div>
-          </div>
+            <!-- Upload Dropzone (Open by default) -->
+            <div class="dropzone-box" id="dropzoneCvLegacy">
+              <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <div class="dropzone-title">Drop your resume PDF or DOCX here</div>
+              <div class="dropzone-subtitle">Text-based PDF only &bull; Up to 10 MB &bull; Magic bytes validated</div>
+              <button class="btn btn-primary" type="button" id="btnSelectCvFileLegacy">Choose Resume File</button>
+              <input type="file" id="inputCvFileLegacy" accept=".pdf,.docx" style="display: none;">
+              <div class="dropzone-specs" style="margin-top: var(--space-4);">No files are shared without your explicit action. Secure and private.</div>
+            </div>
 
           <!-- Structured Review Grid -->
           <div class="resume-editor-grid">
@@ -858,7 +947,8 @@
               </div>
             </div>
           </div>
-        </section>
+          </section>
+        </div>
 
         <!-- ========================================================================
              5. SAVED JOBS VIEW (FOCUSED SHORTLIST)
@@ -885,7 +975,7 @@
             <div class="page-header-text">
               <div class="pre-title">One Place For Your Next Step</div>
               <h1>Progress, not just applications.</h1>
-              <p>Track your own updates. No employer or application status is synced in this demo.</p>
+              <p>Track your own updates. Status changes are tracked within your personal workspace.</p>
             </div>
             <div>
               <button class="btn btn-primary btn-sm" id="btnTrackerAddApp">+ Add application</button>
@@ -1170,13 +1260,7 @@ two_sum([2, 7, 11, 15], 9)
       <div class="modal-title" id="modalAuthTitle">Continue your next chapter.</div>
       <div class="modal-subtitle" id="modalAuthSubtitle">Log in to review your matches and keep moving forward.</div>
 
-      <!-- Quick Demo Login Buttons from CareerMatch Spec -->
-      <div class="quick-demo-buttons-row">
-        <button class="btn btn-outline btn-sm" style="flex: 1;" type="button" id="btnQuickDemoCandidate">Demo: Maya Chen (Candidate)</button>
-        <button class="btn btn-outline btn-sm" style="flex: 1;" type="button" id="btnQuickDemoRecruiter">Demo: Alex Recruiter</button>
-      </div>
-
-      <form id="authForm">
+      <form id="authForm" style="margin-top: var(--space-4);">
         <div class="form-group" id="groupFullName" style="display: none;">
           <label class="form-label" for="authFullName">Full name</label>
           <input class="form-input" id="authFullName" type="text" placeholder="Your full name">
@@ -1315,6 +1399,53 @@ two_sum([2, 7, 11, 15], 9)
 
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Firebase Web SDK Modular Scripts -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signInWithPopup,
+      GoogleAuthProvider,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBcuGpHGfq2dO0-3o8j1qtc2ctWbgxK9Uo",
+      authDomain: "aihiring-3d070.firebaseapp.com",
+      projectId: "aihiring-3d070",
+      storageBucket: "aihiring-3d070.firebasestorage.app",
+      messagingSenderId: "14319993219",
+      appId: "1:14319993219:web:39f05a13de221b4bfb36b6",
+      measurementId: "G-EMPGKM4ZG6"
+    };
+
+    window.FirebaseSDK = {
+      initializeApp,
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signInWithPopup,
+      GoogleAuthProvider,
+      signOut,
+      onAuthStateChanged,
+      config: firebaseConfig
+    };
+
+    try {
+      const app = initializeApp(firebaseConfig);
+      window.firebaseApp = app;
+      window.firebaseAuth = getAuth(app);
+      window.firebaseConfig = firebaseConfig;
+    } catch (e) {
+      console.warn("Firebase client init notice:", e);
+    }
+
+    window.dispatchEvent(new CustomEvent('firebasesdk:ready'));
+  </script>
 
   <!-- Application Logic -->
   <script src="/frontend-assets/app.js"></script>

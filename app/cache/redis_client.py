@@ -75,6 +75,7 @@ class AsyncRedisClient:
                 self._aioredis_client = aioredis.from_url(
                     self.redis_url,
                     socket_timeout=self.timeout,
+                    socket_connect_timeout=self.timeout,
                     decode_responses=True,
                 )
             except Exception as exc:
@@ -87,7 +88,7 @@ class AsyncRedisClient:
         client = self._get_aioredis_client()
         if client:
             try:
-                await client.ping()
+                await asyncio.wait_for(client.ping(), timeout=self.timeout)
                 self._is_connected = True
                 return
             except Exception as exc:
@@ -181,7 +182,7 @@ class AsyncRedisClient:
         client = self._get_aioredis_client()
         if client:
             try:
-                res = await client.ping()
+                res = await asyncio.wait_for(client.ping(), timeout=self.timeout)
                 return "PONG" if res else ""
             except Exception as exc:
                 raise RedisConnectionError(f"aioredis ping failed: {exc}") from exc
@@ -192,7 +193,7 @@ class AsyncRedisClient:
         client = self._get_aioredis_client()
         if client:
             try:
-                return await client.get(key)
+                return await asyncio.wait_for(client.get(key), timeout=self.timeout)
             except Exception as exc:
                 raise RedisConnectionError(f"aioredis get failed: {exc}") from exc
         return await self._send_command("GET", key)
@@ -202,7 +203,8 @@ class AsyncRedisClient:
         client = self._get_aioredis_client()
         if client:
             try:
-                return bool(await client.set(key, value, ex=ex))
+                res = await asyncio.wait_for(client.set(key, value, ex=ex), timeout=self.timeout)
+                return bool(res)
             except Exception as exc:
                 raise RedisConnectionError(f"aioredis set failed: {exc}") from exc
         if ex is not None and ex > 0:
@@ -218,7 +220,7 @@ class AsyncRedisClient:
         client = self._get_aioredis_client()
         if client:
             try:
-                return await client.delete(*keys)
+                return await asyncio.wait_for(client.delete(*keys), timeout=self.timeout)
             except Exception as exc:
                 raise RedisConnectionError(f"aioredis delete failed: {exc}") from exc
         return await self._send_command("DEL", *keys)
@@ -228,7 +230,8 @@ class AsyncRedisClient:
         client = self._get_aioredis_client()
         if client:
             try:
-                return bool(await client.exists(key))
+                res = await asyncio.wait_for(client.exists(key), timeout=self.timeout)
+                return bool(res)
             except Exception as exc:
                 raise RedisConnectionError(f"aioredis exists failed: {exc}") from exc
         res = await self._send_command("EXISTS", key)

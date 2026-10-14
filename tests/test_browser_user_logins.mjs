@@ -1,12 +1,18 @@
 // Browser E2E Test: Simulates real user browser interactions on CareerMatch AI website
 import { spawn } from 'node:child_process';
 import { setTimeout as sleep } from 'node:timers/promises';
+import os from 'node:os';
+import path from 'node:path';
 
-const CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const CHROME_PATH = process.platform === 'win32'
+  ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+  : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const PORT = 9223;
 const TARGET_URL = 'http://127.0.0.1:8000/';
 
 console.log('🚀 Launching Headless Chrome browser to test real website login flows...');
+
+const userDir = path.join(os.tmpdir(), 'chrome_test_profile_' + Date.now());
 
 const chrome = spawn(CHROME_PATH, [
   '--headless=new',
@@ -14,7 +20,7 @@ const chrome = spawn(CHROME_PATH, [
   '--no-first-run',
   '--no-default-browser-check',
   '--disable-gpu',
-  '--user-data-dir=/tmp/chrome_test_profile_' + Date.now(),
+  `--user-data-dir=${userDir}`,
   TARGET_URL
 ]);
 
@@ -73,6 +79,10 @@ async function run() {
 
     ws.onmessage = (evt) => {
       const data = JSON.parse(evt.data);
+      if (data.method === 'Runtime.consoleAPICalled') {
+        const text = (data.params.args || []).map(a => a.value !== undefined ? a.value : a.description).join(' ');
+        console.log('    [Page Console]', text);
+      }
       if (data.id && pending.has(data.id)) {
         const { resolve } = pending.get(data.id);
         pending.delete(data.id);
@@ -88,12 +98,11 @@ async function run() {
     await sleep(1500);
 
     console.log('\n--- TEST 1: Initial Entry Gate Verification ---');
-    const gateCheck = await evalInPage(`
+    await evalInPage(`
       localStorage.clear();
-      location.reload();
-      return true;
+      if (typeof gateWorkspace === 'function') gateWorkspace();
     `);
-    await sleep(1500);
+    await sleep(500);
 
     const initialUI = await evalInPage(`
       const authCard = document.getElementById('authPageContainer');
@@ -111,7 +120,18 @@ async function run() {
     }
     console.log('✅ TEST 1 PASSED: Entry Login Portal is the first screen seen by unauthenticated visitor.');
 
-    // --- TEST 2: User Account 1 (Candidate Sign Up via Website Form) ---
+    // Capture visual screenshot of clean initial auth portal
+    try {
+      const shot = await sendCDP('Page.captureScreenshot', { format: 'png' });
+      const data = shot?.result?.data || shot?.data;
+      if (data) {
+        const fs = await import('node:fs');
+        fs.writeFileSync('C:\\Users\\mayan\\.gemini\\antigravity-ide\\brain\\ac692e36-3369-4c47-b11a-4ee891452a0d\\clean_auth_portal.png', Buffer.from(data, 'base64'));
+        console.log('📸 Clean Auth Portal Screenshot saved successfully.');
+      }
+    } catch (e) {
+      console.warn('Screenshot capture notice:', e.message);
+    }
     console.log('\n--- TEST 2: Sign Up Account 1 (Candidate: Elena Rostova) via Website Form ---');
     const signup1 = await evalInPage(`
       // 1. User clicks "Create Account" tab
@@ -129,16 +149,36 @@ async function run() {
     `);
     console.log('  Submitted registration for:', signup1);
 
+    async function waitForPortalHidden(maxMs = 10000) {
+      const start = Date.now();
+      while (Date.now() - start < maxMs) {
+        const s = await evalInPage(`
+          const authCard = document.getElementById('authPageContainer');
+          const isPortalHidden = authCard && authCard.classList.contains('hidden');
+          const userName = document.getElementById('userNameLabel')?.innerText;
+          const userRole = document.getElementById('userRoleLabel')?.innerText;
+          const token = localStorage.getItem('cm_token');
+          const alertText = document.getElementById('pageAuthAlert')?.innerText;
+          const btnText = document.getElementById('btnPageAuthSubmit')?.innerText;
+          return { isPortalHidden, userName, userRole, hasToken: !!token, alertText, btnText };
+        `);
+        if (s.isPortalHidden && s.hasToken) return s;
+        await sleep(400);
+      }
+      return await evalInPage(`
+        const authCard = document.getElementById('authPageContainer');
+        const isPortalHidden = authCard && authCard.classList.contains('hidden');
+        const userName = document.getElementById('userNameLabel')?.innerText;
+        const userRole = document.getElementById('userRoleLabel')?.innerText;
+        const token = localStorage.getItem('cm_token');
+        const alertText = document.getElementById('pageAuthAlert')?.innerText;
+        const btnText = document.getElementById('btnPageAuthSubmit')?.innerText;
+        return { isPortalHidden, userName, userRole, hasToken: !!token, alertText, btnText };
+      `);
+    }
+
     // Wait for async auth to complete and check state
-    await sleep(2000);
-    const state1 = await evalInPage(`
-      const authCard = document.getElementById('authPageContainer');
-      const isPortalHidden = authCard && authCard.classList.contains('hidden');
-      const userName = document.getElementById('userNameLabel')?.innerText;
-      const userRole = document.getElementById('userRoleLabel')?.innerText;
-      const token = localStorage.getItem('cm_token');
-      return { isPortalHidden, userName, userRole, hasToken: !!token };
-    `);
+    const state1 = await waitForPortalHidden(10000);
     console.log('  Portal hidden (Workspace unlocked):', state1.isPortalHidden);
     console.log('  Logged-in User Name:', state1.userName);
     console.log('  Logged-in User Role:', state1.userRole);
@@ -175,17 +215,10 @@ async function run() {
       document.getElementById('pageAuthPassword').value = 'CandidatePass123!';
       document.getElementById('pageAuthForm').dispatchEvent(new Event('submit', { cancelable: true }));
     `);
-    await sleep(2000);
-
-    const reloginState = await evalInPage(`
-      const authCard = document.getElementById('authPageContainer');
-      const isPortalHidden = authCard && authCard.classList.contains('hidden');
-      const userName = document.getElementById('userNameLabel')?.innerText;
-      return { isPortalHidden, userName };
-    `);
+    const reloginState = await waitForPortalHidden(10000);
     console.log('  Re-login successful:', reloginState.isPortalHidden, reloginState.userName);
     if (!reloginState.isPortalHidden || !reloginState.userName.includes('Elena')) {
-      throw new Error('Re-login failed for Account 1');
+      throw new Error('Re-login failed for Account 1: ' + JSON.stringify(reloginState));
     }
     console.log('✅ TEST 3 PASSED: Account 1 re-login succeeded via website.');
 
@@ -204,15 +237,7 @@ async function run() {
       document.getElementById('pageAuthPassword').value = 'RecruiterPass2026!';
       document.getElementById('pageAuthForm').dispatchEvent(new Event('submit', { cancelable: true }));
     `);
-    await sleep(2000);
-
-    const state2 = await evalInPage(`
-      const authCard = document.getElementById('authPageContainer');
-      const isPortalHidden = authCard && authCard.classList.contains('hidden');
-      const userName = document.getElementById('userNameLabel')?.innerText;
-      const userRole = document.getElementById('userRoleLabel')?.innerText;
-      return { isPortalHidden, userName, userRole };
-    `);
+    const state2 = await waitForPortalHidden(10000);
     console.log('  Portal hidden:', state2.isPortalHidden);
     console.log('  Logged-in User Name:', state2.userName);
     console.log('  Logged-in User Role:', state2.userRole);
@@ -245,18 +270,15 @@ async function run() {
     const deviceGmail = `alex.rivera.device_${Date.now()}@gmail.com`;
     console.log('  Submitting device Gmail:', deviceGmail);
     await evalInPage(`
-      document.getElementById('inputDeviceGoogleEmail').value = '${deviceGmail}';
-      document.getElementById('formDeviceGoogleAuth').dispatchEvent(new Event('submit', { cancelable: true }));
+      const emailInput = document.getElementById('inputDeviceGoogleEmail');
+      emailInput.value = '${deviceGmail}';
+      emailInput.dispatchEvent(new Event('input', { bubbles: true }));
+      const submitBtn = document.getElementById('btnSubmitGoogleAuth');
+      if (submitBtn) submitBtn.click();
+      else document.getElementById('formDeviceGoogleAuth').dispatchEvent(new Event('submit', { cancelable: true }));
     `);
-    await sleep(2000);
 
-    const stateGoogle1 = await evalInPage(`
-      const authCard = document.getElementById('authPageContainer');
-      const isPortalHidden = authCard && authCard.classList.contains('hidden');
-      const userName = document.getElementById('userNameLabel')?.innerText;
-      const userRole = document.getElementById('userRoleLabel')?.innerText;
-      return { isPortalHidden, userName, userRole };
-    `);
+    const stateGoogle1 = await waitForPortalHidden(10000);
     console.log('  Google login completed. Portal hidden:', stateGoogle1.isPortalHidden);
     console.log('  User Name:', stateGoogle1.userName);
     console.log('  User Role:', stateGoogle1.userRole);
@@ -285,14 +307,8 @@ async function run() {
 
     // Click 1-click saved Google account button
     await evalInPage(`document.getElementById('btnUseSavedGoogle').click();`);
-    await sleep(2000);
+    const stateGoogle2 = await waitForPortalHidden(10000);
 
-    const stateGoogle2 = await evalInPage(`
-      const authCard = document.getElementById('authPageContainer');
-      const isPortalHidden = authCard && authCard.classList.contains('hidden');
-      const userName = document.getElementById('userNameLabel')?.innerText;
-      return { isPortalHidden, userName };
-    `);
     console.log('  1-Click Google login completed. Portal hidden:', stateGoogle2.isPortalHidden);
     console.log('  User Name:', stateGoogle2.userName);
     if (!stateGoogle2.isPortalHidden || !stateGoogle2.userName.includes('Alex')) {

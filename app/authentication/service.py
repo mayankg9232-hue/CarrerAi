@@ -182,7 +182,7 @@ class AuthenticationService:
             user = await self.repository.create_user(
                 email=principal.email,
                 hashed_password=self.hash_password(uuid.uuid4().hex),
-                full_name=principal.full_name or principal.email.split("@")[0],
+                full_name=payload.full_name or principal.full_name or principal.email.split("@")[0],
                 role=payload.role,
             )
 
@@ -259,11 +259,55 @@ class AuthenticationService:
             logger.info(f"JWT verification failed: {err}")
             raise AuthenticationError("Invalid authentication credentials")
 
+    async def verify_credentials_with_firebase_api(
+        self,
+        email: str,
+        password: str,
+    ) -> Optional[dict]:
+        """Authenticate directly with Google Firebase Identity Toolkit REST API using FIREBASE_API_KEY."""
+        api_key = self.settings.FIREBASE_API_KEY
+        if not api_key:
+            return None
+
+        url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={api_key}"
+        try:
+            async with httpx.AsyncClient(timeout=6.0) as client:
+                resp = await client.post(
+                    url,
+                    json={
+                        "email": email,
+                        "password": password,
+                        "returnSecureToken": True,
+                    },
+                )
+                if resp.status_code == 200:
+                    return resp.json()
+        except Exception as e:
+            logger.warning(f"Firebase Identity Toolkit sign-in check notice: {e}")
+        return None
+
     async def register_user(self, payload: UserRegisterRequest) -> UserResponse:
         """Register a new user, verifying uniqueness and storing bcrypt hash."""
         existing = await self.repository.get_by_email(payload.email)
         if existing:
             raise ConflictError("A user with this email address already exists", field="email")
+
+        # Also register account in Firebase Cloud Auth using FIREBASE_API_KEY if configured
+        api_key = self.settings.FIREBASE_API_KEY
+        if api_key:
+            try:
+                url = f"https://identitytoolkit.googleapis.com/v1/accounts:signUp?key={api_key}"
+                async with httpx.AsyncClient(timeout=6.0) as client:
+                    await client.post(
+                        url,
+                        json={
+                            "email": payload.email,
+                            "password": payload.password,
+                            "returnSecureToken": True,
+                        },
+                    )
+            except Exception as e:
+                logger.warning(f"Firebase account creation sync notice: {e}")
 
         hashed_pw = self.hash_password(payload.password)
         user = await self.repository.create_user(
@@ -284,36 +328,64 @@ class AuthenticationService:
 
     async def authenticate_user(self, payload: UserLoginRequest) -> TokenResponse:
         """Authenticate user credentials and issue signed JWT access token."""
+        # 1. Attempt local database verification first
         user = await self.repository.get_by_email(payload.email)
-        if not user or not user.is_active:
-            # Constant-time comparison simulation to prevent email enumeration timing attacks
-            self.verify_password("dummy_password", "$2b$12$e80yq9g6i6vG7d9V9RkY0.6bM51lZ8.8u.xYw0Q7lZ9vB9RkY0.6b")
-            raise AuthenticationError("Invalid email or password")
+        if user and user.is_active and self.verify_password(payload.password, user.hashed_password):
+            token, expires_in = self.create_access_token(
+                user_id=user.id,
+                email=user.email,
+                role=user.role,
+            )
+            logger.info(f"User authenticated successfully via local credentials: id={user.id}")
+            return TokenResponse(
+                access_token=token,
+                token_type="bearer",
+                expires_in=expires_in,
+                user=UserResponse(
+                    id=user.id,
+                    email=user.email,
+                    full_name=user.full_name,
+                    role=user.role,
+                    created_at=user.created_at,
+                ),
+            )
 
-        if not self.verify_password(payload.password, user.hashed_password):
-            raise AuthenticationError("Invalid email or password")
+        # 2. Connect directly to Firebase Identity Toolkit using FIREBASE_API_KEY
+        fb_result = await self.verify_credentials_with_firebase_api(payload.email, payload.password)
+        if fb_result and fb_result.get("idToken"):
+            if not user:
+                # Automatically provision account in repository
+                user = await self.repository.create_user(
+                    email=payload.email,
+                    hashed_password=self.hash_password(payload.password),
+                    full_name=fb_result.get("displayName") or payload.email.split("@")[0],
+                    role="candidate",
+                )
+            else:
+                user.hashed_password = self.hash_password(payload.password)
 
-        token, expires_in = self.create_access_token(
-            user_id=user.id,
-            email=user.email,
-            role=user.role,
-        )
+            token, expires_in = self.create_access_token(
+                user_id=user.id,
+                email=user.email,
+                role=user.role,
+            )
+            logger.info(f"User authenticated successfully via Firebase API key: email={payload.email}")
+            return TokenResponse(
+                access_token=token,
+                token_type="bearer",
+                expires_in=expires_in,
+                user=UserResponse(
+                    id=user.id,
+                    email=user.email,
+                    full_name=user.full_name,
+                    role=user.role,
+                    created_at=user.created_at,
+                ),
+            )
 
-        user_info = UserResponse(
-            id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            role=user.role,
-            created_at=user.created_at,
-        )
-
-        logger.info(f"User authenticated successfully: id={user.id}")
-        return TokenResponse(
-            access_token=token,
-            token_type="bearer",
-            expires_in=expires_in,
-            user=user_info,
-        )
+        # Constant-time comparison simulation to prevent email enumeration timing attacks
+        self.verify_password("dummy_password", "$2b$12$e80yq9g6i6vG7d9V9RkY0.6bM51lZ8.8u.xYw0Q7lZ9vB9RkY0.6b")
+        raise AuthenticationError("Invalid email or password")
 
 
 # Singleton authentication service

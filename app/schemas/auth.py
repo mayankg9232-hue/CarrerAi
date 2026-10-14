@@ -59,6 +59,7 @@ class FirebaseLoginRequest(BaseModel):
 
     id_token: str = Field(min_length=10, description="Raw Firebase ID token (JWT) from client SDK")
     role: Literal["candidate", "recruiter"] = Field(default="candidate", description="Assigned role if new user")
+    full_name: Optional[str] = Field(default=None, description="Optional full name from registration form")
 
 
 class FirebaseConfigResponse(BaseModel):

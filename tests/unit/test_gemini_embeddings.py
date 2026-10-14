@@ -191,7 +191,14 @@ async def test_gemini_embedding_live_verification() -> None:
     text3 = "Registered Nurse with 5 years clinical emergency room patient care experience"
 
     # Test single embed
-    vec1 = await provider.embed_text(text1)
+    try:
+        vec1 = await provider.embed_text(text1)
+    except httpx.ConnectError:
+        pytest.skip("Network connection to Gemini API unavailable")
+    except RuntimeError as exc:
+        if "quota" in str(exc).lower() or "rate limit" in str(exc).lower():
+            pytest.skip("Gemini free-tier quota exhausted, skipping live test")
+        raise
     assert len(vec1) == 3072
     assert any(abs(x) > 1e-4 for x in vec1)
 
