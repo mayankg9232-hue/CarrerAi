@@ -43,6 +43,11 @@ SKILL_TAXONOMY: List[Tuple[str, str, str, List[str]]] = [
     ("Ruby on Rails", "framework", r"\b(?:rails|ruby\s+on\s+rails)\b", ["rails", "ruby on rails"]),
     ("PyTorch", "framework", r"\bpytorch\b", ["pytorch"]),
     ("TensorFlow", "framework", r"\btensorflow\b", ["tensorflow"]),
+    ("pandas", "framework", r"\bpandas\b", ["pandas"]),
+    ("NumPy", "framework", r"\bnumpy\b", ["numpy"]),
+    ("scikit-learn", "framework", r"\b(?:scikit-learn|sklearn)\b", ["scikit-learn", "sklearn"]),
+    ("Pydantic", "framework", r"\bpydantic\b", ["pydantic"]),
+    ("HTTPX", "framework", r"\bhttpx\b", ["httpx"]),
 
     # Databases
     ("PostgreSQL", "database", r"\b(?:postgresql|postgres|pgsql)\b", ["postgresql", "postgres", "pgsql"]),
@@ -59,7 +64,7 @@ SKILL_TAXONOMY: List[Tuple[str, str, str, List[str]]] = [
     ("Kubernetes", "tool", r"\b(?:kubernetes|k8s|kube)\b", ["kubernetes", "k8s"]),
     ("Git", "tool", r"\b(?:git|github|gitlab)\b", ["git", "github", "gitlab"]),
     ("GitHub Actions", "tool", r"\bgithub\s+actions\b", ["github actions"]),
-    ("Terraform", "tool", r"\b(?:terraform|tf)\b", ["terraform", "tf"]),
+    ("Terraform", "tool", r"\b(?:terraform|tf(?![-\w]))\b", ["terraform", "tf"]),
     ("Ansible", "tool", r"\bansible\b", ["ansible"]),
     ("Jenkins", "tool", r"\bjenkins\b", ["jenkins"]),
     ("CI/CD", "tool", r"\b(?:ci/cd|cicd|ci\s*/\s*cd)\b", ["ci/cd", "cicd"]),
@@ -67,6 +72,10 @@ SKILL_TAXONOMY: List[Tuple[str, str, str, List[str]]] = [
     ("Nginx", "tool", r"\bnginx\b", ["nginx"]),
     ("Prometheus", "tool", r"\bprometheus\b", ["prometheus"]),
     ("Grafana", "tool", r"\bgrafana\b", ["grafana"]),
+    ("pytest", "tool", r"\bpytest\b", ["pytest"]),
+    ("Postman", "tool", r"\bpostman\b", ["postman"]),
+    ("Jupyter", "tool", r"\bjupyter(?:\s+notebook)?\b", ["jupyter", "jupyter notebook"]),
+    ("Matplotlib", "tool", r"\bmatplotlib\b", ["matplotlib"]),
 
     # Cloud Providers
     ("AWS", "cloud", r"\b(?:aws|amazon\s+web\s+services)\b", ["aws"]),
@@ -80,6 +89,9 @@ SKILL_TAXONOMY: List[Tuple[str, str, str, List[str]]] = [
     ("System Design", "general", r"\bsystem\s+design\b", ["system design"]),
     ("Agile", "general", r"\b(?:agile|scrum)\b", ["agile", "scrum"]),
     ("TDD", "general", r"\b(?:tdd|test[- ]driven\s+development)\b", ["tdd"]),
+    ("Machine Learning", "general", r"\b(?:machine\s+learning|applied\s+machine\s+learning)\b", ["machine learning", "ml"]),
+    ("NLP", "general", r"\b(?:nlp|natural\s+language\s+processing)\b", ["nlp", "natural language processing"]),
+    ("Data Analysis", "general", r"\bdata\s+analysis\b", ["data analysis"]),
 ]
 
 

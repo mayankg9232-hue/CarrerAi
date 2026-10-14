@@ -80,6 +80,22 @@ CANONICAL_SKILL_ALIASES: Dict[str, str] = {
     "ruby": "Ruby",
     "rails": "Ruby on Rails",
     "ruby on rails": "Ruby on Rails",
+    "pandas": "pandas",
+    "numpy": "NumPy",
+    "scikit-learn": "scikit-learn",
+    "sklearn": "scikit-learn",
+    "pydantic": "Pydantic",
+    "httpx": "HTTPX",
+    "pytest": "pytest",
+    "postman": "Postman",
+    "jupyter": "Jupyter",
+    "jupyter notebook": "Jupyter",
+    "matplotlib": "Matplotlib",
+    "machine learning": "Machine Learning",
+    "ml": "Machine Learning",
+    "nlp": "NLP",
+    "natural language processing": "NLP",
+    "data analysis": "Data Analysis",
 }
 
 

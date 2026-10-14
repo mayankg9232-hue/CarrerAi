@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 import hashlib
-from typing import List, Optional
+from typing import Any, List, Optional
 import uuid
 
 from app.adapters.firecrawl_adapter import (
@@ -34,10 +34,12 @@ class JobIngestionPipeline:
         adapter: Optional[IFirecrawlAdapter] = None,
         repo: Optional[IJobRepository] = None,
         settings: Optional[Settings] = None,
+        cache: Optional[Any] = None,
     ) -> None:
         self.settings = settings or get_settings()
         self.adapter = adapter or FirecrawlAdapter(settings=self.settings)
         self.repo = repo or get_job_repository()
+        self.cache = cache
 
     @staticmethod
     def compute_content_hash(title: str, company: str, description: str) -> str:
@@ -127,6 +129,11 @@ class JobIngestionPipeline:
 
         # Apply freshness filter: mark listings older than threshold days as inactive
         await self.repo.mark_stale_jobs(self.settings.STALE_JOB_DAYS_THRESHOLD)
+
+        # Invalidate cached job queries upon write/mutation
+        from app.cache.service import get_cache_service
+        cache_svc = self.cache or get_cache_service()
+        await cache_svc.invalidate_jobs_cache()
 
         return JobIngestResponse(
             ingested_count=len(ingested_jobs),

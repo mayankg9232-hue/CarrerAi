@@ -47,8 +47,15 @@ class Settings(BaseSettings):
     FIREBASE_SERVICE_ACCOUNT_PATH: str = ""
     AUTH_PROVIDER: str = "hybrid"  # "local", "firebase", or "hybrid"
 
-    # Database
-    DATABASE_URL: str = "sqlite+aiosqlite:///./app_dev.db"
+    # Database & PostgreSQL
+    DATABASE_URL: str = "sqlite:///./app_dev.db"
+    POSTGRES_ENDPOINT: str = ""
+
+    # Redis Cache (Upstash TLS or Local)
+    REDIS_URL: str = ""
+    REDIS_ENABLED: bool = True
+    REDIS_DEFAULT_TTL_SECONDS: int = 300
+    REDIS_CONNECT_TIMEOUT_SECONDS: float = 2.0
 
     # CORS
     ALLOWED_ORIGINS: Union[str, List[str]] = [

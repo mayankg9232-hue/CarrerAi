@@ -19,9 +19,11 @@ from httpx import AsyncClient
 
 from app.adapters.firecrawl_adapter import MockFirecrawlAdapter
 from app.adapters.resume_parser import DefaultResumeParser, MockResumeParser
-from app.api.v1.endpoints.jobs import get_job_pipeline
+from app.api.v1.endpoints.jobs import get_job_pipeline, get_jobs_cache_service
 from app.authentication.service import get_auth_service
 from app.main import app
+from app.cache.service import CacheService, get_cache_service
+from app.core.config import Settings
 from app.nlp.normalizer import compute_sha256, sanitize_text, wrap_untrusted_content
 from app.nlp.resume_parser import NLPResumeParser, UnreadableCVError
 from app.nlp.skill_extractor import SkillExtractor
@@ -41,8 +43,10 @@ async def reset_repositories() -> None:
     reset_resume_repository()
     reset_user_repository()
     app.dependency_overrides.clear()
+    app.dependency_overrides[get_jobs_cache_service] = lambda: CacheService(settings=Settings(REDIS_ENABLED=False))
     yield
     app.dependency_overrides.clear()
+
 
 
 async def provision_token(role: str = "candidate", suffix: str = "bench") -> Dict[str, str]:
@@ -100,7 +104,11 @@ async def test_duplicate_job_normalization_efficiency() -> None:
         source_urls.append(f"https://approved-board.example.com/jobs/dev-{i}")
 
     adapter = MockFirecrawlAdapter(canned_jobs=canned_jobs)
-    pipeline = JobIngestionPipeline(adapter=adapter, repo=repo)
+    pipeline = JobIngestionPipeline(
+        adapter=adapter,
+        repo=repo,
+        cache=CacheService(settings=Settings(REDIS_ENABLED=False)),
+    )
 
     start_time = time.perf_counter()
     total_ingested = 0
@@ -353,7 +361,11 @@ async def test_e2e_http_pipeline_throughput(async_client: AsyncClient) -> None:
             },
         }
     )
-    mock_pipeline = JobIngestionPipeline(adapter=mock_adapter, repo=repo)
+    mock_pipeline = JobIngestionPipeline(
+        adapter=mock_adapter,
+        repo=repo,
+        cache=CacheService(settings=Settings(REDIS_ENABLED=False)),
+    )
     app.dependency_overrides[get_job_pipeline] = lambda: mock_pipeline
 
     # 1. Ingest jobs via API

@@ -43,6 +43,14 @@ async def ingest_jobs(
 
 
 
+from app.cache.service import CacheService, get_cache_service
+
+
+def get_jobs_cache_service() -> CacheService:
+    """Dependency provider for CacheService."""
+    return get_cache_service()
+
+
 @router.get(
     "",
     response_model=StandardResponse[List[Job]],
@@ -58,8 +66,19 @@ async def list_jobs(
     offset: int = Query(default=0, ge=0, description="Page offset"),
     current_user: AuthenticatedPrincipal = Depends(get_current_user),
     repo: IJobRepository = Depends(get_job_repository),
+    cache: CacheService = Depends(get_jobs_cache_service),
 ) -> StandardResponse[List[Job]]:
-    """Retrieve filtered list of job postings."""
+    """Retrieve filtered list of job postings with Redis cache-aside."""
+    cached = await cache.get_cached_jobs_query(
+        q=q, skills=skills, location=location, only_active=only_active, limit=limit, offset=offset
+    )
+
+    if cached is not None:
+        return StandardResponse(
+            data=cached,
+            message=f"Retrieved {len(cached)} job listing(s).",
+        )
+
     skills_list = [s.strip() for s in skills.split(",") if s.strip()] if skills else None
     jobs = await repo.query_jobs(
         q=q,
@@ -68,6 +87,9 @@ async def list_jobs(
         only_active=only_active,
         limit=limit,
         offset=offset,
+    )
+    await cache.set_cached_jobs_query(
+        jobs, q=q, skills=skills, location=location, only_active=only_active, limit=limit, offset=offset
     )
     return StandardResponse(
         data=jobs,

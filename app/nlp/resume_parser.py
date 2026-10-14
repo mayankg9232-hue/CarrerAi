@@ -48,9 +48,10 @@ class IResumeParser(ABC):
 SECTION_PATTERNS = {
     "summary": r"(?i)^\s*(?:professional\s+summary|summary|profile|about\s+me|objective)\s*$",
     "skills": r"(?i)^\s*(?:technical\s+skills|core\s+competencies|skills\s*(?:&|and)\s*technologies|skills|technologies|tools)\s*$",
-    "experience": r"(?i)^\s*(?:work\s+experience|professional\s+experience|employment\s+history|experience|career\s+history)\s*$",
+    "experience": r"(?i)^\s*(?:work\s+experience|professional\s+experience|employment\s+history|experience|career\s+history|project\s+experience)\s*$",
     "education": r"(?i)^\s*(?:education|academic\s+background|qualifications|academics)\s*$",
-    "projects": r"(?i)^\s*(?:projects|key\s+projects|notable\s+projects)\s*$",
+    "projects": r"(?i)^\s*(?:(?:selected|key|notable|personal|academic)\s+)?projects\s*$",
+    "other": r"(?i)^\s*(?:relevant\s+coursework.*|additional\s+information|certifications?|awards?|languages?)\s*$",
 }
 
 
@@ -200,17 +201,23 @@ class NLPResumeParser(IResumeParser):
         email = email_match.group(0) if email_match else None
 
         phone_match = re.search(
-            r"(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}",
+            r"(?:\+\d{1,3}[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\d{5}[-.\s]?\d{5}|\b\d{10}\b)",
             full_text,
         )
         phone = phone_match.group(0) if phone_match else None
 
-        # Full Name Heuristic (top line in header without contact symbols)
+        # Full Name Heuristic (top line in header without contact symbols or watermark/headline labels)
         full_name = None
         header_lines = sections.get("header", "").split("\n") or lines[:5]
         for hl in header_lines:
             hl_clean = hl.strip()
-            if hl_clean and "@" not in hl_clean and not re.search(r"http|www|\d{5,}", hl_clean) and len(hl_clean) < 50:
+            if (
+                hl_clean
+                and "@" not in hl_clean
+                and not re.search(r"http|www|\d{5,}", hl_clean)
+                and not re.search(r"(?i)\b(?:fictional|sample|synthetic|resume|curriculum\s+vitae|cv|intern|developer|engineer)\b", hl_clean)
+                and len(hl_clean) < 50
+            ):
                 full_name = hl_clean
                 break
 
@@ -309,21 +316,25 @@ class NLPResumeParser(IResumeParser):
         edu_lines = [line.strip() for line in edu_text.split("\n") if line.strip()]
         education: List[Dict[str, Any]] = []
 
-        edu_keywords = ["university", "college", "institute", "school", "academy"]
-        deg_keywords = ["b.s.", "m.s.", "ph.d", "bachelor", "master", "doctor", "degree", "associate"]
+        edu_keywords = ["university", "college", "institute", "school", "academy", "polytechnic"]
+        deg_keywords = [
+            "b.s.", "m.s.", "ph.d", "bachelor", "master", "doctor", "degree", "associate",
+            "b.tech", "m.tech", "btech", "mtech", "b.e.", "m.e.", "bca", "mca",
+        ]
 
         for i, line in enumerate(edu_lines):
             line_lower = line.lower()
-            if any(k in line_lower for k in edu_keywords) and len(line) < 120:
-                institution = line
+            if (any(k in line_lower for k in edu_keywords) or any(d in line_lower for d in deg_keywords)) and len(line) < 250:
+                institution = "Educational Institution"
                 degree = "B.S. in Computer Science or Related Field"
                 field_of_study = "Computer Science"
                 grad_year = None
 
-                for offset in (0, 1, 2):
-                    if i + offset >= len(edu_lines):
-                        break
-                    cand = edu_lines[i + offset]
+                for offset in (-1, 0, 1, 2):
+                    idx = i + offset
+                    if idx < 0 or idx >= len(edu_lines):
+                        continue
+                    cand = edu_lines[idx]
                     cand_lower = cand.lower()
 
                     if not grad_year:
@@ -331,22 +342,40 @@ class NLPResumeParser(IResumeParser):
                         if year_match:
                             grad_year = int(year_match.group(1))
 
+                    if any(k in cand_lower for k in edu_keywords):
+                        inst_cand = cand.split("|")[0].strip()
+                        if any(k in inst_cand.lower() for k in edu_keywords):
+                            institution = inst_cand
+                        else:
+                            institution = cand[:80].strip()
+
                     if any(d in cand_lower for d in deg_keywords):
-                        if "master" in cand_lower or "m.s." in cand_lower:
+                        deg_cand = cand.split("|")[0].strip()
+                        if "master" in cand_lower or "m.s." in cand_lower or "m.tech" in cand_lower:
                             degree = "M.S. in Computer Science"
                         elif "ph.d" in cand_lower or "doctor" in cand_lower:
                             degree = "Ph.D. in Computer Science"
                         elif "bachelor" in cand_lower or "b.s." in cand_lower:
                             degree = "B.S. in Computer Science"
+                        elif "b.tech" in cand_lower or "btech" in cand_lower or "b.e." in cand_lower:
+                            degree = deg_cand or "B.Tech. in Computer Science"
                         else:
-                            degree = cand
+                            degree = deg_cand or cand
 
-                education.append({
-                    "institution": institution,
-                    "degree": degree,
-                    "field_of_study": field_of_study,
-                    "graduation_year": grad_year,
-                })
+                    if "information technology" in cand_lower:
+                        field_of_study = "Information Technology"
+                    elif "computer science" in cand_lower:
+                        field_of_study = "Computer Science"
+                    elif "data science" in cand_lower:
+                        field_of_study = "Data Science"
+
+                if not any(e["institution"] == institution for e in education):
+                    education.append({
+                        "institution": institution,
+                        "degree": degree,
+                        "field_of_study": field_of_study,
+                        "graduation_year": grad_year,
+                    })
                 if len(education) >= 3:
                     break
 
