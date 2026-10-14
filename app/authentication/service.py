@@ -134,9 +134,10 @@ class AuthenticationService:
             sub = unverified_claims.get("sub") or unverified_claims.get("user_id")
             email = unverified_claims.get("email")
             role = unverified_claims.get("role", "candidate")
+            name = unverified_claims.get("name") or unverified_claims.get("full_name")
             if not sub or not email:
                 raise AuthenticationError("Mock Firebase token missing subject or email")
-            return AuthenticatedPrincipal(id=sub, email=email, role=role, is_active=True)
+            return AuthenticatedPrincipal(id=sub, email=email, full_name=name, role=role, is_active=True)
 
         kid = unverified_header.get("kid")
         if not kid:

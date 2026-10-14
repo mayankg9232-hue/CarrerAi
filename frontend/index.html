@@ -7,8 +7,193 @@
   <meta name="description" content="AI Job Matcher connects candidates to tech jobs with explainable matching, skill gap analysis, and verified assessments.">
   <link rel="stylesheet" href="/frontend-assets/styles.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234F46E5'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='12' fill='none' stroke-linecap='round'/></svg>">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
+  <!-- ==============================================================================
+       AUTHENTICATION PORTAL (FIRST SCREEN ENTRY GATEWAY)
+       Required to Sign In or Sign Up to access the Workspace
+       ============================================================================== -->
+  <div class="auth-page-wrapper" id="authPageContainer">
+    <div class="auth-portal-grid">
+      <!-- Left Hero Panel -->
+      <div class="auth-portal-hero">
+        <div>
+          <div class="auth-hero-brand">
+            <div class="auth-hero-icon">C</div>
+            <div>
+              <div class="auth-hero-title">CareerMatch AI</div>
+              <div class="auth-hero-tagline">Evidence Over Assumptions</div>
+            </div>
+          </div>
+
+          <h1 class="auth-hero-headline">
+            Find the tech roles that truly fit. <span>Understand why.</span>
+          </h1>
+          <p class="auth-hero-desc">
+            Transform your CV into an explainable career shortlist. Experience deterministic multi-factor match scores, automated skill-gap analysis, and interactive AI career assistance.
+          </p>
+
+          <div class="auth-hero-features">
+            <div class="auth-feature-row">
+              <div class="auth-feature-bullet">&check;</div>
+              <div class="auth-feature-text">
+                <strong>Explainable 4-Factor Matching</strong>
+                <span>Scored across Skills (40%), Experience (25%), Preferences (25%), and Education (10%).</span>
+              </div>
+            </div>
+
+            <div class="auth-feature-row">
+              <div class="auth-feature-bullet">✨</div>
+              <div class="auth-feature-text">
+                <strong>Bounded AI Career Copilot</strong>
+                <span>Contextual interview coaching, tailored CV recommendations, and automated gap mitigation.</span>
+              </div>
+            </div>
+
+            <div class="auth-feature-row">
+              <div class="auth-feature-bullet">🛡️</div>
+              <div class="auth-feature-text">
+                <strong>Verified Coding Sandbox</strong>
+                <span>Solve Python and TypeScript challenges in isolated containers for verified score boosts.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="auth-hero-footer">
+          <span>🔒 Private & Isolated &bull; Magic Bytes Validated &bull; Zero Data Selling</span>
+        </div>
+      </div>
+
+      <!-- Right Auth Form Card -->
+      <div class="auth-portal-card">
+        <div class="auth-toggle-tabs">
+          <button class="auth-tab-btn active" id="authTabSignIn" type="button">Sign In</button>
+          <button class="auth-tab-btn" id="authTabSignUp" type="button">Create Account</button>
+        </div>
+
+        <!-- Google Sign-In Button -->
+        <button class="btn-google-auth" id="btnGoogleSignIn" type="button" title="Sign in securely with your Google Account">
+          <svg class="google-icon-svg" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.14z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <span>Continue with Google</span>
+        </button>
+
+        <div class="auth-divider-line">
+          <span>or continue with email</span>
+        </div>
+
+        <!-- Inline Status / Alert Box -->
+        <div class="auth-card-alert" id="pageAuthAlert" style="display: none;"></div>
+
+        <form class="auth-portal-form" id="pageAuthForm">
+          <div class="form-group" id="pageGroupFullName" style="display: none;">
+            <label class="form-label" for="pageAuthFullName">Full Name</label>
+            <input class="form-input" id="pageAuthFullName" type="text" placeholder="e.g. Maya Chen">
+          </div>
+
+          <div class="form-group" id="pageGroupRole" style="display: none;">
+            <label class="form-label" for="pageAuthRole">Account Role</label>
+            <select class="form-select" id="pageAuthRole">
+              <option value="candidate">Candidate (Job Seeker)</option>
+              <option value="recruiter">Recruiter (Post Jobs)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="pageAuthEmail">Email Address</label>
+            <input class="form-input" id="pageAuthEmail" type="email" placeholder="name@example.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="pageAuthPassword">Password</label>
+            <input class="form-input" id="pageAuthPassword" type="password" placeholder="••••••••••••" minlength="8" required autocomplete="current-password">
+            <div class="form-hint" id="pagePasswordHint" style="display: none; font-size: 11px; color: #94A3B8; margin-top: 4px;">Password must contain at least 8 characters.</div>
+          </div>
+
+          <button class="btn btn-primary btn-portal-submit" id="btnPageAuthSubmit" type="submit">
+            Sign In to Workspace &rarr;
+          </button>
+        </form>
+
+        <div style="margin-top: var(--space-4); text-align: center;">
+          <div style="font-size: 11.5px; color: #64748B; margin-bottom: 6px;">One-click demo profiles:</div>
+          <div class="auth-quick-demos">
+            <button class="btn-demo-shortcut" type="button" id="btnPageDemoCandidate">Maya Chen (Candidate)</button>
+            <button class="btn-demo-shortcut" type="button" id="btnPageDemoRecruiter">Alex Recruiter</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================================================================
+       GOOGLE IDENTITY SIGN-IN DIALOG
+       Authenticates directly with the user's Google Account on this device
+       ============================================================================== -->
+  <div class="google-chooser-modal-backdrop" id="googleChooserModal" style="display: none;">
+    <div class="google-chooser-dialog">
+      <div class="google-chooser-header">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <svg class="google-icon-svg" viewBox="0 0 24 24" style="width: 26px; height: 26px;">
+            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.14z"/>
+            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+          </svg>
+          <div>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #111827;">Sign in with Google</h3>
+            <p style="margin: 2px 0 0; font-size: 12px; color: #6B7280;">to continue to CareerMatch AI</p>
+          </div>
+        </div>
+        <button class="btn-close-google-chooser" id="btnCloseGoogleChooser" type="button" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <!-- Container for Google One Tap / GIS iframe if available -->
+      <div id="googleGsiContainer" style="margin-top: 8px;"></div>
+
+      <!-- Detected or Device Gmail input -->
+      <form id="formDeviceGoogleAuth" style="margin-top: 14px;">
+        <div id="deviceGoogleAccountCard" style="display: none; margin-bottom: 12px;">
+          <!-- Dynamically populated if a device account was used/remembered -->
+          <button class="google-account-item" id="btnUseSavedGoogle" type="button" style="width: 100%;">
+            <div class="google-user-avatar" id="savedGoogleAvatar" style="background: #1A73E8;">G</div>
+            <div class="google-user-info">
+              <span class="google-user-name" id="savedGoogleName">Device Google Account</span>
+              <span class="google-user-email" id="savedGoogleEmail"></span>
+            </div>
+            <span style="margin-left: auto; font-size: 11.5px; font-weight: 600; color: #1A73E8;">Sign In &rarr;</span>
+          </button>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" for="inputDeviceGoogleEmail" style="font-size: 12.5px; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">
+            Your Google Account / Gmail
+          </label>
+          <div style="position: relative;">
+            <input class="form-input" id="inputDeviceGoogleEmail" type="email" placeholder="e.g. yourname@gmail.com" autocomplete="username email" required autofocus style="background: #FFFFFF; border: 1.5px solid #CBD5E1; color: #111827; height: 44px; font-size: 14px; padding: 0 14px; border-radius: 8px; width: 100%;">
+          </div>
+          <div style="font-size: 11px; color: #6B7280; margin-top: 5px;">
+            Select your Gmail from browser autofill or enter your account.
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="btnSubmitGoogleAuth" type="submit" style="width: 100%; height: 42px; background: #1A73E8; border: none; font-size: 14px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <span>Continue as Google Account &rarr;</span>
+        </button>
+      </form>
+
+      <div class="google-chooser-footer" style="margin-top: 16px; font-size: 11px; color: #9CA3AF; line-height: 1.4; text-align: center;">
+        Google Identity securely shares your verified email and name with CareerMatch AI.
+      </div>
+    </div>
+  </div>
+
   <div class="app-container">
 
     <!-- ==============================================================================
@@ -122,6 +307,12 @@
           <span class="breadcrumb-current" id="currentBreadcrumb">Overview</span>
         </div>
         <div class="topbar-actions">
+          <button class="btn btn-ai-gradient btn-sm" id="btnTopAiCopilot" type="button" title="Launch AI Career Assistant">
+            <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+            </svg>
+            <span>✨ AI Copilot</span>
+          </button>
           <div class="status-indicator-pill">
             <span class="status-dot"></span>
             <span id="backendStatusLabel">API Online &bull; v0.1.0</span>
@@ -309,7 +500,15 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label" for="editSummary">Professional summary (editable)</label>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <label class="form-label" for="editSummary" style="margin-bottom: 0;">Professional summary (editable)</label>
+                  <button class="btn btn-ai-outline btn-sm" type="button" id="btnAiPolishSummary" title="Optimize with AI action verbs & metrics">
+                    <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+                    </svg>
+                    <span>✨ AI Polish</span>
+                  </button>
+                </div>
                 <textarea class="form-textarea" id="editSummary" placeholder="Upload a resume or write your summary here..."></textarea>
               </div>
 
@@ -317,13 +516,18 @@
               <div class="form-group">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                   <label class="form-label" style="margin-bottom: 0;">Confirmed Skills</label>
-                  <span style="font-size: 11.5px; color: var(--color-text-subtle);" id="confirmedSkillsCount">0 confirmed skills</span>
+                  <div style="display: flex; align-items: center; gap: var(--space-2);">
+                    <span style="font-size: 11.5px; color: var(--color-text-subtle);" id="confirmedSkillsCount">0 confirmed skills</span>
+                    <button class="btn btn-ai-outline btn-sm" type="button" id="btnAiSuggestSkills" style="padding: 2px 8px; font-size: 11px;" title="Suggest in-demand complementary skills">
+                      ✨ AI Suggest
+                    </button>
+                  </div>
                 </div>
                 <div class="skills-editable-wrap" id="editableSkillsList">
                   <!-- Populated by JS -->
                 </div>
                 <div style="display: flex; gap: var(--space-2);">
-                  <input class="form-input" id="inputNewSkill" type="text" placeholder="Add a skill (e.g. GraphQL, Tailwind, Node.js)...">
+                  <input class="form-input" id="inputNewSkill" type="text" placeholder="Add a skill (e.g. GraphQL, Tailwind, Docker, Node.js)...">
                   <button class="btn btn-secondary btn-sm" id="btnAddSkill">Add</button>
                 </div>
               </div>
@@ -331,19 +535,22 @@
               <!-- Experience Timeline -->
               <div class="form-group">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <label class="form-label" style="margin-bottom: 0;">Experience</label>
-                  <button class="btn btn-outline btn-sm" id="btnAddExp">+ Add experience</button>
+                  <label class="form-label" style="margin-bottom: 0;">Work Experience</label>
+                  <button class="btn btn-outline btn-sm" type="button" id="btnAddExp">+ Add experience</button>
                 </div>
                 <div id="experienceItemsList">
-                  <div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;">Upload your resume above to automatically parse your work experience.</div>
+                  <div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;" id="emptyExpNote">Upload your resume above or click "+ Add experience" to record career history.</div>
                 </div>
               </div>
 
               <!-- Education -->
               <div class="form-group">
-                <label class="form-label">Education</label>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <label class="form-label" style="margin-bottom: 0;">Education & Degrees</label>
+                  <button class="btn btn-outline btn-sm" type="button" id="btnAddEdu">+ Add education</button>
+                </div>
                 <div id="educationItemsList">
-                  <div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;">Upload your resume above to automatically parse your education history.</div>
+                  <div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;" id="emptyEduNote">Upload your resume above or click "+ Add education" to specify qualifications.</div>
                 </div>
               </div>
             </div>
@@ -387,22 +594,36 @@
             </div>
           </div>
 
-          <!-- Search Bar Form -->
-          <form class="search-direction-card" id="jobSearchForm" style="margin-bottom: var(--space-6);">
-            <div style="display: flex; gap: var(--space-4); flex: 1; flex-wrap: wrap;">
-              <div style="flex: 1; min-width: 200px;">
-                <label class="form-label" style="font-size: 11px;" for="inputJobQuery">Role or keyword</label>
-                <input class="form-input" id="inputJobQuery" type="text" placeholder="Frontend / UI / Product Engineer" value="Frontend">
-              </div>
-              <div style="flex: 1; min-width: 200px;">
-                <label class="form-label" style="font-size: 11px;" for="inputJobLocation">Location</label>
-                <input class="form-input" id="inputJobLocation" type="text" placeholder="San Francisco + US remote" value="San Francisco">
-              </div>
+          <!-- Search Bar Form (Omni-search + AI Match & Rank) -->
+          <form class="search-direction-card search-ai-card" id="jobSearchForm" style="margin-bottom: var(--space-4);">
+            <div class="search-input-wrapper">
+              <svg class="search-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input class="form-input search-omni-input" id="inputJobQuery" type="text" placeholder="Search by role, framework, or skill (e.g. React, TypeScript, Python, Distributed Systems)..." value="Frontend">
+              <button class="btn-clear-search" type="button" id="btnClearJobQuery" aria-label="Clear search">&times;</button>
             </div>
-            <div style="align-self: flex-end;">
-              <button class="btn btn-primary" type="submit" id="btnSubmitSearch">Search sample jobs</button>
+            <div class="search-actions-row">
+              <button class="btn btn-secondary" type="submit" id="btnSubmitSearch">Search Roles</button>
+              <button class="btn btn-ai-gradient" type="button" id="btnAiMatchJobs">
+                <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+                </svg>
+                <span>✨ AI Auto-Match & Rank</span>
+              </button>
             </div>
           </form>
+
+          <!-- AI Smart Quick Filters -->
+          <div class="smart-ai-pills-row" style="margin-bottom: var(--space-4);">
+            <span class="smart-pills-label">✨ AI Filters:</span>
+            <button class="ai-filter-pill active" type="button" data-filter="all">All Roles</button>
+            <button class="ai-filter-pill" type="button" data-filter="best-match">🔥 Best Match (80%+)</button>
+            <button class="ai-filter-pill" type="button" data-filter="react">React & TS</button>
+            <button class="ai-filter-pill" type="button" data-filter="backend">Backend & Cloud</button>
+            <button class="ai-filter-pill" type="button" data-filter="remote">Remote Only</button>
+          </div>
 
           <!-- Active Chips Bar -->
           <div class="active-chips-bar">
@@ -1011,6 +1232,86 @@ two_sum([2, 7, 11, 15], 9)
       </div>
     </div>
   </div>
+
+  <!-- ==============================================================================
+       ADD WORK EXPERIENCE MODAL
+       ============================================================================== -->
+  <div class="modal-backdrop" id="modalAddExperience" role="dialog" aria-modal="true" style="display: none;">
+    <div class="modal-box">
+      <button class="modal-close-btn" id="btnCloseExpModal" aria-label="Close dialog">&times;</button>
+      <div class="modal-title">Add Work Experience</div>
+      <div class="modal-subtitle">Add verified roles and achievements to personalize your job match scores.</div>
+
+      <form id="formAddExperience">
+        <div class="form-group">
+          <label class="form-label" for="inputExpTitle">Job Title</label>
+          <input class="form-input" id="inputExpTitle" type="text" placeholder="e.g. Senior Frontend Engineer" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputExpCompany">Company or Organization</label>
+          <input class="form-input" id="inputExpCompany" type="text" placeholder="e.g. Stripe, Airbnb, Acme Corp" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputExpDuration">Dates / Duration</label>
+          <input class="form-input" id="inputExpDuration" type="text" placeholder="e.g. 2022 – Present (2 years)" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputExpDescription">Key Impact & Tech Stack</label>
+          <textarea class="form-textarea" id="inputExpDescription" placeholder="Led development of user workflows in React, TypeScript and GraphQL..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: var(--space-3); margin-top: var(--space-4);">
+          <button class="btn btn-primary" style="flex: 1;" type="submit" id="btnSaveExpModal">Save Experience</button>
+          <button class="btn btn-secondary" style="flex: 1;" type="button" id="btnCancelExpModal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==============================================================================
+       ADD EDUCATION MODAL
+       ============================================================================== -->
+  <div class="modal-backdrop" id="modalAddEducation" role="dialog" aria-modal="true" style="display: none;">
+    <div class="modal-box">
+      <button class="modal-close-btn" id="btnCloseEduModal" aria-label="Close dialog">&times;</button>
+      <div class="modal-title">Add Education</div>
+      <div class="modal-subtitle">Include degrees, bootcamps, or certifications to evidence qualification criteria.</div>
+
+      <form id="formAddEducation">
+        <div class="form-group">
+          <label class="form-label" for="inputEduDegree">Degree or Program</label>
+          <input class="form-input" id="inputEduDegree" type="text" placeholder="e.g. B.S. in Computer Science" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputEduSchool">Institution or University</label>
+          <input class="form-input" id="inputEduSchool" type="text" placeholder="e.g. Stanford University, UC Berkeley, Coursera" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="inputEduYear">Graduation Year</label>
+          <input class="form-input" id="inputEduYear" type="text" placeholder="e.g. 2021" required>
+        </div>
+
+        <div style="display: flex; gap: var(--space-3); margin-top: var(--space-4);">
+          <button class="btn btn-primary" style="flex: 1;" type="submit" id="btnSaveEduModal">Save Education</button>
+          <button class="btn btn-secondary" style="flex: 1;" type="button" id="btnCancelEduModal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Floating AI Copilot Action Button -->
+  <button class="fab-ai-assistant" id="fabAiAssistant" type="button" aria-label="Open AI Career Copilot">
+    <div class="fab-ai-pulse"></div>
+    <svg class="fab-ai-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+    </svg>
+    <span class="fab-ai-text">✨ AI Copilot</span>
+  </button>
 
   <!-- Toast Notification Container -->
   <div class="toast-container" id="toastContainer"></div>

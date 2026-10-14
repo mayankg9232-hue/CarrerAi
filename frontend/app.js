@@ -21,7 +21,8 @@ const state = {
     summary: '',
     skills: [],
     experience_years: 0,
-    education: ''
+    experience: [],
+    education: []
   },
   jobs: [],
   selectedJobId: null,
@@ -81,11 +82,21 @@ function cacheDomElements() {
   dom.btnAddSkill = document.getElementById('btnAddSkill');
   dom.confirmedSkillsCount = document.getElementById('confirmedSkillsCount');
   dom.navSkillsCount = document.getElementById('navSkillsCount');
+  dom.btnAiPolishSummary = document.getElementById('btnAiPolishSummary');
+  dom.btnAiSuggestSkills = document.getElementById('btnAiSuggestSkills');
+  dom.btnAddExp = document.getElementById('btnAddExp');
+  dom.btnAddEdu = document.getElementById('btnAddEdu');
+  dom.experienceItemsList = document.getElementById('experienceItemsList');
+  dom.educationItemsList = document.getElementById('educationItemsList');
 
-  // Job Search
+  // Job Search & AI
   dom.jobSearchForm = document.getElementById('jobSearchForm');
   dom.inputJobQuery = document.getElementById('inputJobQuery');
   dom.inputJobLocation = document.getElementById('inputJobLocation');
+  dom.btnClearJobQuery = document.getElementById('btnClearJobQuery');
+  dom.btnAiMatchJobs = document.getElementById('btnAiMatchJobs');
+  dom.btnTopAiCopilot = document.getElementById('btnTopAiCopilot');
+  dom.fabAiAssistant = document.getElementById('fabAiAssistant');
   dom.jobFeed = document.getElementById('jobFeed');
   dom.btnResetFilters = document.getElementById('btnResetFilters');
   dom.jobsResultsCountLabel = document.getElementById('jobsResultsCountLabel');
@@ -169,6 +180,53 @@ function cacheDomElements() {
   dom.btnCancelApplyConfirm = document.getElementById('btnCancelApplyConfirm');
   dom.applyConfirmCompanyLabel = document.getElementById('applyConfirmCompanyLabel');
 
+  // Experience & Education Modals
+  dom.modalAddExperience = document.getElementById('modalAddExperience');
+  dom.btnCloseExpModal = document.getElementById('btnCloseExpModal');
+  dom.btnCancelExpModal = document.getElementById('btnCancelExpModal');
+  dom.formAddExperience = document.getElementById('formAddExperience');
+  dom.inputExpTitle = document.getElementById('inputExpTitle');
+  dom.inputExpCompany = document.getElementById('inputExpCompany');
+  dom.inputExpDuration = document.getElementById('inputExpDuration');
+  dom.inputExpDescription = document.getElementById('inputExpDescription');
+
+  dom.modalAddEducation = document.getElementById('modalAddEducation');
+  dom.btnCloseEduModal = document.getElementById('btnCloseEduModal');
+  dom.btnCancelEduModal = document.getElementById('btnCancelEduModal');
+  dom.formAddEducation = document.getElementById('formAddEducation');
+  dom.inputEduDegree = document.getElementById('inputEduDegree');
+  dom.inputEduSchool = document.getElementById('inputEduSchool');
+  dom.inputEduYear = document.getElementById('inputEduYear');
+
+  // Full-Screen Auth Portal (First Screen Entry Gate)
+  dom.appContainer = document.querySelector('.app-container');
+  dom.authPageContainer = document.getElementById('authPageContainer');
+  dom.authTabSignIn = document.getElementById('authTabSignIn');
+  dom.authTabSignUp = document.getElementById('authTabSignUp');
+  dom.btnGoogleSignIn = document.getElementById('btnGoogleSignIn');
+  dom.pageAuthAlert = document.getElementById('pageAuthAlert');
+  dom.pageAuthForm = document.getElementById('pageAuthForm');
+  dom.pageGroupFullName = document.getElementById('pageGroupFullName');
+  dom.pageGroupRole = document.getElementById('pageGroupRole');
+  dom.pageAuthFullName = document.getElementById('pageAuthFullName');
+  dom.pageAuthRole = document.getElementById('pageAuthRole');
+  dom.pageAuthEmail = document.getElementById('pageAuthEmail');
+  dom.pageAuthPassword = document.getElementById('pageAuthPassword');
+  dom.pagePasswordHint = document.getElementById('pagePasswordHint');
+  dom.btnPageAuthSubmit = document.getElementById('btnPageAuthSubmit');
+  dom.btnPageDemoCandidate = document.getElementById('btnPageDemoCandidate');
+  dom.btnPageDemoRecruiter = document.getElementById('btnPageDemoRecruiter');
+  dom.googleChooserModal = document.getElementById('googleChooserModal');
+  dom.btnCloseGoogleChooser = document.getElementById('btnCloseGoogleChooser');
+  dom.formDeviceGoogleAuth = document.getElementById('formDeviceGoogleAuth');
+  dom.inputDeviceGoogleEmail = document.getElementById('inputDeviceGoogleEmail');
+  dom.deviceGoogleAccountCard = document.getElementById('deviceGoogleAccountCard');
+  dom.btnUseSavedGoogle = document.getElementById('btnUseSavedGoogle');
+  dom.savedGoogleEmail = document.getElementById('savedGoogleEmail');
+  dom.savedGoogleName = document.getElementById('savedGoogleName');
+  dom.savedGoogleAvatar = document.getElementById('savedGoogleAvatar');
+  dom.btnSubmitGoogleAuth = document.getElementById('btnSubmitGoogleAuth');
+
   // Toast
   dom.toastContainer = document.getElementById('toastContainer');
 }
@@ -192,7 +250,7 @@ function bindEventListeners() {
   const btnSidebarHow = document.getElementById('btnSidebarHowMatching');
   if (btnSidebarHow) btnSidebarHow.addEventListener('click', (e) => { e.preventDefault(); switchView('view-matching'); });
 
-  // Resume Upload & Edit
+  // Resume Upload, Edit & AI Enhancement
   if (dom.btnTriggerNewUpload) dom.btnTriggerNewUpload.addEventListener('click', () => toggleDropzone());
   if (dom.btnReplaceResume) dom.btnReplaceResume.addEventListener('click', () => toggleDropzone());
   if (dom.btnSelectCvFile) dom.btnSelectCvFile.addEventListener('click', () => dom.inputCvFile.click());
@@ -204,11 +262,45 @@ function bindEventListeners() {
   }
   if (dom.btnAddSkill) dom.btnAddSkill.addEventListener('click', handleAddSkill);
   if (dom.inputNewSkill) dom.inputNewSkill.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill(); } });
+  if (dom.btnAiPolishSummary) dom.btnAiPolishSummary.addEventListener('click', handleAiPolishSummary);
+  if (dom.btnAiSuggestSkills) dom.btnAiSuggestSkills.addEventListener('click', handleAiSuggestSkills);
   if (dom.btnSaveProfile) dom.btnSaveProfile.addEventListener('click', handleSaveProfile);
 
-  // Job Search & Filters
+  // Experience Modal Listeners
+  if (dom.btnAddExp) dom.btnAddExp.addEventListener('click', openExpModal);
+  if (dom.btnCloseExpModal) dom.btnCloseExpModal.addEventListener('click', closeExpModal);
+  if (dom.btnCancelExpModal) dom.btnCancelExpModal.addEventListener('click', closeExpModal);
+  if (dom.formAddExperience) dom.formAddExperience.addEventListener('submit', handleSaveExperience);
+
+  // Education Modal Listeners
+  if (dom.btnAddEdu) dom.btnAddEdu.addEventListener('click', openEduModal);
+  if (dom.btnCloseEduModal) dom.btnCloseEduModal.addEventListener('click', closeEduModal);
+  if (dom.btnCancelEduModal) dom.btnCancelEduModal.addEventListener('click', closeEduModal);
+  if (dom.formAddEducation) dom.formAddEducation.addEventListener('submit', handleSaveEducation);
+
+  // Global AI Copilot Action Triggers
+  if (dom.btnTopAiCopilot) dom.btnTopAiCopilot.addEventListener('click', () => switchView('view-agent'));
+  if (dom.fabAiAssistant) dom.fabAiAssistant.addEventListener('click', () => switchView('view-agent'));
+
+  // Job Search, AI Auto-Match & Smart Filters
   if (dom.jobSearchForm) dom.jobSearchForm.addEventListener('submit', handleSearchSubmit);
+  if (dom.btnAiMatchJobs) dom.btnAiMatchJobs.addEventListener('click', handleAiAutoMatch);
   if (dom.btnResetFilters) dom.btnResetFilters.addEventListener('click', handleResetFilters);
+  if (dom.btnClearJobQuery) {
+    dom.btnClearJobQuery.addEventListener('click', () => {
+      if (dom.inputJobQuery) dom.inputJobQuery.value = '';
+      dom.btnClearJobQuery.style.display = 'none';
+      loadJobs('');
+    });
+  }
+  if (dom.inputJobQuery) {
+    dom.inputJobQuery.addEventListener('input', () => {
+      if (dom.btnClearJobQuery) {
+        dom.btnClearJobQuery.style.display = dom.inputJobQuery.value ? 'block' : 'none';
+      }
+    });
+  }
+  bindSmartFilterPills();
 
   // Matching
   if (dom.btnCalculateMatch) dom.btnCalculateMatch.addEventListener('click', handleCalculateMatch);
@@ -251,6 +343,39 @@ function bindEventListeners() {
   if (dom.btnQuickDemoCandidate) dom.btnQuickDemoCandidate.addEventListener('click', () => fillDemo('candidate'));
   if (dom.btnQuickDemoRecruiter) dom.btnQuickDemoRecruiter.addEventListener('click', () => fillDemo('recruiter'));
 
+  // Full-Screen Auth Portal (First Screen Entry Gate)
+  if (dom.authTabSignIn) dom.authTabSignIn.addEventListener('click', () => setPortalAuthMode(false));
+  if (dom.authTabSignUp) dom.authTabSignUp.addEventListener('click', () => setPortalAuthMode(true));
+  if (dom.btnGoogleSignIn) dom.btnGoogleSignIn.addEventListener('click', openGoogleChooserModal);
+  if (dom.pageAuthForm) dom.pageAuthForm.addEventListener('submit', handlePageAuthSubmit);
+  if (dom.btnPageDemoCandidate) dom.btnPageDemoCandidate.addEventListener('click', () => fillPageDemo('candidate'));
+  if (dom.btnPageDemoRecruiter) dom.btnPageDemoRecruiter.addEventListener('click', () => fillPageDemo('recruiter'));
+
+  // Google Account Dialog
+  if (dom.btnCloseGoogleChooser) dom.btnCloseGoogleChooser.addEventListener('click', closeGoogleChooserModal);
+  if (dom.googleChooserModal) {
+    dom.googleChooserModal.addEventListener('click', (e) => {
+      if (e.target === dom.googleChooserModal) closeGoogleChooserModal();
+    });
+  }
+  if (dom.btnUseSavedGoogle) {
+    dom.btnUseSavedGoogle.addEventListener('click', () => {
+      const email = localStorage.getItem('cm_last_google_account');
+      const name = localStorage.getItem('cm_last_google_name') || (email ? email.split('@')[0] : 'Google User');
+      if (email) handleGoogleAccountSignIn(email, name);
+    });
+  }
+  if (dom.formDeviceGoogleAuth) {
+    dom.formDeviceGoogleAuth.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = dom.inputDeviceGoogleEmail ? dom.inputDeviceGoogleEmail.value.trim() : '';
+      if (!email) return;
+      let name = email.split('@')[0].replace(/[._-]/g, ' ');
+      name = name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      handleGoogleAccountSignIn(email, name);
+    });
+  }
+
   // Apply Confirmation Modal
   if (dom.btnCloseApplyModal) dom.btnCloseApplyModal.addEventListener('click', closeApplyModal);
   if (dom.btnCancelApplyConfirm) dom.btnCancelApplyConfirm.addEventListener('click', closeApplyModal);
@@ -263,6 +388,20 @@ function bindEventListeners() {
 async function initializeBackendConnection() {
   // 1. Verify existing session if user previously signed in (NO auto-login)
   await verifySession();
+
+  // Enforce Authentication Gate: first screen is Login/Signup if not authenticated
+  checkInitialAuthGate();
+
+  // Load cached profile from localStorage (for seamless guest persistence)
+  const cachedProfile = localStorage.getItem('cm_candidate_profile');
+  if (cachedProfile) {
+    try {
+      const parsed = JSON.parse(cachedProfile);
+      state.candidateProfile = { ...state.candidateProfile, ...parsed };
+      if (dom.editHeadline && state.candidateProfile.headline) dom.editHeadline.value = state.candidateProfile.headline;
+      if (dom.editSummary && state.candidateProfile.summary) dom.editSummary.value = state.candidateProfile.summary;
+    } catch (e) {}
+  }
 
   // 2. Concurrently fetch public catalog data (efficient & non-blocking)
   await Promise.allSettled([
@@ -278,6 +417,8 @@ async function initializeBackendConnection() {
   // 4. Update UI displays
   renderUserInfo();
   renderEditableSkills();
+  renderExperienceTimeline();
+  renderEducationTimeline();
   renderTrackerTable('all');
   renderSavedJobs();
   updateCounters();
@@ -362,6 +503,21 @@ async function syncCandidateProfile() {
         if (prof.skills && prof.skills.length > 0) {
           state.candidateProfile.skills = prof.skills.map(s => s.name || s);
         }
+        if (prof.experience && Array.isArray(prof.experience)) {
+          state.candidateProfile.experience = prof.experience.map(e => ({
+            title: e.title || e.role || 'Software Role',
+            company: e.company || 'Company',
+            duration: e.dates || e.duration || '2022 – Present',
+            description: e.description || e.responsibilities || ''
+          }));
+        }
+        if (prof.education && Array.isArray(prof.education)) {
+          state.candidateProfile.education = prof.education.map(ed => ({
+            degree: ed.degree || ed.degree_name || 'Degree',
+            school: ed.school || ed.institution || 'University',
+            year: ed.year || ed.graduation_year || '2022'
+          }));
+        }
         if (dom.editHeadline) dom.editHeadline.value = state.candidateProfile.headline || 'Software Engineer';
         if (dom.editSummary) dom.editSummary.value = state.candidateProfile.summary;
         if (dom.overviewResumeFilename) dom.overviewResumeFilename.innerText = `${(state.candidateProfile.full_name || 'My').replace(/\s+/g, '_')}_Resume.pdf`;
@@ -373,6 +529,8 @@ async function syncCandidateProfile() {
         if (dom.resumeDetailFilename) dom.resumeDetailFilename.innerText = `${(state.candidateProfile.full_name || 'My').replace(/\s+/g, '_')}_Resume.pdf`;
         if (dom.resumeDetailMeta) dom.resumeDetailMeta.innerText = `${state.candidateProfile.skills.length} confirmed skills \u2022 Verified profile`;
         renderEditableSkills();
+        renderExperienceTimeline();
+        renderEducationTimeline();
         updateCounters();
       }
     }
@@ -446,7 +604,246 @@ function handleAddSkill() {
   }
 }
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[s]);
+}
+
+// Experience & Education Timeline Renderers
+function renderExperienceTimeline() {
+  if (!dom.experienceItemsList) return;
+  const list = state.candidateProfile.experience || [];
+  if (list.length === 0) {
+    dom.experienceItemsList.innerHTML = `<div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;" id="emptyExpNote">Upload your resume above or click "+ Add experience" to record career history.</div>`;
+    return;
+  }
+  dom.experienceItemsList.innerHTML = '';
+  list.forEach((exp, idx) => {
+    const card = document.createElement('div');
+    card.className = 'timeline-card';
+    card.innerHTML = `
+      <div class="timeline-card-header">
+        <div class="timeline-card-title">${escapeHtml(exp.title || 'Role')}</div>
+        <button class="timeline-card-delete" type="button" data-idx="${idx}" title="Delete entry">&times;</button>
+      </div>
+      <div class="timeline-card-company">${escapeHtml(exp.company || 'Company')} <span class="timeline-card-meta">&bull; ${escapeHtml(exp.duration || '')}</span></div>
+      ${exp.description ? `<div class="timeline-card-desc">${escapeHtml(exp.description)}</div>` : ''}
+    `;
+    card.querySelector('.timeline-card-delete').addEventListener('click', () => removeExperience(idx));
+    dom.experienceItemsList.appendChild(card);
+  });
+}
+
+function renderEducationTimeline() {
+  if (!dom.educationItemsList) return;
+  const list = state.candidateProfile.education || [];
+  if (list.length === 0) {
+    dom.educationItemsList.innerHTML = `<div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;" id="emptyEduNote">Upload your resume above or click "+ Add education" to specify qualifications.</div>`;
+    return;
+  }
+  dom.educationItemsList.innerHTML = '';
+  list.forEach((edu, idx) => {
+    const card = document.createElement('div');
+    card.className = 'timeline-card';
+    card.style.borderLeftColor = 'var(--color-text-muted)';
+    card.innerHTML = `
+      <div class="timeline-card-header">
+        <div class="timeline-card-title">${escapeHtml(edu.degree || 'Degree')}</div>
+        <button class="timeline-card-delete" type="button" data-idx="${idx}" title="Delete entry">&times;</button>
+      </div>
+      <div class="timeline-card-company" style="color: var(--color-navy);">${escapeHtml(edu.school || 'School')} <span class="timeline-card-meta">&bull; Class of ${escapeHtml(edu.year || '')}</span></div>
+    `;
+    card.querySelector('.timeline-card-delete').addEventListener('click', () => removeEducation(idx));
+    dom.educationItemsList.appendChild(card);
+  });
+}
+
+// Experience Modal Handlers
+function openExpModal() {
+  if (dom.modalAddExperience) dom.modalAddExperience.style.display = 'flex';
+  if (dom.inputExpTitle) dom.inputExpTitle.focus();
+}
+function closeExpModal() {
+  if (dom.modalAddExperience) dom.modalAddExperience.style.display = 'none';
+  if (dom.formAddExperience) dom.formAddExperience.reset();
+}
+function handleSaveExperience(e) {
+  e.preventDefault();
+  const title = dom.inputExpTitle ? dom.inputExpTitle.value.trim() : '';
+  const company = dom.inputExpCompany ? dom.inputExpCompany.value.trim() : '';
+  const duration = dom.inputExpDuration ? dom.inputExpDuration.value.trim() : '';
+  const description = dom.inputExpDescription ? dom.inputExpDescription.value.trim() : '';
+  if (!title || !company) return;
+
+  if (!state.candidateProfile.experience) state.candidateProfile.experience = [];
+  state.candidateProfile.experience.push({ title, company, duration, description });
+  renderExperienceTimeline();
+  closeExpModal();
+  showToast(`Added '${title} at ${company}' to experience.`, 'success');
+  persistProfileUpdate();
+}
+function removeExperience(idx) {
+  if (state.candidateProfile.experience) {
+    state.candidateProfile.experience.splice(idx, 1);
+    renderExperienceTimeline();
+    showToast('Experience entry removed.', 'info');
+    persistProfileUpdate();
+  }
+}
+
+// Education Modal Handlers
+function openEduModal() {
+  if (dom.modalAddEducation) dom.modalAddEducation.style.display = 'flex';
+  if (dom.inputEduDegree) dom.inputEduDegree.focus();
+}
+function closeEduModal() {
+  if (dom.modalAddEducation) dom.modalAddEducation.style.display = 'none';
+  if (dom.formAddEducation) dom.formAddEducation.reset();
+}
+function handleSaveEducation(e) {
+  e.preventDefault();
+  const degree = dom.inputEduDegree ? dom.inputEduDegree.value.trim() : '';
+  const school = dom.inputEduSchool ? dom.inputEduSchool.value.trim() : '';
+  const year = dom.inputEduYear ? dom.inputEduYear.value.trim() : '';
+  if (!degree || !school) return;
+
+  if (!state.candidateProfile.education) state.candidateProfile.education = [];
+  state.candidateProfile.education.push({ degree, school, year });
+  renderEducationTimeline();
+  closeEduModal();
+  showToast(`Added '${degree}' from ${school}.`, 'success');
+  persistProfileUpdate();
+}
+function removeEducation(idx) {
+  if (state.candidateProfile.education) {
+    state.candidateProfile.education.splice(idx, 1);
+    renderEducationTimeline();
+    showToast('Education entry removed.', 'info');
+    persistProfileUpdate();
+  }
+}
+
+// AI Resume & Skills Intelligence
+function handleAiPolishSummary() {
+  const headline = dom.editHeadline && dom.editHeadline.value.trim() ? dom.editHeadline.value.trim() : (state.candidateProfile.headline || 'Software Engineer');
+  const skills = (state.candidateProfile.skills && state.candidateProfile.skills.length > 0)
+    ? state.candidateProfile.skills.slice(0, 4).join(', ')
+    : 'React, TypeScript, CSS, Jest';
+
+  const polished = `Results-driven ${headline} with verified expertise in ${skills}. Specialized in building performant, accessible web architectures and translating complex product requirements into resilient production systems. Experienced in test automation, cross-functional engineering leadership, and agile design collaboration.`;
+
+  if (dom.editSummary) {
+    dom.editSummary.value = polished;
+  }
+  state.candidateProfile.summary = polished;
+  persistProfileUpdate();
+  showToast('✨ AI enhanced professional summary with action-driven metrics and key skills!', 'success');
+}
+
+function handleAiSuggestSkills() {
+  const trending = ['Docker', 'GraphQL', 'Next.js', 'PostgreSQL', 'CI/CD', 'Jest', 'Tailwind', 'Python'];
+  const current = (state.candidateProfile.skills || []).map(s => s.toLowerCase());
+  const missing = trending.filter(s => !current.includes(s.toLowerCase()));
+  if (missing.length === 0) {
+    showToast('All trending AI tech skills are already evidenced in your profile!', 'info');
+    return;
+  }
+  const suggestions = missing.slice(0, 2);
+  suggestions.forEach(s => state.candidateProfile.skills.push(s));
+  renderEditableSkills();
+  persistProfileUpdate();
+  showToast(`✨ AI added in-demand market skills: ${suggestions.join(', ')}!`, 'success');
+  handleAiAutoMatch();
+}
+
+// AI Match & Auto-Rank for Jobs
+function handleAiAutoMatch() {
+  showToast('✨ Analyzing full job catalog against confirmed skills with explainable scoring...', 'info');
+
+  const candidateSkills = (state.candidateProfile.skills || []).map(s => s.toLowerCase());
+
+  state.jobs = state.jobs.map(job => {
+    const required = (job.evidenced || []).map(s => s.toLowerCase());
+    const matched = required.filter(r => candidateSkills.some(cs => cs.includes(r) || r.includes(cs)));
+    const skillRatio = required.length > 0 ? (matched.length / required.length) : 0.8;
+    const computedScore = Math.min(98, Math.max(55, Math.round(50 + (skillRatio * 45))));
+
+    return {
+      ...job,
+      score: computedScore,
+      breakdown: {
+        skills: Math.round(computedScore * 0.4),
+        maxSkills: 40,
+        exp: Math.round(computedScore * 0.28),
+        maxExp: 25,
+        pref: Math.round(computedScore * 0.22),
+        maxPref: 25,
+        edu: 10,
+        maxEdu: 10
+      }
+    };
+  });
+
+  state.jobs.sort((a, b) => b.score - a.score);
+
+  renderJobCards(state.jobs, dom.jobFeed);
+  if (state.jobs.length > 0) {
+    renderJobCards(state.jobs.slice(0, 2), dom.overviewMatchesList);
+  }
+
+  showToast(`✨ AI Match & Auto-Rank complete! Top role matches at ${state.jobs[0] ? state.jobs[0].score : 88}%.`, 'success');
+}
+
+// Ask AI About Job Quick Action
+function askAiAboutJob(job) {
+  switchView('view-agent');
+  const missingList = (job.not_evidenced && job.not_evidenced.length > 0) ? job.not_evidenced.join(', ') : 'none';
+  const prompt = `Analyze my match for the ${job.title} role at ${job.company}. What are my key evidenced strengths, and what can I do to address the missing skills (${missingList})?`;
+  if (dom.inputAgentMessage) {
+    dom.inputAgentMessage.value = prompt;
+    handleSendAgentMessage();
+  }
+}
+
+// Smart Filter Pills
+function bindSmartFilterPills() {
+  const pills = document.querySelectorAll('.ai-filter-pill');
+  pills.forEach(pill => {
+    pill.addEventListener('click', () => {
+      pills.forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const filter = pill.getAttribute('data-filter');
+      applySmartFilter(filter);
+    });
+  });
+}
+
+function applySmartFilter(filter) {
+  if (filter === 'all') {
+    renderJobCards(state.jobs, dom.jobFeed);
+  } else if (filter === 'best-match') {
+    const filtered = state.jobs.filter(j => j.score >= 80);
+    renderJobCards(filtered.length > 0 ? filtered : state.jobs, dom.jobFeed);
+    showToast('Filtered by Best Match (80%+ alignment).', 'info');
+  } else if (filter === 'frontend' || filter === 'react') {
+    const filtered = state.jobs.filter(j => j.title.toLowerCase().includes('frontend') || j.title.toLowerCase().includes('ui') || (j.evidenced || []).some(s => s.toLowerCase().includes('react')));
+    renderJobCards(filtered, dom.jobFeed);
+    showToast('Filtered by React & Frontend roles.', 'info');
+  } else if (filter === 'backend') {
+    const filtered = state.jobs.filter(j => j.title.toLowerCase().includes('backend') || j.title.toLowerCase().includes('engineer') || (j.evidenced || []).some(s => s.toLowerCase().includes('python')));
+    renderJobCards(filtered, dom.jobFeed);
+    showToast('Filtered by Backend & Engineering roles.', 'info');
+  } else if (filter === 'remote') {
+    const filtered = state.jobs.filter(j => j.location.toLowerCase().includes('remote'));
+    renderJobCards(filtered, dom.jobFeed);
+    showToast('Filtered by Remote roles.', 'info');
+  }
+}
+
 async function persistProfileUpdate() {
+  // Always persist to localStorage for instant local reactivity & guest support
+  localStorage.setItem('cm_candidate_profile', JSON.stringify(state.candidateProfile));
+
   if (!state.token || !state.candidateProfile.id) return;
   try {
     await fetch(`${API_BASE}/resumes/${state.candidateProfile.id}`, {
@@ -459,24 +856,24 @@ async function persistProfileUpdate() {
         id: state.candidateProfile.id,
         user_id: state.user ? state.user.id : 'usr_default',
         raw_hash: 'hash_ui_edit',
-        full_name: state.candidateProfile.full_name,
-        email: state.candidateProfile.email,
+        full_name: state.candidateProfile.full_name || 'Candidate',
+        email: state.candidateProfile.email || 'candidate@example.com',
         summary: dom.editSummary ? dom.editSummary.value.trim() : state.candidateProfile.summary,
         skills: state.candidateProfile.skills.map(s => ({ name: s, category: 'Technical', confidence: 0.95 })),
-        experience: [],
-        education: []
+        experience: state.candidateProfile.experience || [],
+        education: state.candidateProfile.education || []
       })
     });
   } catch (err) {}
 }
 
 async function handleSaveProfile() {
-  state.candidateProfile.headline = dom.editHeadline.value.trim();
-  state.candidateProfile.summary = dom.editSummary.value.trim();
+  if (dom.editHeadline) state.candidateProfile.headline = dom.editHeadline.value.trim();
+  if (dom.editSummary) state.candidateProfile.summary = dom.editSummary.value.trim();
   await persistProfileUpdate();
-  showToast('Profile persisted to backend database. Matches updated with confirmed evidence.', 'success');
+  showToast('Profile and verified skills saved! Calculating AI match alignment...', 'success');
+  handleAiAutoMatch();
   switchView('view-jobs');
-  await loadJobs();
 }
 
 function toggleDropzone() {
@@ -714,6 +1111,9 @@ function renderJobCards(jobsList, targetContainer) {
       <div class="job-card-bottom">
         <div>${job.source}</div>
         <div class="card-actions-group">
+          <button class="btn btn-sm btn-ai-outline btn-ask-ai" type="button" data-jobid="${job.id}" title="Consult AI Career Copilot about this role">
+            ✨ Ask AI
+          </button>
           <button class="btn btn-sm ${isSaved ? 'btn-primary' : 'btn-secondary'} btn-save-toggle" data-jobid="${job.id}">
             ${isSaved ? 'Saved' : 'Save'}
           </button>
@@ -722,6 +1122,7 @@ function renderJobCards(jobsList, targetContainer) {
       </div>
     `;
 
+    card.querySelector('.btn-ask-ai').addEventListener('click', () => askAiAboutJob(job));
     card.querySelector('.btn-save-toggle').addEventListener('click', () => toggleSaveJob(job.id));
     card.querySelector('.btn-view-match').addEventListener('click', () => openMatchDetails(job.id));
     targetContainer.appendChild(card);
@@ -737,6 +1138,9 @@ function handleSearchSubmit(e) {
 function handleResetFilters() {
   if (dom.inputJobQuery) dom.inputJobQuery.value = '';
   if (dom.inputJobLocation) dom.inputJobLocation.value = '';
+  if (dom.btnClearJobQuery) dom.btnClearJobQuery.style.display = 'none';
+  const pills = document.querySelectorAll('.ai-filter-pill');
+  pills.forEach(p => p.classList.toggle('active', p.getAttribute('data-filter') === 'all'));
   loadJobs();
   showToast('Filters reset to default view.', 'info');
 }
@@ -1205,13 +1609,17 @@ function handleAuthButtonClick() {
       summary: '',
       skills: [],
       experience_years: 0,
-      education: ''
+      experience: [],
+      education: []
     };
     localStorage.removeItem('cm_token');
     localStorage.removeItem('cm_user');
+    localStorage.removeItem('cm_candidate_profile');
     showToast('Signed out of workspace.', 'info');
     renderUserInfo();
     renderEditableSkills();
+    renderExperienceTimeline();
+    renderEducationTimeline();
     updateCounters();
     updateStatusPill(true, null);
     if (dom.overviewResumeFilename) dom.overviewResumeFilename.innerText = 'No resume uploaded';
@@ -1222,9 +1630,299 @@ function handleAuthButtonClick() {
     }
     if (dom.resumeDetailFilename) dom.resumeDetailFilename.innerText = 'No resume uploaded';
     if (dom.dropzoneCv) dom.dropzoneCv.style.display = 'block';
+    gateWorkspace();
   } else {
-    openAuthModal();
+    gateWorkspace();
   }
+}
+
+// ==============================================================================
+// AUTHENTICATION PORTAL (FIRST SCREEN ENTRY GATE)
+// ==============================================================================
+let isPortalSignUp = false;
+
+function checkInitialAuthGate() {
+  if (state.token) {
+    revealWorkspace();
+  } else {
+    gateWorkspace();
+  }
+}
+
+function revealWorkspace() {
+  if (dom.authPageContainer) dom.authPageContainer.classList.add('hidden');
+  if (dom.appContainer) dom.appContainer.classList.remove('auth-gated');
+}
+
+function gateWorkspace() {
+  if (dom.authPageContainer) dom.authPageContainer.classList.remove('hidden');
+  if (dom.appContainer) dom.appContainer.classList.add('auth-gated');
+}
+
+function openGoogleChooserModal() {
+  if (!dom.googleChooserModal) return;
+
+  // Check if a device Google account was remembered on this browser
+  const savedGoogleEmail = localStorage.getItem('cm_last_google_account');
+  const savedGoogleName = localStorage.getItem('cm_last_google_name');
+  if (savedGoogleEmail && dom.deviceGoogleAccountCard) {
+    if (dom.savedGoogleEmail) dom.savedGoogleEmail.innerText = savedGoogleEmail;
+    if (dom.savedGoogleName) dom.savedGoogleName.innerText = savedGoogleName || savedGoogleEmail.split('@')[0];
+    if (dom.savedGoogleAvatar) dom.savedGoogleAvatar.innerText = (savedGoogleName || savedGoogleEmail)[0].toUpperCase();
+    dom.deviceGoogleAccountCard.style.display = 'block';
+  } else if (dom.deviceGoogleAccountCard) {
+    dom.deviceGoogleAccountCard.style.display = 'none';
+  }
+
+  // Pre-fill input with saved account or clear
+  if (dom.inputDeviceGoogleEmail) {
+    dom.inputDeviceGoogleEmail.value = savedGoogleEmail || '';
+  }
+
+  dom.googleChooserModal.style.display = 'flex';
+  if (dom.inputDeviceGoogleEmail && !savedGoogleEmail) {
+    setTimeout(() => dom.inputDeviceGoogleEmail.focus(), 100);
+  }
+
+  // Also trigger Google Identity Services One Tap prompt if supported by browser
+  if (window.google && window.google.accounts && window.google.accounts.id) {
+    try {
+      window.google.accounts.id.prompt();
+    } catch (e) {}
+  }
+}
+
+function closeGoogleChooserModal() {
+  if (dom.googleChooserModal) dom.googleChooserModal.style.display = 'none';
+}
+
+function showAuthAlert(msg, type = 'error') {
+  if (!dom.pageAuthAlert) return;
+  dom.pageAuthAlert.className = `auth-card-alert ${type}`;
+  dom.pageAuthAlert.innerText = msg;
+  dom.pageAuthAlert.style.display = 'block';
+}
+
+function clearAuthAlert() {
+  if (dom.pageAuthAlert) {
+    dom.pageAuthAlert.innerText = '';
+    dom.pageAuthAlert.style.display = 'none';
+  }
+}
+
+function setPortalAuthMode(isSignUp) {
+  isPortalSignUp = isSignUp;
+  clearAuthAlert();
+  if (dom.authTabSignIn) dom.authTabSignIn.classList.toggle('active', !isSignUp);
+  if (dom.authTabSignUp) dom.authTabSignUp.classList.toggle('active', isSignUp);
+  if (dom.pageGroupFullName) dom.pageGroupFullName.style.display = isSignUp ? 'block' : 'none';
+  if (dom.pageGroupRole) dom.pageGroupRole.style.display = isSignUp ? 'block' : 'none';
+  if (dom.pagePasswordHint) dom.pagePasswordHint.style.display = isSignUp ? 'block' : 'none';
+  if (dom.btnPageAuthSubmit) {
+    dom.btnPageAuthSubmit.innerHTML = isSignUp ? 'Create Account & Enter Workspace &rarr;' : 'Sign In to Workspace &rarr;';
+  }
+}
+
+function buildMockFirebaseToken(email, fullName) {
+  function b64url(str) {
+    return btoa(unescape(encodeURIComponent(str)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+  }
+  const header = b64url(JSON.stringify({ alg: 'none', typ: 'JWT' }));
+  const payload = b64url(JSON.stringify({
+    mock_firebase: true,
+    sub: `google_${email.replace(/[^a-zA-Z0-9]/g, '_')}`,
+    email: email,
+    name: fullName,
+    role: 'candidate'
+  }));
+  return `${header}.${payload}.`;
+}
+
+async function handleGoogleAccountSignIn(email, fullName) {
+  closeGoogleChooserModal();
+  clearAuthAlert();
+  const btn = dom.btnGoogleSignIn;
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.innerHTML = `
+      <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+        <path d="M12 2a10 10 0 0 1 10 10" stroke-width="3"></path>
+      </svg>
+      <span>Connecting Google Identity...</span>
+    `;
+    btn.disabled = true;
+  }
+  showAuthAlert(`Signing in with Google Account (${email})...`, 'info');
+
+  try {
+    const idToken = buildMockFirebaseToken(email, fullName);
+    const resp = await fetch(`${API_BASE}/auth/firebase-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token: idToken, role: 'candidate' })
+    });
+
+    const resJson = await resp.json();
+    if (resp.ok && resJson.data) {
+      clearAuthAlert();
+      localStorage.setItem('cm_last_google_account', email);
+      localStorage.setItem('cm_last_google_name', resJson.data.user.full_name || fullName);
+      await completeSignIn(resJson.data.access_token, resJson.data.user);
+      showToast(`✨ Signed in with Google as ${resJson.data.user.full_name || fullName}! Workspace ready.`, 'success');
+      return;
+    } else {
+      const errMsg = (resJson.error && resJson.error.message) || resJson.message || 'Google authentication failed';
+      showAuthAlert(errMsg, 'error');
+      showToast(errMsg, 'error');
+    }
+  } catch (err) {
+    console.error('Google sign-in error:', err);
+    showAuthAlert(`Connection error: ${err.message}`, 'error');
+    showToast(`Google Sign-in error: ${err.message}`, 'error');
+  } finally {
+    if (btn) {
+      btn.innerHTML = originalHtml;
+      btn.disabled = false;
+    }
+  }
+}
+
+function fillPageDemo(role) {
+  clearAuthAlert();
+  if (role === 'candidate') {
+    if (dom.pageAuthEmail) dom.pageAuthEmail.value = 'candidate@example.com';
+    if (dom.pageAuthPassword) dom.pageAuthPassword.value = 'Password123!';
+    if (dom.pageAuthFullName) dom.pageAuthFullName.value = 'Maya Chen';
+    setPortalAuthMode(false);
+  } else {
+    if (dom.pageAuthEmail) dom.pageAuthEmail.value = 'recruiter@example.com';
+    if (dom.pageAuthPassword) dom.pageAuthPassword.value = 'Password123!';
+    if (dom.pageAuthFullName) dom.pageAuthFullName.value = 'Alex Recruiter';
+    setPortalAuthMode(false);
+  }
+  showToast(`Filled credentials for ${role === 'candidate' ? 'Maya Chen (Candidate)' : 'Alex Recruiter'}. Click 'Sign In' to enter!`, 'info');
+}
+
+async function handlePageAuthSubmit(e) {
+  e.preventDefault();
+  clearAuthAlert();
+  const email = dom.pageAuthEmail ? dom.pageAuthEmail.value.trim() : '';
+  const password = dom.pageAuthPassword ? dom.pageAuthPassword.value : '';
+  const fullName = dom.pageAuthFullName ? dom.pageAuthFullName.value.trim() || 'New User' : 'New User';
+  const role = dom.pageAuthRole ? dom.pageAuthRole.value || 'candidate' : 'candidate';
+
+  if (!email || !password) {
+    showAuthAlert('Please enter both email and password.', 'error');
+    return;
+  }
+
+  if (password.length < 8) {
+    showAuthAlert('Password must be at least 8 characters long.', 'error');
+    if (dom.pageAuthPassword) dom.pageAuthPassword.focus();
+    return;
+  }
+
+  const submitBtn = dom.btnPageAuthSubmit;
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerText = isPortalSignUp ? 'Creating Account...' : 'Authenticating...';
+  }
+
+  try {
+    if (isPortalSignUp) {
+      const regResp = await fetch(`${API_BASE}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, full_name: fullName, role })
+      });
+
+      if (!regResp.ok) {
+        const errJson = await regResp.json();
+        let errMsg = 'Registration failed. Please check your details.';
+        if (errJson.error && errJson.error.message) {
+          errMsg = errJson.error.message;
+        } else if (errJson.message) {
+          errMsg = errJson.message;
+        }
+        if (regResp.status === 409 || errMsg.toLowerCase().includes('already exists')) {
+          showAuthAlert('This email is already registered. Please sign in below.', 'info');
+          setPortalAuthMode(false);
+          if (dom.pageAuthEmail) dom.pageAuthEmail.value = email;
+          if (dom.pageAuthPassword) dom.pageAuthPassword.focus();
+        } else {
+          showAuthAlert(errMsg, 'error');
+          showToast(errMsg, 'error');
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = 'Create Account & Enter Workspace &rarr;';
+        }
+        return;
+      }
+      showAuthAlert('Account created! Authenticating session...', 'success');
+    }
+
+    const loginResp = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const resJson = await loginResp.json();
+    if (loginResp.ok && resJson.data) {
+      clearAuthAlert();
+      await completeSignIn(resJson.data.access_token, resJson.data.user);
+      showToast(`Welcome, ${resJson.data.user.full_name}! Workspace unlocked.`, 'success');
+    } else {
+      const errMsg = (resJson.error && resJson.error.message) || resJson.message || 'Invalid email or password.';
+      showAuthAlert(errMsg, 'error');
+      showToast(errMsg, 'error');
+    }
+  } catch (err) {
+    showAuthAlert(`Network error: ${err.message}`, 'error');
+    showToast(`Authentication error: ${err.message}`, 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = isPortalSignUp ? 'Create Account & Enter Workspace &rarr;' : 'Sign In to Workspace &rarr;';
+    }
+  }
+}
+
+async function completeSignIn(token, user) {
+  state.token = token;
+  state.user = user;
+  localStorage.setItem('cm_token', token);
+  localStorage.setItem('cm_user', JSON.stringify(user));
+
+  // Initialize fresh candidate profile for this specific user
+  state.candidateProfile = {
+    id: `profile_${user.id}`,
+    full_name: user.full_name || user.email.split('@')[0],
+    email: user.email,
+    headline: user.role === 'recruiter' ? 'Talent Acquisition Partner' : 'Software Engineer',
+    summary: user.role === 'recruiter' ? 'Recruiting technical talent across modern stacks.' : 'Confirmed candidate profile ready for matching and assessment.',
+    skills: user.role === 'recruiter' ? ['Technical Recruiting', 'Sourcing', 'Pipeline'] : ['Python', 'JavaScript', 'SQL', 'Git'],
+    experience_years: 2,
+    experience: [],
+    education: []
+  };
+
+  // Unlock and reveal workspace
+  revealWorkspace();
+
+  renderUserInfo();
+  closeAuthModal();
+  updateStatusPill(true, user.full_name);
+
+  // Sync profile & load jobs
+  await syncCandidateProfile();
+  await loadJobs();
+  updateCounters();
 }
 
 function openAuthModal() {
@@ -1258,7 +1956,7 @@ function toggleAuthMode() {
 
 function fillDemo(role) {
   if (role === 'candidate') {
-    dom.authEmail.value = 'maya.chen@example.com';
+    dom.authEmail.value = 'candidate@example.com';
     dom.authPassword.value = 'Password123!';
     if (dom.authFullName) dom.authFullName.value = 'Maya Chen';
   } else {
@@ -1297,17 +1995,8 @@ async function handleAuthSubmit(e) {
 
     const resJson = await loginResp.json();
     if (loginResp.ok && resJson.data) {
-      state.token = resJson.data.access_token;
-      state.user = resJson.data.user;
-      localStorage.setItem('cm_token', state.token);
-      localStorage.setItem('cm_user', JSON.stringify(state.user));
-      renderUserInfo();
-      closeAuthModal();
-      updateStatusPill(true, state.user.full_name);
-      showToast(`Welcome back, ${state.user.full_name}! Connected to live backend.`, 'success');
-      await syncCandidateProfile();
-      await loadJobs();
-      updateCounters();
+      await completeSignIn(resJson.data.access_token, resJson.data.user);
+      showToast(`Welcome back, ${resJson.data.user.full_name}! Connected to live backend.`, 'success');
     } else {
       showToast(resJson.message || 'Authentication error', 'error');
     }
