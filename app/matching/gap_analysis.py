@@ -35,8 +35,9 @@ class GapAnalyzer:
 
         for s in candidate.skills:
             canonical = canonicalize_skill_name(s.name)
-            candidate_skills_map[canonical.lower()] = (canonical, s.confidence)
-            if s.confidence < self.low_confidence_threshold:
+            is_verified = getattr(s, "is_verified", False)
+            candidate_skills_map[canonical.lower()] = (canonical, s.confidence, is_verified)
+            if s.confidence < self.low_confidence_threshold and not is_verified:
                 uncertain_skills_set.add(canonical)
 
         # Also inspect summary for skills mentioned casually without explicit validation
@@ -57,7 +58,7 @@ class GapAnalyzer:
         for req in job_required_canonical:
             req_lower = req.lower()
             if req_lower in candidate_skills_map:
-                matched_name, conf = candidate_skills_map[req_lower]
+                matched_name, conf, is_ver = candidate_skills_map[req_lower]
                 matched.append(matched_name)
             else:
                 # Check if it was casually mentioned in text without structured skill entry
@@ -65,12 +66,23 @@ class GapAnalyzer:
                     uncertain_skills_set.add(req)
                 missing.append(req)
 
+        # Verified skills are never uncertain
+        verified_names_lower = {
+            canonicalize_skill_name(s.name).lower()
+            for s in candidate.skills
+            if getattr(s, "is_verified", False)
+        }
+        uncertain_skills_set = {
+            u for u in uncertain_skills_set
+            if canonicalize_skill_name(u).lower() not in verified_names_lower
+        }
+
         # Also evaluate preferred skills
         for pref in job.preferred_skills:
             pref_canonical = canonicalize_skill_name(pref)
             pref_lower = pref_canonical.lower()
             if pref_lower in candidate_skills_map:
-                matched_name, _ = candidate_skills_map[pref_lower]
+                matched_name, _, _ = candidate_skills_map[pref_lower]
                 if matched_name not in matched:
                     matched.append(matched_name)
 

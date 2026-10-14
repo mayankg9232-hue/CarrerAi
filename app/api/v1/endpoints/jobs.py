@@ -3,7 +3,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, status
 
-from app.authentication.dependencies import get_current_user
+from app.authentication.dependencies import get_current_user, get_optional_current_user
 from app.authorization.dependencies import RequireRole
 from app.core.exceptions import NotFoundError
 from app.pipelines.job_ingestion_pipeline import JobIngestionPipeline
@@ -64,7 +64,7 @@ async def list_jobs(
     only_active: bool = Query(default=True, description="Filter for active jobs only"),
     limit: int = Query(default=20, ge=1, le=100, description="Page size limit"),
     offset: int = Query(default=0, ge=0, description="Page offset"),
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    current_user: Optional[AuthenticatedPrincipal] = Depends(get_optional_current_user),
     repo: IJobRepository = Depends(get_job_repository),
     cache: CacheService = Depends(get_jobs_cache_service),
 ) -> StandardResponse[List[Job]]:
@@ -105,7 +105,7 @@ async def list_jobs(
 )
 async def get_job(
     job_id: str,
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    current_user: Optional[AuthenticatedPrincipal] = Depends(get_optional_current_user),
     repo: IJobRepository = Depends(get_job_repository),
 ) -> StandardResponse[Job]:
     """Retrieve specific job listing by ID."""

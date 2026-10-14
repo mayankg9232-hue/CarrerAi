@@ -51,6 +51,18 @@ from app.retrieval.retriever import JobRetriever
 from app.schemas.job import Job
 from app.schemas.matching import MatchResult
 from app.schemas.resume import CandidateProfile, SkillItem
+from app.matching.assessment_catalog import (
+    AssessmentChallenge,
+    get_all_challenges,
+    get_challenge_by_id,
+    get_challenges_by_skill,
+)
+from app.services.skill_verification_service import (
+    SkillVerificationFeedback,
+    SkillVerificationService,
+    get_skill_verification_service,
+)
+from app.sandbox.service import SandboxService, get_sandbox_service
 
 
 # ==============================================================================
@@ -250,6 +262,65 @@ class SynthesizedMatchExplanationOutput(BaseModel):
 
 
 # ==============================================================================
+# TOOL 7: RECOMMEND SKILL ASSESSMENTS (Candidate Skill Verification)
+# ==============================================================================
+
+class RecommendSkillAssessmentsInput(BaseModel):
+    """Input payload to recommend coding assessments targeting candidate skill gaps."""
+
+    candidate_id: str = Field(..., min_length=1, max_length=100, description="Candidate profile ID")
+    job_id: Optional[str] = Field(None, max_length=100, description="Optional target job ID for contextual gap targeting")
+    language: Optional[str] = Field(None, max_length=50, description="Optional preferred programming language")
+
+
+class RecommendedAssessmentItem(BaseModel):
+    """Recommended coding challenge metadata."""
+
+    challenge_id: str
+    title: str
+    skill: str
+    language: str
+    difficulty: str
+    description_preview: str
+
+
+class RecommendSkillAssessmentsOutput(BaseModel):
+    """Output envelope for recommended skill verification challenges."""
+
+    candidate_id: str
+    target_skills: List[str]
+    recommendations: List[RecommendedAssessmentItem] = Field(default_factory=list)
+    total_recommendations: int = Field(ge=0)
+    guidance: str
+
+
+# ==============================================================================
+# TOOL 8: VERIFY SKILL FROM ASSESSMENT (Assessment Outcome Certification)
+# ==============================================================================
+
+class VerifySkillFromAssessmentInput(BaseModel):
+    """Input payload to evaluate an assessment submission and certify skill on profile."""
+
+    candidate_id: str = Field(..., min_length=1, max_length=100, description="Candidate profile ID")
+    submission_id: str = Field(..., min_length=1, max_length=100, description="Assessment submission ID")
+
+
+class VerifySkillFromAssessmentOutput(BaseModel):
+    """Output envelope certifying assessment verification outcome."""
+
+    candidate_id: str
+    submission_id: str
+    skill: str
+    verified: bool
+    score: float
+    passed_tests: int
+    total_tests: int
+    feedback_summary: str
+    remediation_advice: List[str] = Field(default_factory=list)
+    disclaimer: str
+
+
+# ==============================================================================
 # TOOL FACTORY FOR DEVELOPER B CAPABILITIES
 # ==============================================================================
 
@@ -261,6 +332,8 @@ def create_developer_b_tools(
     job_retriever: Optional[JobRetriever] = None,
     firecrawl_adapter: Optional[IFirecrawlAdapter] = None,
     skill_extractor: Optional[SkillExtractor] = None,
+    skill_verifier: Optional[SkillVerificationService] = None,
+    sandbox_service: Optional[SandboxService] = None,
 ) -> List[Any]:
     """Instantiate and configure Developer B's allowlisted capability tools."""
     # Resolve dependencies with safe singleton or mock fallbacks
@@ -270,6 +343,8 @@ def create_developer_b_tools(
     _llm_service = llm_service or get_llm_service()
     _job_retriever = job_retriever or JobRetriever(job_repository=_job_repo)
     _skill_extractor = skill_extractor or SkillExtractor()
+    _skill_verifier = skill_verifier or SkillVerificationService(resume_repo=_resume_repo)
+    _sandbox_service = sandbox_service or get_sandbox_service()
 
     # If no Firecrawl adapter provided, determine from environment configuration
     if firecrawl_adapter is None:
@@ -606,6 +681,112 @@ def create_developer_b_tools(
             timeout_seconds=8.0,
             max_retries=1,
             handler=_handle_synthesize_explanation,
+        )
+    )
+
+    # --------------------------------------------------------------------------
+    # 7. recommend_skill_assessments
+    # --------------------------------------------------------------------------
+    async def _handle_recommend_assessments(args: RecommendSkillAssessmentsInput) -> RecommendSkillAssessmentsOutput:
+        cand = await _resume_repo.get_by_id(args.candidate_id)
+        if not cand:
+            raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
+
+        target_skills: List[str] = []
+        if args.job_id:
+            job = await _job_repo.get_by_id(args.job_id)
+            if job and job.is_active:
+                gap = _matching_engine.gap_analyzer.analyze(cand, job)
+                target_skills = list(dict.fromkeys(gap.missing_skills + gap.uncertain_skills))
+
+        if not target_skills:
+            target_skills = [
+                s.name for s in cand.skills
+                if not getattr(s, "is_verified", False)
+            ]
+
+        items: List[RecommendedAssessmentItem] = []
+        seen_ids = set()
+        for sk in target_skills:
+            matched_challenges = get_challenges_by_skill(sk, args.language)
+            for ch in matched_challenges:
+                if ch.id not in seen_ids:
+                    seen_ids.add(ch.id)
+                    items.append(
+                        RecommendedAssessmentItem(
+                            challenge_id=ch.id,
+                            title=ch.title,
+                            skill=ch.skill,
+                            language=ch.language.value,
+                            difficulty=ch.difficulty,
+                            description_preview=ch.description[:120] + ("..." if len(ch.description) > 120 else ""),
+                        )
+                    )
+
+        return RecommendSkillAssessmentsOutput(
+            candidate_id=cand.id,
+            target_skills=target_skills,
+            recommendations=items,
+            total_recommendations=len(items),
+            guidance=(
+                f"Recommended {len(items)} coding assessment(s) to verify technical competencies "
+                f"and boost job matching scores."
+            ),
+        )
+
+    tools.append(
+        ToolDefinition(
+            name="recommend_skill_assessments",
+            description="Recommend verified coding challenges targeting candidate skill gaps or unverified skills.",
+            input_schema=RecommendSkillAssessmentsInput,
+            output_schema=RecommendSkillAssessmentsOutput,
+            required_permission="matching:execute",
+            timeout_seconds=5.0,
+            max_retries=1,
+            handler=_handle_recommend_assessments,
+        )
+    )
+
+    # --------------------------------------------------------------------------
+    # 8. verify_skill_from_assessment
+    # --------------------------------------------------------------------------
+    async def _handle_verify_assessment(args: VerifySkillFromAssessmentInput) -> VerifySkillFromAssessmentOutput:
+        cand = await _resume_repo.get_by_id(args.candidate_id)
+        if not cand:
+            raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
+
+        result = _sandbox_service.get_assessment_result(args.submission_id)
+        if not result:
+            raise ValueError(f"Assessment submission '{args.submission_id}' not found.")
+
+        if result.candidate_id != args.candidate_id:
+            raise ValueError("Submission candidate ID does not match specified candidate profile.")
+
+        feedback = await _skill_verifier.evaluate_and_verify(result)
+
+        return VerifySkillFromAssessmentOutput(
+            candidate_id=cand.id,
+            submission_id=result.submission_id,
+            skill=feedback.skill,
+            verified=feedback.verified,
+            score=feedback.score,
+            passed_tests=feedback.passed_tests,
+            total_tests=feedback.total_tests,
+            feedback_summary=feedback.feedback_summary,
+            remediation_advice=feedback.remediation_advice,
+            disclaimer=feedback.disclaimer,
+        )
+
+    tools.append(
+        ToolDefinition(
+            name="verify_skill_from_assessment",
+            description="Evaluate completed code assessment execution result and certify verified skill status on candidate profile.",
+            input_schema=VerifySkillFromAssessmentInput,
+            output_schema=VerifySkillFromAssessmentOutput,
+            required_permission="matching:execute",
+            timeout_seconds=5.0,
+            max_retries=1,
+            handler=_handle_verify_assessment,
         )
     )
 

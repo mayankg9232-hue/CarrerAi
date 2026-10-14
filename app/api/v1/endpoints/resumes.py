@@ -1,7 +1,7 @@
 """Candidate resume upload and profile retrieval endpoints."""
 
 from typing import List
-from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi import APIRouter, Body, Depends, File, UploadFile, status
 
 from app.authentication.dependencies import get_current_user
 from app.authorization.dependencies import assert_resource_owner
@@ -90,4 +90,34 @@ async def list_candidate_profiles(
     return StandardResponse(
         data=profiles,
         message="Candidate profiles retrieved successfully.",
+    )
+
+
+@router.put(
+    "/{profile_id}",
+    response_model=StandardResponse[CandidateProfile],
+    summary="Update candidate profile",
+    description="Update candidate profile summary, skills, and preferences.",
+)
+async def update_candidate_profile(
+    profile_id: str,
+    payload: CandidateProfile = Body(..., embed=False),
+    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    repo: IResumeRepository = Depends(get_resume_repository),
+) -> StandardResponse[CandidateProfile]:
+    """Update existing candidate profile with resource ownership check."""
+    existing = await repo.get_by_id(profile_id)
+    if not existing:
+        raise NotFoundError(f"Candidate profile '{profile_id}' not found.")
+    assert_resource_owner(
+        resource_user_id=existing.user_id,
+        principal=current_user,
+        allowed_roles=["admin", "recruiter"],
+    )
+    payload.id = profile_id
+    payload.user_id = existing.user_id
+    updated = await repo.save_profile(payload)
+    return StandardResponse(
+        data=updated,
+        message="Candidate profile updated successfully.",
     )

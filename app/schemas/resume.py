@@ -12,6 +12,10 @@ class SkillItem(BaseModel):
     category: str = Field(default="general", description="Skill category (e.g. language, framework, database, tool)")
     confidence: float = Field(ge=0.0, le=1.0, default=1.0, description="Extraction confidence score between 0.0 and 1.0")
     years_experience: Optional[float] = Field(default=None, ge=0.0, description="Estimated years of experience with skill")
+    is_verified: bool = Field(default=False, description="Whether this skill has been verified via candidate code assessment")
+    verified_at: Optional[datetime] = Field(default=None, description="UTC timestamp when skill was verified")
+    verification_score: Optional[float] = Field(default=None, ge=0.0, le=100.0, description="Score percentage achieved on verification assessment")
+    verification_submission_id: Optional[str] = Field(default=None, description="Assessment submission ID certifying this skill")
 
 
 class ExperienceItem(BaseModel):

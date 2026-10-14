@@ -29,6 +29,137 @@ settings = get_settings()
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan context manager for startup and shutdown routines."""
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION} [Env: {settings.APP_ENV}]")
+
+    # Seed canonical sample jobs and demo accounts matching CareerMatch AI spec
+    try:
+        from app.repositories.job_repo import get_job_repository
+        from app.schemas.job import Job
+        job_repo = get_job_repository()
+        existing_jobs = await job_repo.list_all()
+        if not existing_jobs:
+            sample_jobs = [
+                Job(
+                    id="job_atlas_01",
+                    title="Frontend Engineer",
+                    company="Atlas Labs",
+                    location="San Francisco, CA · Hybrid (2 days / week)",
+                    description="Atlas Labs is a product team building collaborative work software. This role focuses on fast, reliable interfaces that make complex workflows feel simple.",
+                    required_skills=["React", "TypeScript", "CSS", "Jest"],
+                    preferred_skills=["GraphQL", "Accessibility", "WCAG"],
+                    is_active=True,
+                ),
+                Job(
+                    id="job_forma_02",
+                    title="Product Engineer",
+                    company="Forma",
+                    location="US · Remote",
+                    description="Build user-facing workflows and design systems for enterprise team analytics.",
+                    required_skills=["React", "TypeScript", "CSS"],
+                    preferred_skills=["Node.js", "Docker"],
+                    is_active=True,
+                ),
+                Job(
+                    id="job_northstar_03",
+                    title="UI Engineer",
+                    company="Northstar",
+                    location="San Francisco, CA · Hybrid",
+                    description="Create reusable web components and interface libraries across multiple product lines.",
+                    required_skills=["React", "TypeScript", "CSS"],
+                    preferred_skills=["Accessibility", "Storybook"],
+                    is_active=True,
+                ),
+                Job(
+                    id="job_parcel_04",
+                    title="Frontend Developer",
+                    company="Parcel",
+                    location="US · Remote",
+                    description="Modern ecommerce logistics interface development with React and test automation.",
+                    required_skills=["React", "TypeScript", "CSS"],
+                    preferred_skills=["Cypress", "Testing"],
+                    is_active=True,
+                ),
+            ]
+            for j in sample_jobs:
+                await job_repo.create_job(j)
+            logger.info(f"Seeded {len(sample_jobs)} CareerMatch sample jobs for local host demonstration")
+
+        from app.repositories.user_repo import get_user_repository
+        from app.authentication.service import AuthenticationService
+        from app.repositories.resume_repo import get_resume_repository
+        from app.schemas.resume import CandidateProfile, SkillItem
+        user_repo = get_user_repository()
+        auth_service = AuthenticationService(repository=user_repo)
+        resume_repo = get_resume_repository()
+
+        # 1. Maya Chen (Canonical Profile from PDF)
+        maya_user = await user_repo.get_by_email("maya.chen@example.com")
+        if not maya_user:
+            maya_user = await user_repo.create_user(
+                email="maya.chen@example.com",
+                hashed_password=auth_service.hash_password("Password123!"),
+                full_name="Maya Chen",
+                role="candidate",
+            )
+            maya_profile = CandidateProfile(
+                id=f"profile_{maya_user.id}",
+                user_id=maya_user.id,
+                raw_hash="hash_maya_chen_resume",
+                full_name="Maya Chen",
+                email="maya.chen@example.com",
+                summary="Frontend engineer with 4 years building accessible-minded, performant web products with React and TypeScript. Experienced in reusable UI, testing and design collaboration.",
+                skills=[
+                    SkillItem(name="React", category="Framework", confidence=0.98, is_verified=True),
+                    SkillItem(name="TypeScript", category="Language", confidence=0.96, is_verified=True),
+                    SkillItem(name="CSS", category="Styling", confidence=0.95),
+                    SkillItem(name="Jest", category="Testing", confidence=0.90),
+                    SkillItem(name="Figma", category="Design", confidence=0.88),
+                    SkillItem(name="Git", category="DevOps", confidence=0.85),
+                ],
+                experience=[],
+                education=[],
+            )
+            await resume_repo.save_profile(maya_profile)
+
+        # 2. General Candidate Demo
+        candidate_user = await user_repo.get_by_email("candidate@example.com")
+        if not candidate_user:
+            candidate_user = await user_repo.create_user(
+                email="candidate@example.com",
+                hashed_password=auth_service.hash_password("Password123!"),
+                full_name="Maya Chen",
+                role="candidate",
+            )
+            profile = CandidateProfile(
+                id=f"profile_{candidate_user.id}",
+                user_id=candidate_user.id,
+                raw_hash="hash_demo_candidate",
+                full_name="Maya Chen",
+                email="candidate@example.com",
+                summary="Frontend engineer with 4 years building accessible-minded, performant web products with React and TypeScript.",
+                skills=[
+                    SkillItem(name="React", category="Framework", confidence=0.98, is_verified=True),
+                    SkillItem(name="TypeScript", category="Language", confidence=0.95, is_verified=True),
+                    SkillItem(name="CSS", category="Styling", confidence=0.90),
+                    SkillItem(name="Jest", category="Testing", confidence=0.88),
+                    SkillItem(name="Python", category="Language", confidence=0.85),
+                ],
+                experience=[],
+                education=[],
+            )
+            await resume_repo.save_profile(profile)
+
+        # 3. Recruiter Demo
+        recruiter_user = await user_repo.get_by_email("recruiter@example.com")
+        if not recruiter_user:
+            await user_repo.create_user(
+                email="recruiter@example.com",
+                hashed_password=auth_service.hash_password("Password123!"),
+                full_name="Alex Recruiter",
+                role="recruiter",
+            )
+    except Exception as exc:
+        logger.warning(f"Demo data seeding encountered error: {exc}")
+
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
 
@@ -73,12 +204,23 @@ def create_application() -> FastAPI:
         async def trigger_unhandled_error() -> None:
             raise RuntimeError("Deliberate unhandled test error to verify safe 500 handler")
 
-    # 5. Local Dev UI Static Mount
+    # 5. Frontend & Dev UI Static Mounts
+    frontend_dir = Path("frontend")
     dev_ui_dir = Path("dev_ui")
+
+    if frontend_dir.exists():
+        app.mount("/frontend-assets", StaticFiles(directory="frontend"), name="frontend_assets")
+
+        @app.get("/", include_in_schema=False)
+        @app.get("/app", include_in_schema=False)
+        async def serve_frontend() -> FileResponse:
+            index_path = frontend_dir / "index.html"
+            return FileResponse(index_path)
+
     if dev_ui_dir.exists():
         app.mount("/dev-ui-assets", StaticFiles(directory="dev_ui"), name="dev_ui_assets")
 
-        @app.get("/", include_in_schema=False)
+        @app.get("/dev-ui", include_in_schema=False)
         @app.get("/ui", include_in_schema=False)
         async def serve_dev_ui() -> FileResponse:
             index_path = dev_ui_dir / "index.html"

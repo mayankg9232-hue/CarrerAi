@@ -13,6 +13,10 @@ from app.schemas.assessment import (
     SupportedLanguageSpec,
 )
 from app.schemas.auth import AuthenticatedPrincipal
+from app.services.skill_verification_service import (
+    SkillVerificationService,
+    get_skill_verification_service,
+)
 
 
 class AssessmentApplicationService:
@@ -22,9 +26,11 @@ class AssessmentApplicationService:
         self,
         sandbox_service: Optional[SandboxService] = None,
         resume_repo: Optional[IResumeRepository] = None,
+        skill_verifier: Optional[SkillVerificationService] = None,
     ) -> None:
         self.sandbox = sandbox_service or SandboxService()
         self.resume_repo = resume_repo or get_resume_repository()
+        self.skill_verifier = skill_verifier or get_skill_verification_service()
 
     def get_supported_languages(self) -> List[SupportedLanguageSpec]:
         """Return allowlisted programming languages and execution limits."""
@@ -52,7 +58,13 @@ class AssessmentApplicationService:
         # 3. Dispatch to sandbox execution service
         result = await self.sandbox.execute_assessment(request)
 
-        # 4. Redacted audit event
+        # 4. Developer B Skill Verification and profile certification
+        try:
+            await self.skill_verifier.evaluate_and_verify(result)
+        except Exception as exc:
+            logger.warning("Skill verification hook failed for submission %s: %s", result.submission_id, exc)
+
+        # 5. Redacted audit event
         logger.info(
             "Assessment Executed: submission_id=%s candidate_id=%s skill=%s language=%s "
             "status=%s passed=%d/%d duration_ms=%.1f caller_id=%s role=%s",

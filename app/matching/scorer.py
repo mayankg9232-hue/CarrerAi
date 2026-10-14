@@ -24,13 +24,16 @@ class DeterministicScorer:
         self.semantic_weight = semantic_weight
 
     def calculate_skill_score(self, candidate: CandidateProfile, job: Job) -> float:
-        """Calculate technical skill overlap score (0.0 to 100.0) with alias resolution and confidence."""
+        """Calculate technical skill overlap score (0.0 to 100.0) with alias resolution, confidence, and verified bonus."""
         if not job.required_skills and not job.preferred_skills:
             # If no skills specified in job listing, use neutral baseline
             return 60.0
 
         candidate_skills = {
-            canonicalize_skill_name(s.name).lower(): s.confidence
+            canonicalize_skill_name(s.name).lower(): (
+                1.0 if getattr(s, "is_verified", False) else s.confidence,
+                getattr(s, "is_verified", False),
+            )
             for s in candidate.skills
         }
 
@@ -40,27 +43,36 @@ class DeterministicScorer:
 
         total_weight = 0.0
         accumulated_score = 0.0
+        verified_matches = 0
 
         # Required skills evaluation
         for req in job.required_skills:
             total_weight += req_weights
             canonical = canonicalize_skill_name(req).lower()
             if canonical in candidate_skills:
-                conf = candidate_skills[canonical]
+                conf, is_ver = candidate_skills[canonical]
                 accumulated_score += req_weights * conf
+                if is_ver:
+                    verified_matches += 1
 
         # Preferred skills evaluation
         for pref in job.preferred_skills:
             total_weight += pref_weights
             canonical = canonicalize_skill_name(pref).lower()
             if canonical in candidate_skills:
-                conf = candidate_skills[canonical]
+                conf, is_ver = candidate_skills[canonical]
                 accumulated_score += pref_weights * conf
+                if is_ver:
+                    verified_matches += 1
 
         if total_weight == 0.0:
             return 60.0
 
         raw_score = (accumulated_score / total_weight) * 100.0
+        # Verification bonus: each verified skill required/preferred adds +5 points (up to 15 max)
+        if verified_matches > 0:
+            raw_score = min(100.0, raw_score + min(15.0, verified_matches * 5.0))
+
         return max(0.0, min(100.0, round(raw_score, 1)))
 
     def calculate_experience_score(self, candidate: CandidateProfile, job: Job) -> float:

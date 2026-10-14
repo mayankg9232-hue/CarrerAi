@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-job-matcher:production
+    container_name: ai-job-matcher-prod
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY}
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_ENABLED=True
+      - PRIMARY_LLM_PROVIDER=${PRIMARY_LLM_PROVIDER:-gemini}
+      - PRIMARY_LLM_API_KEY=${PRIMARY_LLM_API_KEY}
+      - PRIMARY_LLM_MODEL=${PRIMARY_LLM_MODEL:-gemini-2.5-flash}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://jobmatcher.example.com}
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1024M
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: ai-job-matcher-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  redis-data:

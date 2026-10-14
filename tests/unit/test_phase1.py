@@ -100,13 +100,18 @@ def test_config_validation() -> None:
 
 @pytest.mark.asyncio
 async def test_dev_ui_served(async_client: AsyncClient) -> None:
-    """Test 7: Local Dev UI index is served at root and /ui paths."""
-    for path in ["/", "/ui"]:
+    """Test 7: Dev UI index is served at /dev-ui and /ui, and production UI at root."""
+    for path in ["/dev-ui", "/ui"]:
         response = await async_client.get(path)
         assert response.status_code == 200
         assert "text/html" in response.headers.get("content-type", "")
         assert "AI Job Matcher" in response.text
         assert "Developer Testing Dashboard" in response.text
+
+    root_resp = await async_client.get("/")
+    assert root_resp.status_code == 200
+    assert "text/html" in root_resp.headers.get("content-type", "")
+    assert "AI Job Matcher" in root_resp.text
 
 
 @pytest.mark.asyncio

@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Job Matcher — CareerMatch AI</title>
+  <meta name="description" content="AI Job Matcher connects candidates to tech jobs with explainable matching, skill gap analysis, and verified assessments.">
+  <link rel="stylesheet" href="/frontend-assets/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234F46E5'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='12' fill='none' stroke-linecap='round'/></svg>">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- ==============================================================================
+         LEFT SIDEBAR NAVIGATION (Desktop 240px / Tablet 80px / Mobile Nav)
+         ============================================================================== -->
+    <aside class="app-sidebar" aria-label="Main Navigation">
+      <div class="sidebar-header">
+        <a href="#overview" class="brand-logo-wrap" id="brandLogo">
+          <div class="brand-icon">C</div>
+          <div>
+            <div class="brand-text">CareerMatch AI</div>
+            <div class="brand-tag">Evidence Over Assumptions</div>
+          </div>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Your Workspace</div>
+        <ul class="nav-list" role="tablist">
+          <li class="nav-item">
+            <button class="nav-link active" id="tabOverview" data-view="view-overview" role="tab" aria-selected="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              <span class="nav-label">Overview</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tabProfile" data-view="view-resume" role="tab" aria-selected="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <span class="nav-label">My resume</span>
+              <span class="nav-counter" id="navSkillsCount">6</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tabJobs" data-view="view-jobs" role="tab" aria-selected="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              <span class="nav-label">Job matches</span>
+              <span class="nav-counter" id="navJobsCount">12</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tabMatching" data-view="view-matching" role="tab" aria-selected="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+              <span class="nav-label">Match & Explain</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tabSaved" data-view="view-saved" role="tab" aria-selected="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              <span class="nav-label">Saved jobs</span>
+              <span class="nav-counter" id="navSavedCount">3</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tabApplications" data-view="view-tracker" role="tab" aria-selected="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              <span class="nav-label">Applications</span>
+              <span class="nav-counter" id="navAppsCount">6</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tabInsights" data-view="view-insights" role="tab" aria-selected="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              <span class="nav-label">Career insights</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tabAssessments" data-view="view-assessments" role="tab" aria-selected="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <span class="nav-label">Coding Sandbox</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tabAgent" data-view="view-agent" role="tab" aria-selected="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span class="nav-label">Career Agent</span>
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="tabSettings" data-view="view-settings" role="tab" aria-selected="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <span class="nav-label">Profile & settings</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-callout">
+          <div class="callout-title">A clearer next step</div>
+          <div class="callout-desc">Your experience is more than keywords. See what each match is based on.</div>
+          <a href="#matching" class="callout-link" id="btnSidebarHowMatching">How matching works &nearr;</a>
+        </div>
+        <div class="sidebar-user-card" id="userBadge">
+          <div class="user-avatar-circle" id="userAvatar">GV</div>
+          <div class="user-info-text">
+            <div class="user-name-display" id="userNameLabel">Guest Visitor</div>
+            <div class="user-sub-display" id="userRoleLabel">Sign in to personalize</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ==============================================================================
+         MAIN VIEWPORT
+         ============================================================================== -->
+    <main class="app-main">
+      <header class="app-topbar">
+        <div class="topbar-breadcrumbs">
+          <span>Workspace</span>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current" id="currentBreadcrumb">Overview</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="status-indicator-pill">
+            <span class="status-dot"></span>
+            <span id="backendStatusLabel">API Online &bull; v0.1.0</span>
+          </div>
+          <button class="btn btn-secondary btn-sm" id="btnAuthAction">Sign In</button>
+        </div>
+      </header>
+
+      <div class="content-body">
+
+        <!-- ========================================================================
+             1. OVERVIEW VIEW
+             ======================================================================== -->
+        <section class="view-section active" id="view-overview">
+          <div class="page-header-row">
+            <div class="page-header-text">
+              <div class="pre-title">Explainable AI Career Intelligence</div>
+              <h1 id="overviewGreeting">Find the roles that fit. Understand why.</h1>
+              <p id="overviewSubheading">Turn your resume into an explainable job shortlist. See your strengths, understand the gaps, and make your next move with intention.</p>
+            </div>
+            <div style="display: flex; gap: var(--space-3); flex-wrap: wrap;">
+              <button class="btn btn-primary" id="btnOverviewExplore">Explore active roles</button>
+              <button class="btn btn-secondary" id="btnOverviewUploadResume">Upload resume</button>
+            </div>
+          </div>
+
+          <!-- Search Direction Card -->
+          <div class="search-direction-card">
+            <div class="search-direction-left">
+              <div class="sd-eyebrow">Search Direction & Scope</div>
+              <div class="sd-role-title">
+                <span id="sdTitleDisplay">Tech & Engineering Roles</span>
+                <span class="badge-pill" id="sdLevelDisplay">All Experience Levels</span>
+              </div>
+              <div class="sd-meta" id="sdMetaDisplay">Remote, Hybrid & On-site &bull; Live active employer listings</div>
+            </div>
+            <div>
+              <button class="btn btn-secondary btn-sm" id="btnEditSearchDirection">Filter & search</button>
+            </div>
+          </div>
+
+          <!-- 4 Stat Tiles -->
+          <div class="stat-tiles-grid">
+            <div class="stat-tile">
+              <div class="st-label">Available positions</div>
+              <div class="st-value" id="statMatchesCount">12</div>
+              <div class="st-sub">Live job opportunities</div>
+            </div>
+            <div class="stat-tile">
+              <div class="st-label">Saved jobs</div>
+              <div class="st-value" id="statSavedCount">0</div>
+              <div class="st-sub">Your personal shortlist</div>
+            </div>
+            <div class="stat-tile">
+              <div class="st-label">Applications</div>
+              <div class="st-value" id="statAppsCount">0</div>
+              <div class="st-sub">Active pipeline entries</div>
+            </div>
+            <div class="stat-tile">
+              <div class="st-label">Resume profile</div>
+              <div class="st-value" id="statResumeStatus" style="font-size: 18px; color: var(--color-indigo);">Upload to Review</div>
+              <div class="st-sub" id="statResumeSub">PDF or DOCX format</div>
+            </div>
+          </div>
+
+          <!-- Overview Grid (Strongest matches vs Resume/Activity) -->
+          <div class="overview-grid">
+            <div>
+              <div class="card-header-bar">
+                <div>
+                  <h2 class="card-title">Top matching roles</h2>
+                  <div class="card-subtext">Estimated alignment based on current opportunities.</div>
+                </div>
+                <button class="btn btn-outline btn-sm" id="btnOverviewViewAll">View all roles &rarr;</button>
+              </div>
+              <div class="job-cards-list" id="overviewMatchesList">
+                <!-- Dynamically populated or fallback sample cards -->
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+              <!-- Your Resume Source Card -->
+              <div class="card" id="overviewResumeCard">
+                <div class="card-header-bar">
+                  <h3 class="card-title" style="font-size: 14px;">Your resume</h3>
+                  <span class="badge-pill" id="overviewResumeBadge" style="color: var(--color-text-subtle); background: var(--color-border-subtle);">No upload yet</span>
+                </div>
+                <div style="font-size: 13.5px; font-weight: 700; color: var(--color-navy);" id="overviewResumeFilename">No resume uploaded</div>
+                <div style="font-size: 12px; color: var(--color-text-subtle); margin-top: 2px;" id="overviewResumeMeta">PDF / DOCX supported &bull; Max 10 MB</div>
+                <div style="font-size: 12.5px; color: var(--color-text-muted); margin: var(--space-3) 0;" id="overviewResumeDesc">Upload your resume to extract skills, calculate explainable match scores, and highlight gaps.</div>
+                <button class="btn btn-primary btn-sm" style="width: 100%;" id="btnOverviewReviewResume">Upload & analyze resume</button>
+              </div>
+
+              <!-- Recent Activity -->
+              <div class="card">
+                <h3 class="card-title" style="font-size: 14px; margin-bottom: var(--space-4);">Recent activity</h3>
+                <div class="activity-timeline">
+                  <div class="activity-item">
+                    <span class="activity-dot"></span>
+                    <div>
+                      <div class="activity-desc">Saved Atlas Labs</div>
+                      <div class="activity-time">Today &bull; 09:42</div>
+                    </div>
+                  </div>
+                  <div class="activity-item">
+                    <span class="activity-dot"></span>
+                    <div>
+                      <div class="activity-desc">Reviewed resume profile</div>
+                      <div class="activity-time">Today &bull; 09:30</div>
+                    </div>
+                  </div>
+                  <div class="activity-item">
+                    <span class="activity-dot"></span>
+                    <div>
+                      <div class="activity-desc">Northstar interview scheduled</div>
+                      <div class="activity-time">Oct 13 &bull; 16:05</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Useful Next Step Card -->
+              <div class="card" style="background: var(--color-indigo-subtle); border-color: rgba(79, 70, 229, 0.2);">
+                <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--color-indigo); margin-bottom: 2px;">A useful next step</div>
+                <div style="font-size: 14px; font-weight: 700; color: var(--color-navy); margin-bottom: 4px;">Make accessibility visible in your portfolio.</div>
+                <div style="font-size: 12.5px; color: var(--color-text-muted); line-height: 1.4; margin-bottom: var(--space-3);">
+                  Accessibility appears in 7 of 12 sample roles. Your resume doesn't yet evidence it.
+                </div>
+                <button class="btn btn-primary btn-sm" id="btnOverviewViewInsights">View career insights</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================================
+             2. MY RESUME VIEW (SETUP STEP 1 -> 2 -> 3)
+             ======================================================================== -->
+        <section class="view-section" id="view-resume">
+          <!-- Stepper -->
+          <div class="stepper-header">
+            <div class="step-item" id="step1Indicator">
+              <span class="step-num">1</span>
+              <span>Preferences</span>
+            </div>
+            <div class="step-divider"></div>
+            <div class="step-item" id="step2Indicator">
+              <span class="step-num">2</span>
+              <span>Upload PDF</span>
+            </div>
+            <div class="step-divider"></div>
+            <div class="step-item active" id="step3Indicator">
+              <span class="step-num">3</span>
+              <span>Review Structured Story</span>
+            </div>
+          </div>
+
+          <div class="page-header-row">
+            <div class="page-header-text">
+              <div class="pre-title" id="resumeStepPreTitle">SETUP &bull; STEP 2 OF 3</div>
+              <h1 id="resumeMainTitle">Upload your resume to get started.</h1>
+              <p id="resumeSubTitle">Upload your CV to automatically extract skills, analyze experience, and match with active engineering roles.</p>
+            </div>
+            <div class="card-actions-group">
+              <button class="btn btn-secondary btn-sm" id="btnTriggerNewUpload">Upload New Resume</button>
+              <button class="btn btn-primary btn-sm" id="btnSaveProfile">Save & find matches</button>
+            </div>
+          </div>
+
+          <!-- Upload Dropzone (Open by default) -->
+          <div class="dropzone-box" id="dropzoneCv">
+            <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <div class="dropzone-title">Drop your resume PDF or DOCX here</div>
+            <div class="dropzone-subtitle">Text-based PDF only &bull; Up to 10 MB &bull; Magic bytes validated</div>
+            <button class="btn btn-primary" type="button" id="btnSelectCvFile">Choose Resume File</button>
+            <input type="file" id="inputCvFile" accept=".pdf,.docx" style="display: none;">
+            <div class="dropzone-specs" style="margin-top: var(--space-4);">No files are shared without your explicit action. Secure and private.</div>
+          </div>
+
+          <!-- Structured Review Grid -->
+          <div class="resume-editor-grid">
+            <div class="card">
+              <div class="form-group">
+                <label class="form-label" for="editHeadline">Target headline</label>
+                <input class="form-input" id="editHeadline" type="text" placeholder="e.g. Senior Frontend Engineer / Full Stack Developer" value="">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="editSummary">Professional summary (editable)</label>
+                <textarea class="form-textarea" id="editSummary" placeholder="Upload a resume or write your summary here..."></textarea>
+              </div>
+
+              <!-- Editable Skills with 'x' tags -->
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <label class="form-label" style="margin-bottom: 0;">Confirmed Skills</label>
+                  <span style="font-size: 11.5px; color: var(--color-text-subtle);" id="confirmedSkillsCount">0 confirmed skills</span>
+                </div>
+                <div class="skills-editable-wrap" id="editableSkillsList">
+                  <!-- Populated by JS -->
+                </div>
+                <div style="display: flex; gap: var(--space-2);">
+                  <input class="form-input" id="inputNewSkill" type="text" placeholder="Add a skill (e.g. GraphQL, Tailwind, Node.js)...">
+                  <button class="btn btn-secondary btn-sm" id="btnAddSkill">Add</button>
+                </div>
+              </div>
+
+              <!-- Experience Timeline -->
+              <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <label class="form-label" style="margin-bottom: 0;">Experience</label>
+                  <button class="btn btn-outline btn-sm" id="btnAddExp">+ Add experience</button>
+                </div>
+                <div id="experienceItemsList">
+                  <div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;">Upload your resume above to automatically parse your work experience.</div>
+                </div>
+              </div>
+
+              <!-- Education -->
+              <div class="form-group">
+                <label class="form-label">Education</label>
+                <div id="educationItemsList">
+                  <div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;">Upload your resume above to automatically parse your education history.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Source Card & Excerpt -->
+            <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+              <div class="card">
+                <div class="card-header-bar">
+                  <h3 class="card-title" style="font-size: 14px;">Resume source</h3>
+                  <button class="btn btn-outline btn-sm" id="btnReplaceResume">Upload</button>
+                </div>
+                <div style="font-size: 13.5px; font-weight: 700; color: var(--color-navy);" id="resumeDetailFilename">No resume uploaded</div>
+                <div style="font-size: 12px; color: var(--color-text-subtle); margin-top: 2px;" id="resumeDetailMeta">PDF / DOCX supported &bull; Max 10 MB</div>
+
+                <div style="margin-top: var(--space-5); border-top: 1px solid var(--color-border-subtle); padding-top: var(--space-4);">
+                  <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--color-text-subtle); margin-bottom: var(--space-2);">Source Excerpt &bull; Page 1</div>
+                  <div style="background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); padding: var(--space-3); font-family: var(--font-mono); font-size: 11px; color: var(--color-text-muted); line-height: 1.6;" id="resumeSourceExcerpt">
+                    No resume uploaded yet.<br><br>
+                    Upload your PDF or DOCX resume to view extracted source text and parsed skills here.
+                  </div>
+                </div>
+              </div>
+
+              <div class="legal-caveat-box">
+                <div style="font-weight: 700; color: var(--color-navy); margin-bottom: 2px;">Your review matters</div>
+                Extraction can miss context. A missing skill means <strong>not evidenced</strong> in your resume text, not that you don't possess the skill. Changes to confirmed evidence recalculate alignment estimates.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================================
+             3. JOB MATCHES VIEW (SEARCH & FILTER SIDEBAR)
+             ======================================================================== -->
+        <section class="view-section" id="view-jobs">
+          <div class="page-header-row">
+            <div class="page-header-text">
+              <div class="pre-title">Your Experience, In Context</div>
+              <h1>A shortlist with a reason.</h1>
+              <p>Explore sample roles aligned with your reviewed resume and preferences.</p>
+            </div>
+          </div>
+
+          <!-- Search Bar Form -->
+          <form class="search-direction-card" id="jobSearchForm" style="margin-bottom: var(--space-6);">
+            <div style="display: flex; gap: var(--space-4); flex: 1; flex-wrap: wrap;">
+              <div style="flex: 1; min-width: 200px;">
+                <label class="form-label" style="font-size: 11px;" for="inputJobQuery">Role or keyword</label>
+                <input class="form-input" id="inputJobQuery" type="text" placeholder="Frontend / UI / Product Engineer" value="Frontend">
+              </div>
+              <div style="flex: 1; min-width: 200px;">
+                <label class="form-label" style="font-size: 11px;" for="inputJobLocation">Location</label>
+                <input class="form-input" id="inputJobLocation" type="text" placeholder="San Francisco + US remote" value="San Francisco">
+              </div>
+            </div>
+            <div style="align-self: flex-end;">
+              <button class="btn btn-primary" type="submit" id="btnSubmitSearch">Search sample jobs</button>
+            </div>
+          </form>
+
+          <!-- Active Chips Bar -->
+          <div class="active-chips-bar">
+            <span style="font-size: 12.5px; font-weight: 600; color: var(--color-text-muted); margin-right: 4px;">Active filters:</span>
+            <span class="filter-chip">Mid-level &times;</span>
+            <span class="filter-chip">$120k&ndash;$160k &times;</span>
+            <span class="filter-chip">Hybrid + Remote &times;</span>
+            <button class="btn btn-sm btn-secondary" style="margin-left: auto;" id="btnResetFilters">Reset filters</button>
+          </div>
+
+          <!-- Matches Layout (Sidebar + Results) -->
+          <div class="matches-layout">
+            <!-- Filter Sidebar -->
+            <aside class="filter-sidebar">
+              <div class="filter-group">
+                <div class="filter-title">
+                  <span>Experience level</span>
+                </div>
+                <label class="checkbox-label"><input type="checkbox" checked> Mid-level &bull; 3&ndash;5 years</label>
+                <label class="checkbox-label"><input type="checkbox"> Senior &bull; 5+ years</label>
+                <label class="checkbox-label"><input type="checkbox"> Lead / Staff</label>
+              </div>
+
+              <div class="filter-group">
+                <div class="filter-title">
+                  <span>Base salary (USD / yr)</span>
+                </div>
+                <div style="font-size: 12px; color: var(--color-indigo); font-weight: 600; margin-bottom: 6px;" id="salaryRangeLabel">$120,000 &ndash; $160,000</div>
+                <input type="range" min="80000" max="220000" step="5000" value="120000" style="width: 100%; accent-color: var(--color-indigo);">
+              </div>
+
+              <div class="filter-group">
+                <div class="filter-title">
+                  <span>Work type</span>
+                </div>
+                <label class="checkbox-label"><input type="checkbox" checked> Hybrid</label>
+                <label class="checkbox-label"><input type="checkbox" checked> Remote</label>
+                <label class="checkbox-label"><input type="checkbox"> On-site</label>
+              </div>
+
+              <div class="filter-group">
+                <div class="filter-title">
+                  <span>Employment</span>
+                </div>
+                <label class="checkbox-label"><input type="checkbox" checked> Full-time</label>
+                <label class="checkbox-label"><input type="checkbox"> Contract</label>
+              </div>
+            </aside>
+
+            <!-- Results Column -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+                <div style="font-size: 13.5px; font-weight: 700; color: var(--color-navy);" id="jobsResultsCountLabel">3 matching roles &bull; Sample corpus</div>
+                <div style="font-size: 12px; color: var(--color-text-subtle);">Sort: <strong>Highest estimated match</strong></div>
+              </div>
+
+              <div class="job-cards-list" id="jobFeed">
+                <!-- Dynamically populated job cards -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================================
+             4. MATCH & EXPLAIN VIEW ("WHY AN ESTIMATED 88%?")
+             ======================================================================== -->
+        <section class="view-section" id="view-matching">
+          <!-- Job Selection Bar for Matching -->
+          <div class="search-direction-card" style="margin-bottom: var(--space-6);">
+            <div style="flex: 1;">
+              <label class="form-label" style="font-size: 11px;" for="selectMatchingJob">Select Job for Multi-Factor Explainability</label>
+              <select class="form-select" id="selectMatchingJob">
+                <option value="job_atlas_01">Atlas Labs — Frontend Engineer ($130k–$160k · SF Hybrid)</option>
+                <option value="job_forma_02">Forma — Product Engineer ($125k–$155k · Remote)</option>
+                <option value="job_northstar_03">Northstar — UI Engineer ($120k–$150k · SF Hybrid)</option>
+              </select>
+            </div>
+            <div style="align-self: flex-end;">
+              <button class="btn btn-primary" id="btnCalculateMatch">Calculate Match & Breakdown</button>
+            </div>
+          </div>
+
+          <!-- Matching Results Dashboard -->
+          <div id="matchingResultsDashboard">
+            <!-- Header Card with Score Gauge -->
+            <div class="job-detail-header-card">
+              <button class="back-link-btn" id="btnBackToMatches">&larr; Back to job matches</button>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-4);">
+                <div>
+                  <div style="font-size: 12px; font-weight: 600; color: var(--color-text-subtle);">Atlas Labs &bull; Sample job &bull; Posted Oct 12, 2026</div>
+                  <h1 style="font-size: 24px; font-weight: 700; color: var(--color-navy); margin: 4px 0;" id="matchJobTitleDisplay">Frontend Engineer</h1>
+                  <div style="font-size: 13px; color: var(--color-text-muted);">San Francisco, CA &bull; Hybrid (2 days / week) &bull; $130,000&ndash;$160,000 base &bull; Mid-level</div>
+                </div>
+                <!-- Score Pill Badge -->
+                <div class="score-pill-badge" id="scoreGaugeElem">
+                  <div class="score-num" id="matchOverallScoreDisplay">88%</div>
+                  <div class="score-est-label">EST. MATCH</div>
+                </div>
+              </div>
+
+              <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5); border-top: 1px solid var(--color-border-subtle); padding-top: var(--space-4); flex-wrap: wrap;">
+                <button class="btn btn-secondary btn-sm" id="btnOpenExternalApp">View original application &nearr;</button>
+                <button class="btn btn-secondary btn-sm" id="btnSaveToShortlist">Saved to shortlist</button>
+                <button class="btn btn-primary btn-sm" id="btnMarkApplied">Mark as applied</button>
+              </div>
+            </div>
+
+            <!-- Two-Column Breakdown -->
+            <div class="detail-two-col">
+              <!-- Left Column: Requirements Compared -->
+              <div class="card">
+                <h3 class="card-title" style="margin-bottom: var(--space-2);">Requirements, compared with your resume</h3>
+                <div style="font-size: 12.5px; color: var(--color-text-subtle); margin-bottom: var(--space-4);">
+                  Not evidenced reflects this resume only, not your full ability.
+                </div>
+
+                <div class="requirement-row">
+                  <div class="req-left">
+                    <div class="req-name">React + TypeScript</div>
+                    <div class="req-evidence">Confirmed in Lumen Studio experience</div>
+                  </div>
+                  <span class="tag-evidence">&check; Matched</span>
+                </div>
+
+                <div class="requirement-row">
+                  <div class="req-left">
+                    <div class="req-name">Modern CSS + Jest</div>
+                    <div class="req-evidence">Confirmed in skills and project evidence</div>
+                  </div>
+                  <span class="tag-evidence">&check; Matched</span>
+                </div>
+
+                <div class="requirement-row">
+                  <div class="req-left">
+                    <div class="req-name">GraphQL</div>
+                    <div class="req-evidence">No GraphQL experience found in your resume</div>
+                  </div>
+                  <span class="tag-gap">Not evidenced</span>
+                </div>
+
+                <div class="requirement-row">
+                  <div class="req-left">
+                    <div class="req-name">Accessibility / WCAG</div>
+                    <div class="req-evidence">No specific accessibility work found</div>
+                  </div>
+                  <span class="tag-gap">Not evidenced</span>
+                </div>
+
+                <div class="requirement-row">
+                  <div class="req-left">
+                    <div class="req-name">3&ndash;5 years frontend experience</div>
+                    <div class="req-evidence">4 years across Lumen Studio and Brightline Digital</div>
+                  </div>
+                  <span class="tag-evidence">&check; Aligned</span>
+                </div>
+
+                <!-- Turn the Gaps into a Plan -->
+                <div style="margin-top: var(--space-6); background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); padding: var(--space-4);">
+                  <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin-bottom: 6px;">Turn the gaps into a plan</div>
+                  <div style="font-size: 12px; color: var(--color-text-muted); line-height: 1.5; margin-bottom: 6px;">
+                    <strong>GraphQL:</strong> Build a small query-driven React feature and document what you learned.<br>
+                    <strong>Accessibility:</strong> Audit keyboard navigation, semantic markup and contrast in a portfolio project.
+                  </div>
+                  <div style="font-size: 11px; color: var(--color-text-subtle);">Already have this experience? Add accurate evidence to your resume profile.</div>
+                </div>
+              </div>
+
+              <!-- Right Column: "Why an estimated 88%?" Weighted Breakdown -->
+              <div class="card">
+                <h3 class="card-title" style="margin-bottom: 2px;">Why an estimated 88%?</h3>
+                <div style="font-size: 12px; color: var(--color-text-subtle); margin-bottom: var(--space-5);">
+                  A weighted alignment estimate based on your confirmed profile.
+                </div>
+
+                <!-- Factor 1: Skills -->
+                <div class="breakdown-factor-item">
+                  <div class="factor-top-row">
+                    <span>Skills</span>
+                    <span id="scoreFactorSkills">34 / 40</span>
+                  </div>
+                  <div class="factor-bar-track">
+                    <div class="factor-bar-fill" id="barFactorSkills" style="width: 85%;"></div>
+                  </div>
+                  <div class="factor-explanation-note">React, TypeScript, CSS and Jest evidenced. GraphQL and accessibility are not evidenced.</div>
+                </div>
+
+                <!-- Factor 2: Experience -->
+                <div class="breakdown-factor-item">
+                  <div class="factor-top-row">
+                    <span>Experience</span>
+                    <span id="scoreFactorExp">23 / 25</span>
+                  </div>
+                  <div class="factor-bar-track">
+                    <div class="factor-bar-fill" id="barFactorExp" style="width: 92%;"></div>
+                  </div>
+                  <div class="factor-explanation-note">4 years aligns with the 3&ndash;5 year requirement. Scope of product ownership needs review.</div>
+                </div>
+
+                <!-- Factor 3: Preferences -->
+                <div class="breakdown-factor-item">
+                  <div class="factor-top-row">
+                    <span>Preferences</span>
+                    <span id="scoreFactorPref">21 / 25</span>
+                  </div>
+                  <div class="factor-bar-track">
+                    <div class="factor-bar-fill" id="barFactorPref" style="width: 84%;"></div>
+                  </div>
+                  <div class="factor-explanation-note">SF hybrid and salary overlap fit your preferences; full range is not an exact match.</div>
+                </div>
+
+                <!-- Factor 4: Education -->
+                <div class="breakdown-factor-item">
+                  <div class="factor-top-row">
+                    <span>Education</span>
+                    <span id="scoreFactorEdu">10 / 10</span>
+                  </div>
+                  <div class="factor-bar-track">
+                    <div class="factor-bar-fill" id="barFactorEdu" style="width: 100%;"></div>
+                  </div>
+                  <div class="factor-explanation-note">B.S. Computer Science meets the degree or equivalent-experience requirement.</div>
+                </div>
+
+                <!-- Total Formula Box -->
+                <div style="margin-top: var(--space-5); padding: var(--space-3); background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); text-align: center; font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--color-indigo);" id="scoreFormulaDisplay">
+                  34 + 23 + 21 + 10 = 88 / 100
+                </div>
+
+                <!-- Mandatory Legal Caveat -->
+                <div class="legal-caveat-box">
+                  <strong>88% does not mean an 88% chance of an interview or offer.</strong> Employers make their own hiring decisions. Scores estimate alignment with stated requirements.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================================
+             5. SAVED JOBS VIEW (FOCUSED SHORTLIST)
+             ======================================================================== -->
+        <section class="view-section" id="view-saved">
+          <div class="page-header-row">
+            <div class="page-header-text">
+              <div class="pre-title">Your Focused Shortlist</div>
+              <h1>Keep the possibilities that matter.</h1>
+              <p>3 saved sample jobs. Revisit the evidence before deciding what's next.</p>
+            </div>
+          </div>
+
+          <div class="job-cards-list" id="savedJobsList">
+            <!-- Populated dynamically with Atlas Labs, Northstar, Parcel -->
+          </div>
+        </section>
+
+        <!-- ========================================================================
+             6. APPLICATIONS TRACKER VIEW (6 STAGES)
+             ======================================================================== -->
+        <section class="view-section" id="view-tracker">
+          <div class="page-header-row">
+            <div class="page-header-text">
+              <div class="pre-title">One Place For Your Next Step</div>
+              <h1>Progress, not just applications.</h1>
+              <p>Track your own updates. No employer or application status is synced in this demo.</p>
+            </div>
+            <div>
+              <button class="btn btn-primary btn-sm" id="btnTrackerAddApp">+ Add application</button>
+            </div>
+          </div>
+
+          <!-- 6 Stages Pipeline Bar -->
+          <div class="stages-pipeline-bar">
+            <div class="stage-tab-btn active" data-stage="all">
+              <div class="stage-title">All</div>
+              <div class="stage-count">6</div>
+            </div>
+            <div class="stage-tab-btn" data-stage="interested">
+              <div class="stage-title">Interested</div>
+              <div class="stage-count">1</div>
+            </div>
+            <div class="stage-tab-btn" data-stage="applied">
+              <div class="stage-title">Applied</div>
+              <div class="stage-count">1</div>
+            </div>
+            <div class="stage-tab-btn" data-stage="assessment">
+              <div class="stage-title">Assessment</div>
+              <div class="stage-count">1</div>
+            </div>
+            <div class="stage-tab-btn" data-stage="interview">
+              <div class="stage-title">Interview</div>
+              <div class="stage-count">1</div>
+            </div>
+            <div class="stage-tab-btn" data-stage="offer">
+              <div class="stage-title">Offer</div>
+              <div class="stage-count">1</div>
+            </div>
+          </div>
+
+          <!-- Applications Table -->
+          <div class="card" style="padding: 0; overflow-x: auto;">
+            <table class="applications-table">
+              <thead>
+                <tr>
+                  <th>Role & Company</th>
+                  <th>Status</th>
+                  <th>Applied Date</th>
+                  <th>Next Step</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="trackerTableBody">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ========================================================================
+             7. CAREER INSIGHTS VIEW
+             ======================================================================== -->
+        <section class="view-section" id="view-insights">
+          <div class="page-header-row">
+            <div class="page-header-text">
+              <div class="pre-title">Small Steps, Clearer Direction</div>
+              <h1>Build on what you already know.</h1>
+              <p>Learning suggestions from your confirmed profile and 12 sample jobs &mdash; not labor-market trends.</p>
+            </div>
+          </div>
+
+          <!-- Top Metrics -->
+          <div class="insights-top-metrics">
+            <div class="insight-metric-card">
+              <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted);">A solid frontend foundation</div>
+              <div style="font-size: 24px; font-weight: 700; color: var(--color-navy); margin: 4px 0;">6 confirmed skills</div>
+              <div style="font-size: 12px; color: var(--color-text-subtle);">React, TypeScript, CSS, Jest, Figma, Git</div>
+            </div>
+            <div class="insight-metric-card">
+              <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted);">Your experience fits the direction</div>
+              <div style="font-size: 24px; font-weight: 700; color: var(--color-navy); margin: 4px 0;">4 years relevant</div>
+              <div style="font-size: 12px; color: var(--color-text-subtle);">Mid-level engineering alignment</div>
+            </div>
+            <div class="insight-metric-card">
+              <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted);">An intentional next step</div>
+              <div style="font-size: 24px; font-weight: 700; color: var(--color-indigo); margin: 4px 0;">Accessibility</div>
+              <div style="font-size: 12px; color: var(--color-text-subtle);">Appears in 7 of 12 sample roles</div>
+            </div>
+          </div>
+
+          <!-- Skills Frequency Chart -->
+          <div class="overview-grid">
+            <div class="card">
+              <h3 class="card-title" style="margin-bottom: 2px;">Skills to explore</h3>
+              <div style="font-size: 12px; color: var(--color-text-subtle); margin-bottom: var(--space-5);">
+                Number of sample jobs mentioning each skill &bull; n = 12
+              </div>
+
+              <div class="skills-frequency-list">
+                <div class="skill-freq-item">
+                  <span class="skill-freq-name">Accessibility</span>
+                  <div class="skill-freq-bar-wrap">
+                    <div class="skill-freq-fill" style="width: 58%;"></div>
+                  </div>
+                  <span class="skill-freq-ratio">7 / 12</span>
+                </div>
+                <div class="skill-freq-item">
+                  <span class="skill-freq-name">GraphQL</span>
+                  <div class="skill-freq-bar-wrap">
+                    <div class="skill-freq-fill" style="width: 42%;"></div>
+                  </div>
+                  <span class="skill-freq-ratio">5 / 12</span>
+                </div>
+                <div class="skill-freq-item">
+                  <span class="skill-freq-name">Storybook</span>
+                  <div class="skill-freq-bar-wrap">
+                    <div class="skill-freq-fill" style="width: 33%;"></div>
+                  </div>
+                  <span class="skill-freq-ratio">4 / 12</span>
+                </div>
+                <div class="skill-freq-item">
+                  <span class="skill-freq-name">Node.js</span>
+                  <div class="skill-freq-bar-wrap">
+                    <div class="skill-freq-fill" style="width: 25%;"></div>
+                  </div>
+                  <span class="skill-freq-ratio">3 / 12</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Practical 2-Week Plan -->
+            <div class="card">
+              <h3 class="card-title" style="margin-bottom: var(--space-4);">A practical two-week plan</h3>
+              <div style="display: flex; flex-direction: column; gap: var(--space-4);">
+                <div style="border-left: 3px solid var(--color-indigo); padding-left: var(--space-3);">
+                  <div style="font-size: 11px; font-weight: 700; color: var(--color-indigo); text-transform: uppercase;">This Week</div>
+                  <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin: 2px 0;">Make one feature keyboard-friendly</div>
+                  <div style="font-size: 12px; color: var(--color-text-muted);">Audit focus order, labels and contrast in a React project. Record what you improved.</div>
+                </div>
+                <div style="border-left: 3px solid #8B5CF6; padding-left: var(--space-3);">
+                  <div style="font-size: 11px; font-weight: 700; color: #8B5CF6; text-transform: uppercase;">Next Week</div>
+                  <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin: 2px 0;">Build a small GraphQL feature</div>
+                  <div style="font-size: 12px; color: var(--color-text-muted);">Query a public demo endpoint, add loading/error UI and cover the behavior with tests.</div>
+                </div>
+                <div style="border-left: 3px solid var(--color-evidence-text); padding-left: var(--space-3);">
+                  <div style="font-size: 11px; font-weight: 700; color: var(--color-evidence-text); text-transform: uppercase;">Then</div>
+                  <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin: 2px 0;">Update with evidence</div>
+                  <div style="font-size: 12px; color: var(--color-text-muted);">Describe work you actually completed. Review your profile before recalculating matches.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================================
+             8. SKILL ASSESSMENTS & ISOLATED SANDBOX
+             ======================================================================== -->
+        <section class="view-section" id="view-assessments">
+          <div class="page-header-row">
+            <div class="page-header-text">
+              <div class="pre-title">Verified Skill Benchmarks</div>
+              <h1>Interactive Coding Sandbox</h1>
+              <p>Solve targeted algorithm and engineering challenges. Successful test executions verify your skill badge and grant a deterministic matching boost.</p>
+            </div>
+          </div>
+
+          <div class="sandbox-split-grid" id="sandboxWorkspace">
+            <!-- Catalog List -->
+            <div>
+              <div class="card-header-bar">
+                <h3 class="card-title" style="font-size: 14px;">Assessment Challenges</h3>
+              </div>
+              <div id="assessmentCatalog" style="display: flex; flex-direction: column; gap: var(--space-3);">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+
+            <!-- Workspace Editor -->
+            <div class="card" style="padding: var(--space-5);">
+              <div class="card-header-bar">
+                <div>
+                  <h3 class="card-title" id="activeChallengeTitle">Python: Two Sum Indices</h3>
+                  <div class="card-subtext" id="activeChallengeDesc">Return indices of the two numbers that add up to target.</div>
+                </div>
+                <button class="btn btn-primary btn-sm" id="btnSubmitCode">Run Code & Verify</button>
+              </div>
+
+              <div class="code-editor-area">
+                <div class="editor-header-bar">
+                  <span>solution.py</span>
+                  <span>Python 3.11 Isolated Container</span>
+                </div>
+                <textarea class="editor-textarea" id="codeEditorInput" spellcheck="false"># Solve the challenge below:
+def two_sum(nums, target):
+    # Output indices formatted as string: "0 1"
+    print("0 1")
+
+two_sum([2, 7, 11, 15], 9)
+</textarea>
+                <div class="sandbox-output-panel" id="sandboxConsoleOutput">
+                  Sandbox ready. Click 'Run Code & Verify' to execute solution in isolated Docker container...
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================================
+             9. CAREER AGENT VIEW
+             ======================================================================== -->
+        <section class="view-section" id="view-agent">
+          <div class="page-header-row">
+            <div class="page-header-text">
+              <div class="pre-title">AI Agent Orchestrator</div>
+              <h1>Career Advisory Agent</h1>
+              <p>Ask questions about your resume evidence, job requirements, or closing specific skill gaps.</p>
+            </div>
+          </div>
+
+          <div class="card" style="max-width: 800px; margin: 0 auto;">
+            <div id="agentChatLog" style="min-height: 300px; max-height: 450px; overflow-y: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);">
+              <div style="background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); padding: var(--space-3); max-width: 85%;">
+                <strong>CareerMatch Agent:</strong> Welcome! I am your explainable AI career assistant. I can help analyze your job alignment, explain skill overlap, suggest targeted coding assessments, or recommend ways to evidence in-demand technologies. What would you like to explore?
+              </div>
+            </div>
+            <div style="display: flex; gap: var(--space-2); padding: var(--space-3); border-top: 1px solid var(--color-border-subtle);">
+              <input class="form-input" id="inputAgentMessage" type="text" placeholder="Ask about resume gaps, match rationale, or assessment tips...">
+              <button class="btn btn-primary" id="btnSendAgentMessage">Send</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========================================================================
+             10. PROFILE & SETTINGS VIEW
+             ======================================================================== -->
+        <section class="view-section" id="view-settings">
+          <div class="page-header-row">
+            <div class="page-header-text">
+              <div class="pre-title">Your Workspace Settings</div>
+              <h1>Your profile. Your preferences.</h1>
+              <p>Manage the details behind your search and how your information is used.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" id="btnSaveSettings">Save changes</button>
+          </div>
+
+          <div class="overview-grid">
+            <div class="card">
+              <h3 class="card-title" style="margin-bottom: var(--space-4);">Personal profile</h3>
+              <div class="form-group">
+                <label class="form-label">Full name</label>
+                <input class="form-input" id="settingsFullName" type="text" placeholder="Your full name" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email address</label>
+                <input class="form-input" id="settingsEmail" type="email" placeholder="your.email@example.com" value="">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Location</label>
+                <input class="form-input" id="settingsLocation" type="text" placeholder="e.g. San Francisco, CA / Remote" value="">
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 class="card-title" style="margin-bottom: var(--space-4);">Notification preferences</h3>
+              <label class="checkbox-label"><input type="checkbox" checked> Weekly match summaries</label>
+              <label class="checkbox-label"><input type="checkbox" checked> Application reminder follow-ups</label>
+              <label class="checkbox-label"><input type="checkbox"> Product updates</label>
+
+              <div style="margin-top: var(--space-6); border-top: 1px solid var(--color-border-subtle); padding-top: var(--space-4);">
+                <div style="font-size: 13px; font-weight: 700; color: #DC2626; margin-bottom: 4px;">Delete workspace</div>
+                <div style="font-size: 12px; color: var(--color-text-subtle); margin-bottom: var(--space-3);">Permanently remove your confirmed profile, resume, and tracker records.</div>
+                <button class="btn btn-danger btn-sm" id="btnDeleteAccount">Request account deletion</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ==============================================================================
+       AUTH MODAL (Sign In / Register & Quick Demo Accounts)
+       ============================================================================== -->
+  <div class="modal-backdrop" id="modalAuth" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <button class="modal-close-btn" id="btnCloseAuthModal" aria-label="Close dialog">&times;</button>
+      <div class="modal-title" id="modalAuthTitle">Continue your next chapter.</div>
+      <div class="modal-subtitle" id="modalAuthSubtitle">Log in to review your matches and keep moving forward.</div>
+
+      <!-- Quick Demo Login Buttons from CareerMatch Spec -->
+      <div class="quick-demo-buttons-row">
+        <button class="btn btn-outline btn-sm" style="flex: 1;" type="button" id="btnQuickDemoCandidate">Demo: Maya Chen (Candidate)</button>
+        <button class="btn btn-outline btn-sm" style="flex: 1;" type="button" id="btnQuickDemoRecruiter">Demo: Alex Recruiter</button>
+      </div>
+
+      <form id="authForm">
+        <div class="form-group" id="groupFullName" style="display: none;">
+          <label class="form-label" for="authFullName">Full name</label>
+          <input class="form-input" id="authFullName" type="text" placeholder="Your full name">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="authEmail">Email address</label>
+          <input class="form-input" id="authEmail" type="email" placeholder="you@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="authPassword">Password</label>
+          <input class="form-input" id="authPassword" type="password" placeholder="••••••••••••" required>
+          <div style="font-size: 11px; color: var(--color-text-subtle); margin-top: 4px;">&check; At least 8 characters &bull; &check; Includes numbers or symbols</div>
+        </div>
+
+        <div class="form-group" id="groupRole" style="display: none;">
+          <label class="form-label" for="authRole">Account Role</label>
+          <select class="form-select" id="authRole">
+            <option value="candidate">Candidate (Job Seeker)</option>
+            <option value="recruiter">Recruiter (Post Jobs)</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" style="width: 100%; margin-top: var(--space-3);" type="submit" id="btnAuthSubmit">Log in</button>
+      </form>
+
+      <div style="text-align: center; margin-top: var(--space-4); font-size: 12.5px; color: var(--color-text-muted);">
+        <span id="authTogglePrompt">New to CareerMatch?</span>
+        <button id="btnToggleAuthMode" style="background: none; border: none; color: var(--color-indigo); font-weight: 600; cursor: pointer; text-decoration: underline; margin-left: 4px;">Create an account</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================================================================
+       APPLY CONFIRMATION MODAL ("Did you submit your application?")
+       ============================================================================== -->
+  <div class="modal-backdrop" id="modalApplyConfirm" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <button class="modal-close-btn" id="btnCloseApplyModal">&times;</button>
+      <div style="font-size: 12px; font-weight: 600; color: var(--color-text-subtle);" id="applyConfirmCompanyLabel">Atlas Labs &bull; Sample job</div>
+      <div class="modal-title" style="margin-top: 4px;">Did you submit your application?</div>
+      <div class="modal-subtitle">CareerMatch can't confirm what happened on the employer's site. Only mark Applied after you have submitted there.</div>
+
+      <div class="form-group">
+        <label class="form-label">Application date</label>
+        <input class="form-input" id="inputApplyDate" type="date" value="2026-10-14">
+      </div>
+
+      <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5);">
+        <button class="btn btn-primary" style="flex: 1;" id="btnConfirmMarkApplied">Yes, mark Applied</button>
+        <button class="btn btn-secondary" style="flex: 1;" id="btnCancelApplyConfirm">Not yet</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Application Logic -->
+  <script src="/frontend-assets/app.js"></script>
+</body>
+</html>

@@ -1,10 +1,15 @@
 """Candidate assessment execution and sandbox introspection endpoints (Phase 7 Developer A)."""
 
-from typing import List
-from fastapi import APIRouter, Body, Depends, Path, status
+from typing import List, Optional
+from fastapi import APIRouter, Body, Depends, Path, Query, status
 
-from app.authentication.dependencies import get_current_user
+from app.authentication.dependencies import get_current_user, get_optional_current_user
 from app.authorization.policies import require_role
+from app.matching.assessment_catalog import (
+    AssessmentChallenge,
+    get_all_challenges,
+    get_challenges_by_skill,
+)
 from app.schemas.assessment import (
     AssessmentResult,
     AssessmentSubmissionRequest,
@@ -21,6 +26,32 @@ router = APIRouter()
 
 
 @router.get(
+    "/challenges",
+    response_model=StandardResponse[List[AssessmentChallenge]],
+    status_code=status.HTTP_200_OK,
+    summary="List available assessment coding challenges",
+    description="Retrieve coding challenges filtered by target skill and programming language.",
+)
+async def list_assessment_challenges(
+    skill: Optional[str] = Query(None, description="Optional target skill to filter by"),
+    language: Optional[str] = Query(None, description="Optional programming language to filter by"),
+    current_user: Optional[AuthenticatedPrincipal] = Depends(get_optional_current_user),
+) -> StandardResponse[List[AssessmentChallenge]]:
+    """Return available coding challenges from Developer B's catalog."""
+    if skill:
+        challenges = get_challenges_by_skill(skill, language)
+    else:
+        challenges = get_all_challenges()
+        if language:
+            challenges = [c for c in challenges if c.language.value.lower() == language.lower()]
+
+    return StandardResponse(
+        data=challenges,
+        message=f"Retrieved {len(challenges)} coding challenge(s).",
+    )
+
+
+@router.get(
     "/languages",
     response_model=StandardResponse[List[SupportedLanguageSpec]],
     status_code=status.HTTP_200_OK,
@@ -28,7 +59,7 @@ router = APIRouter()
     description="Retrieve allowlisted programming languages, runtimes, and baseline resource constraints.",
 )
 async def list_supported_languages(
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    current_user: Optional[AuthenticatedPrincipal] = Depends(get_optional_current_user),
     service: AssessmentApplicationService = Depends(get_assessment_service),
 ) -> StandardResponse[List[SupportedLanguageSpec]]:
     """Return allowlisted programming languages and execution limits."""

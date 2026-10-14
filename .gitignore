@@ -72,3 +72,6 @@ htmlcov/
 # Sandbox ephemeral work directories
 app/sandbox/temp/
 sandbox-temp/
+
+# Large binary files & ephemeral media
+*.pdf

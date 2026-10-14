@@ -204,3 +204,21 @@ class SandboxService:
 
         self._results_store[submission_id] = result
         return result
+
+
+_sandbox_service_instance: Optional[SandboxService] = None
+
+
+def get_sandbox_service() -> SandboxService:
+    """Singleton provider for SandboxService."""
+    global _sandbox_service_instance
+    if _sandbox_service_instance is None:
+        _sandbox_service_instance = SandboxService()
+    return _sandbox_service_instance
+
+
+def reset_sandbox_service() -> None:
+    """Reset sandbox service singleton for test isolation."""
+    global _sandbox_service_instance
+    _sandbox_service_instance = None
+
