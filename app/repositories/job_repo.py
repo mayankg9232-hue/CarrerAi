@@ -32,6 +32,11 @@ class IJobRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_by_platform_and_external_id(self, source_platform: str, external_job_id: str) -> Optional[Job]:
+        """Retrieve a job by source platform and external ATS ID for deduplication."""
+        pass
+
+    @abstractmethod
     async def update_job(self, job_id: str, **updates) -> Optional[Job]:
         """Update fields of an existing job listing."""
         pass
@@ -83,6 +88,7 @@ class InMemoryJobRepository(IJobRepository):
         self._jobs: Dict[str, Job] = {}
         self._hash_index: Dict[str, str] = {}  # content_hash -> job_id
         self._url_index: Dict[str, str] = {}   # source_url -> job_id
+        self._platform_index: Dict[str, str] = {}  # "platform:ext_id" -> job_id
 
     async def create_job(self, job: Job) -> Job:
         self._jobs[job.id] = job
@@ -90,6 +96,8 @@ class InMemoryJobRepository(IJobRepository):
             self._hash_index[job.content_hash] = job.id
         if job.source_url:
             self._url_index[job.source_url] = job.id
+        if job.source_platform and job.external_job_id:
+            self._platform_index[f"{job.source_platform}:{job.external_job_id}"] = job.id
         return job
 
     async def get_by_id(self, job_id: str) -> Optional[Job]:
@@ -103,6 +111,12 @@ class InMemoryJobRepository(IJobRepository):
 
     async def get_by_source_url(self, source_url: str) -> Optional[Job]:
         job_id = self._url_index.get(source_url)
+        if job_id:
+            return self._jobs.get(job_id)
+        return None
+
+    async def get_by_platform_and_external_id(self, source_platform: str, external_job_id: str) -> Optional[Job]:
+        job_id = self._platform_index.get(f"{source_platform}:{external_job_id}")
         if job_id:
             return self._jobs.get(job_id)
         return None

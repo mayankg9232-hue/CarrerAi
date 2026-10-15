@@ -9,6 +9,7 @@ from app.api.v1.endpoints import (
     llm,
     matching,
     resumes,
+    scraping,
 )
 
 __all__ = [
@@ -20,4 +21,5 @@ __all__ = [
     "llm",
     "matching",
     "resumes",
+    "scraping",
 ]

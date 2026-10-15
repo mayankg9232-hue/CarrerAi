@@ -109,6 +109,18 @@ class Settings(BaseSettings):
     ]
     MAX_CV_SIZE_BYTES: int = 5 * 1024 * 1024  # 5 MB
 
+    # Automated Weekly Scraping (Firecrawl & Neon / ATS Platforms)
+    SCRAPING_ENABLED: bool = True
+    SCRAPING_SCHEDULE_CRON: str = "0 0 * * 0"  # Midnight every Sunday
+    SCRAPING_TIMEZONE: str = "Asia/Kolkata"    # Default timezone as required
+    SCRAPING_MAX_RETRIES: int = 3
+    SCRAPING_TIMEOUT_SECONDS: float = 20.0
+    SCRAPING_CONCURRENCY_LIMIT: int = 5
+    SCRAPING_BATCH_SIZE: int = 50
+    SCRAPING_MAX_JOBS_PER_SOURCE: int = 100
+    SCRAPING_SEED_SOURCES: str = "https://boards.greenhouse.io/gitlab,https://jobs.lever.co/leverdemo,https://jobs.ashbyhq.com/ashby"
+    PERMITTED_JOB_PLATFORMS: Union[str, List[str]] = ["greenhouse", "lever", "ashby"]
+
     # Agent Limits (Phase 6)
     AGENT_MAX_STEPS: int = 8
     AGENT_MAX_TOOL_CALLS: int = 12
@@ -122,7 +134,7 @@ class Settings(BaseSettings):
     SANDBOX_DOCKER_CPUS: float = 1.0
     SANDBOX_DOCKER_PIDS_LIMIT: int = 32
 
-    @field_validator("ALLOWED_ORIGINS", "APPROVED_JOB_DOMAINS", "ALLOWED_CV_MIME_TYPES", mode="before")
+    @field_validator("ALLOWED_ORIGINS", "APPROVED_JOB_DOMAINS", "ALLOWED_CV_MIME_TYPES", "PERMITTED_JOB_PLATFORMS", mode="before")
     @classmethod
     def assemble_string_or_list(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
@@ -136,7 +148,7 @@ class Settings(BaseSettings):
             raise ValueError("DATABASE_URL must not be empty.")
         clean = v.strip()
         scheme = clean.split("://")[0].lower() if "://" in clean else ""
-        if scheme not in ("postgresql", "postgres", "sqlite"):
+        if scheme not in ("postgresql", "postgres", "sqlite", "sqlite+aiosqlite", "postgresql+asyncpg"):
             raise ValueError(f"Unsupported database scheme: '{scheme}'. Supported schemes: 'postgresql', 'postgres', 'sqlite'.")
         return clean
 

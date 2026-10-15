@@ -5,7 +5,7 @@ Supports PostgreSQL (via asyncpg connection pooling) and SQLite (with WAL mode a
 
 import asyncio
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import logging
 import os
 import sqlite3
@@ -24,6 +24,9 @@ from app.db.schema import (
     CREATE_CANDIDATE_PROFILES_TABLE,
     CREATE_JOBS_TABLE,
     CREATE_MATCH_RECORDS_TABLE,
+    CREATE_SCRAPING_LOCKS_TABLE,
+    CREATE_SCRAPING_RUNS_TABLE,
+    CREATE_SCRAPING_SOURCES_TABLE,
     CREATE_USERS_TABLE,
 )
 
@@ -127,13 +130,36 @@ class DatabaseManager:
                             CREATE_JOBS_TABLE,
                             CREATE_CANDIDATE_PROFILES_TABLE,
                             CREATE_MATCH_RECORDS_TABLE,
+                            CREATE_SCRAPING_RUNS_TABLE,
+                            CREATE_SCRAPING_SOURCES_TABLE,
+                            CREATE_SCRAPING_LOCKS_TABLE,
                         ]:
                             for stmt in ddl.strip().split(";"):
                                 stmt = stmt.strip()
                                 if stmt:
                                     await conn.execute(stmt)
+                        # PostgreSQL migration: add missing columns to jobs table idempotently
+                        for col_stmt in [
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS external_job_id VARCHAR(255)",
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS source_platform VARCHAR(64)",
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS department VARCHAR(255)",
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS employment_type VARCHAR(64)",
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS workplace_type VARCHAR(64)",
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS posted_at TEXT",
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS updated_at TEXT",
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS salary VARCHAR(255)",
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS experience_years_required REAL",
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS education_required VARCHAR(255)",
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS responsibilities TEXT DEFAULT '[]'",
+                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS domain VARCHAR(128)",
+                            "CREATE INDEX IF NOT EXISTS idx_jobs_platform_ext_id ON jobs(source_platform, external_job_id)",
+                        ]:
+                            try:
+                                await conn.execute(col_stmt)
+                            except Exception:
+                                pass
                     self._initialized = True
-                    logger.info("PostgreSQL database pool initialized successfully with 4 core tables.")
+                    logger.info("PostgreSQL database pool initialized successfully with core tables and scraping models.")
                     return
                 except Exception as exc:
                     logger.error("Failed to initialize PostgreSQL pool: %s", type(exc).__name__)
@@ -164,6 +190,80 @@ class DatabaseManager:
                 "checked_at": datetime.now(timezone.utc).isoformat(),
             }
 
+    async def check_connectivity(self) -> Dict[str, Any]:
+        """Verify database connectivity returning health, dialect, and latency safely."""
+        start = asyncio.get_event_loop().time()
+        await self.initialize()
+        if self.is_postgres and self._pg_pool:
+            async with self._pg_pool.acquire() as conn:
+                await conn.fetchval("SELECT 1")
+                latency_ms = (asyncio.get_event_loop().time() - start) * 1000
+                return {
+                    "status": "connected",
+                    "dialect": "PostgreSQL (Neon)",
+                    "latency_ms": round(latency_ms, 2),
+                    "pool_active": True,
+                }
+        else:
+            row = await self.fetchone("SELECT 1 AS ok")
+            latency_ms = (asyncio.get_event_loop().time() - start) * 1000
+            return {
+                "status": "connected",
+                "dialect": "SQLite (Local Dev)",
+                "latency_ms": round(latency_ms, 2),
+                "db_path": self._db_path,
+            }
+
+    async def try_acquire_advisory_lock(self, lock_key: str, timeout_seconds: int = 900) -> bool:
+        """Acquire a distributed/advisory lock to prevent overlapping scraping runs."""
+        await self.initialize()
+        if self.is_postgres and self._pg_pool:
+            async with self._pg_pool.acquire() as conn:
+                acquired = await conn.fetchval("SELECT pg_try_advisory_lock(hashtext($1))", lock_key)
+                return bool(acquired)
+
+        # SQLite atomic lock via scraping_locks table with expiration lease
+        now_iso = datetime.now(timezone.utc).isoformat()
+        expires_iso = (datetime.now(timezone.utc) + timedelta(seconds=timeout_seconds)).isoformat()
+
+        def _sync_acquire() -> bool:
+            conn = self._get_raw_connection()
+            try:
+                with conn:
+                    # Clear expired lock if present
+                    conn.execute("DELETE FROM scraping_locks WHERE lock_name = ? AND expires_at < ?", (lock_key, now_iso))
+                    try:
+                        conn.execute(
+                            "INSERT INTO scraping_locks (lock_name, locked_by, locked_at, expires_at) VALUES (?, ?, ?, ?)",
+                            (lock_key, "worker", now_iso, expires_iso),
+                        )
+                        return True
+                    except sqlite3.IntegrityError:
+                        return False
+            finally:
+                conn.close()
+
+        return await asyncio.to_thread(_sync_acquire)
+
+    async def release_advisory_lock(self, lock_key: str) -> bool:
+        """Release a previously acquired advisory lock."""
+        await self.initialize()
+        if self.is_postgres and self._pg_pool:
+            async with self._pg_pool.acquire() as conn:
+                released = await conn.fetchval("SELECT pg_advisory_unlock(hashtext($1))", lock_key)
+                return bool(released)
+
+        def _sync_release() -> bool:
+            conn = self._get_raw_connection()
+            try:
+                with conn:
+                    cursor = conn.execute("DELETE FROM scraping_locks WHERE lock_name = ?", (lock_key,))
+                    return cursor.rowcount > 0
+            finally:
+                conn.close()
+
+        return await asyncio.to_thread(_sync_release)
+
     def _sync_init_schema(self) -> None:
         conn = self._get_raw_connection()
         try:
@@ -172,6 +272,33 @@ class DatabaseManager:
                 conn.executescript(CREATE_JOBS_TABLE)
                 conn.executescript(CREATE_CANDIDATE_PROFILES_TABLE)
                 conn.executescript(CREATE_MATCH_RECORDS_TABLE)
+                conn.executescript(CREATE_SCRAPING_RUNS_TABLE)
+                conn.executescript(CREATE_SCRAPING_SOURCES_TABLE)
+                conn.executescript(CREATE_SCRAPING_LOCKS_TABLE)
+
+                # SQLite migration: add missing columns to jobs table idempotently
+                cursor = conn.execute("PRAGMA table_info(jobs)")
+                existing_cols = {row["name"] for row in cursor.fetchall()}
+                migration_cols = [
+                    ("external_job_id", "TEXT"),
+                    ("source_platform", "TEXT"),
+                    ("department", "TEXT"),
+                    ("employment_type", "TEXT"),
+                    ("workplace_type", "TEXT"),
+                    ("posted_at", "TEXT"),
+                    ("updated_at", "TEXT"),
+                    ("salary", "TEXT"),
+                    ("experience_years_required", "REAL"),
+                    ("education_required", "TEXT"),
+                    ("responsibilities", "TEXT DEFAULT '[]'"),
+                    ("domain", "TEXT"),
+                ]
+                for col_name, col_type in migration_cols:
+                    if col_name not in existing_cols:
+                        try:
+                            conn.execute(f"ALTER TABLE jobs ADD COLUMN {col_name} {col_type}")
+                        except Exception:
+                            pass
         finally:
             conn.close()
 

@@ -70,3 +70,48 @@ CREATE TABLE IF NOT EXISTS match_records (
 );
 CREATE INDEX IF NOT EXISTS idx_matches_cand_job ON match_records(candidate_id, job_id);
 """
+
+CREATE_SCRAPING_RUNS_TABLE = """
+CREATE TABLE IF NOT EXISTS scraping_runs (
+    id VARCHAR(64) PRIMARY KEY,
+    platform VARCHAR(32) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    started_at TEXT NOT NULL,
+    completed_at TEXT,
+    jobs_discovered INTEGER NOT NULL DEFAULT 0,
+    jobs_inserted INTEGER NOT NULL DEFAULT 0,
+    jobs_updated INTEGER NOT NULL DEFAULT 0,
+    jobs_skipped INTEGER NOT NULL DEFAULT 0,
+    jobs_marked_inactive INTEGER NOT NULL DEFAULT 0,
+    retry_count INTEGER NOT NULL DEFAULT 0,
+    error_category VARCHAR(64),
+    error_details TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_scraping_runs_platform ON scraping_runs(platform);
+CREATE INDEX IF NOT EXISTS idx_scraping_runs_started ON scraping_runs(started_at);
+"""
+
+CREATE_SCRAPING_SOURCES_TABLE = """
+CREATE TABLE IF NOT EXISTS scraping_sources (
+    id VARCHAR(64) PRIMARY KEY,
+    platform VARCHAR(32) NOT NULL,
+    company_name VARCHAR(255) NOT NULL,
+    board_url TEXT NOT NULL,
+    board_token VARCHAR(255) NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    last_scraped_at TEXT,
+    UNIQUE (platform, board_token)
+);
+CREATE INDEX IF NOT EXISTS idx_scraping_sources_platform ON scraping_sources(platform, is_active);
+"""
+
+CREATE_SCRAPING_LOCKS_TABLE = """
+CREATE TABLE IF NOT EXISTS scraping_locks (
+    lock_name VARCHAR(64) PRIMARY KEY,
+    locked_by VARCHAR(64) NOT NULL,
+    locked_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+);
+"""
+

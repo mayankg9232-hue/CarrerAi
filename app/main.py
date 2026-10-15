@@ -171,8 +171,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as exc:
         logger.warning(f"Demo data seeding encountered error: {exc}")
 
+    # Start automated weekly job scraping scheduler
+    from app.scraping.scheduler import get_scraping_scheduler
+    scraping_scheduler = get_scraping_scheduler()
+    scraping_scheduler.start()
+
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
+    scraping_scheduler.shutdown()
     if settings.REPOSITORY_BACKEND == "sql":
         from app.db.connection import get_db_manager
         await get_db_manager().close()

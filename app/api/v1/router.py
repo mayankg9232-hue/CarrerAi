@@ -10,6 +10,7 @@ from app.api.v1.endpoints import (
     llm,
     matching,
     resumes,
+    scraping,
 )
 
 api_v1_router = APIRouter()
@@ -37,4 +38,7 @@ api_v1_router.include_router(agent.router, prefix="/agent", tags=["Agent"])
 
 # Register Candidate Assessment Sandbox (Phase 7 Developer A)
 api_v1_router.include_router(assessments.router, prefix="/assessments", tags=["Assessments"])
+
+# Register Dynamic Automated Job Scraping & ATS Ingestion Pipeline
+api_v1_router.include_router(scraping.router)
 

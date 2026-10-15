@@ -117,11 +117,16 @@ class SQLJobRepository(IJobRepository):
         ).hexdigest()
         job.content_hash = content_hash
 
+        posted_at = job.posted_at.isoformat() if job.posted_at else None
+        updated_at = job.updated_at.isoformat() if job.updated_at else None
         query = """
         INSERT INTO jobs (
             id, title, company, location, description, required_skills, preferred_skills,
-            experience_level, source, source_url, content_hash, collected_at, last_seen_at, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            experience_level, source, source_platform, external_job_id, department,
+            employment_type, workplace_type, source_url, content_hash, collected_at,
+            posted_at, updated_at, salary, experience_years_required, education_required,
+            responsibilities, domain, last_seen_at, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         params = (
             job.id,
@@ -133,9 +138,21 @@ class SQLJobRepository(IJobRepository):
             json.dumps(job.preferred_skills),
             job.experience_level,
             job.source,
+            job.source_platform,
+            job.external_job_id,
+            job.department,
+            job.employment_type,
+            job.workplace_type,
             job.source_url,
             content_hash,
             collected_at,
+            posted_at,
+            updated_at,
+            job.salary,
+            job.experience_years_required,
+            job.education_required,
+            json.dumps(job.responsibilities),
+            job.domain,
             last_seen_at,
             1 if job.is_active else 0,
         )
@@ -143,10 +160,15 @@ class SQLJobRepository(IJobRepository):
             await self.db.execute(query, params)
         except UniqueConstraintViolationError:
             # Idempotent deduplication update
+            if job.source_platform and job.external_job_id:
+                existing = await self.get_by_platform_and_external_id(job.source_platform, job.external_job_id)
+                if existing:
+                    await self.update_job(existing.id, last_seen_at=datetime.now(timezone.utc), is_active=True)
+                    return await self.get_by_id(existing.id) or job
             if job.content_hash:
                 existing = await self.get_by_content_hash(job.content_hash)
                 if existing:
-                    await self.update_job(existing.id, last_seen_at=datetime.now(timezone.utc))
+                    await self.update_job(existing.id, last_seen_at=datetime.now(timezone.utc), is_active=True)
                     return await self.get_by_id(existing.id) or job
             raise
         return job
@@ -161,6 +183,13 @@ class SQLJobRepository(IJobRepository):
 
     async def get_by_source_url(self, source_url: str) -> Optional[Job]:
         row = await self.db.fetchone("SELECT * FROM jobs WHERE source_url = ?", (source_url,))
+        return self._to_job(row) if row else None
+
+    async def get_by_platform_and_external_id(self, source_platform: str, external_job_id: str) -> Optional[Job]:
+        row = await self.db.fetchone(
+            "SELECT * FROM jobs WHERE source_platform = ? AND external_job_id = ?",
+            (source_platform, external_job_id),
+        )
         return self._to_job(row) if row else None
 
     async def update_job(self, job_id: str, **updates) -> Optional[Job]:
@@ -272,6 +301,8 @@ class SQLJobRepository(IJobRepository):
     def _to_job(self, row: Dict[str, Any]) -> Job:
         collected = datetime.fromisoformat(row["collected_at"]) if isinstance(row["collected_at"], str) else row["collected_at"]
         last_seen = datetime.fromisoformat(row["last_seen_at"]) if row.get("last_seen_at") and isinstance(row["last_seen_at"], str) else None
+        posted = datetime.fromisoformat(row["posted_at"]) if row.get("posted_at") and isinstance(row["posted_at"], str) else None
+        updated = datetime.fromisoformat(row["updated_at"]) if row.get("updated_at") and isinstance(row["updated_at"], str) else None
         return Job(
             id=row["id"],
             title=row["title"],
@@ -287,9 +318,16 @@ class SQLJobRepository(IJobRepository):
             responsibilities=json.loads(row["responsibilities"]) if row.get("responsibilities") and isinstance(row["responsibilities"], str) else (row.get("responsibilities") or []),
             domain=row.get("domain"),
             source=row.get("source", "firecrawl"),
+            source_platform=row.get("source_platform"),
+            external_job_id=row.get("external_job_id"),
+            department=row.get("department"),
+            employment_type=row.get("employment_type"),
+            workplace_type=row.get("workplace_type"),
             source_url=row.get("source_url"),
             content_hash=row.get("content_hash"),
             collected_at=collected,
+            posted_at=posted,
+            updated_at=updated,
             last_seen_at=last_seen,
             is_active=bool(row["is_active"]),
         )
