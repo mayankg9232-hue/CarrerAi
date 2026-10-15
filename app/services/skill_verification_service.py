@@ -40,8 +40,16 @@ class SkillVerificationService:
         resume_repo: Optional[IResumeRepository] = None,
         passing_threshold: float = 100.0,
     ) -> None:
-        self.resume_repo = resume_repo or get_resume_repository()
+        self._resume_repo = resume_repo
         self.passing_threshold = passing_threshold
+
+    @property
+    def resume_repo(self) -> IResumeRepository:
+        return self._resume_repo or get_resume_repository()
+
+    @resume_repo.setter
+    def resume_repo(self, value: Optional[IResumeRepository]) -> None:
+        self._resume_repo = value
 
     async def evaluate_and_verify(
         self,

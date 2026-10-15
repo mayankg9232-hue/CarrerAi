@@ -33,6 +33,7 @@ const state = {
   isRegisterMode: false,
   pendingApplyJob: null,
   currentView: 'view-overview',
+  chatHistory: [],
 };
 
 const API_BASE = '/api/v1';
@@ -540,8 +541,8 @@ async function syncCandidateProfile() {
       if (body.data && body.data.length > 0) {
         const prof = body.data[0];
         state.candidateProfile.id = prof.id;
-        state.candidateProfile.full_name = prof.full_name || (state.user ? state.user.full_name : '');
-        state.candidateProfile.email = prof.email || (state.user ? state.user.email : '');
+        state.candidateProfile.full_name = (state.user && state.user.full_name) ? state.user.full_name : (prof.full_name || '');
+        state.candidateProfile.email = (state.user && state.user.email) ? state.user.email : (prof.email || '');
         if (prof.summary) state.candidateProfile.summary = prof.summary;
         if (prof.skills && prof.skills.length > 0) {
           state.candidateProfile.skills = prof.skills.map(s => s.name || s);
@@ -2140,59 +2141,107 @@ async function handleSubmitCode() {
 // ==============================================================================
 // BOUNDED AGENTIC AI ORCHESTRATOR (/api/v1/agent)
 // ==============================================================================
+let isAgentSending = false;
+
 async function handleSendAgentMessage() {
-  const msg = dom.inputAgentMessage.value.trim();
+  if (isAgentSending) return;
+  const msg = dom.inputAgentMessage ? dom.inputAgentMessage.value.trim() : '';
   if (!msg) return;
 
+  // Add user message to UI log and conversation memory
   appendChatMessage('user', msg);
-  dom.inputAgentMessage.value = '';
+  state.chatHistory.push({ role: 'user', content: msg });
 
-  const typingId = appendChatMessage('agent', 'Planning multi-step workflow with allowlisted tools...');
+  // Clear input and set loading state
+  if (dom.inputAgentMessage) dom.inputAgentMessage.value = '';
+  setAgentInputBusy(true);
+
+  const typingId = appendChatMessage('agent', '<span class="agent-thinking">CareerMatch AI is analyzing your question...</span>');
 
   try {
     const headers = { 'Content-Type': 'application/json' };
-    if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+    let endpoint = `${API_BASE}/agent/run`;
 
-    const resp = await fetch(`${API_BASE}/agent/run`, {
+    const isJobContextView = state.currentView === 'view-matching' || state.currentView === 'view-job-details';
+    const requestBody = {
+      task: msg,
+      candidate_id: (state.candidateProfile && state.candidateProfile.id) ? state.candidateProfile.id : null,
+      job_id: isJobContextView ? (state.selectedJobId || null) : null,
+      history: state.chatHistory.slice(-10)
+    };
+
+    if (state.token) {
+      headers['Authorization'] = `Bearer ${state.token}`;
+    } else {
+      // Unauthenticated public career guidance endpoint
+      endpoint = `${API_BASE}/agent/public-chat`;
+      delete requestBody.candidate_id;
+    }
+
+    const resp = await fetch(endpoint, {
       method: 'POST',
       headers,
-      body: JSON.stringify({
-        task: msg,
-        candidate_id: state.candidateProfile.id,
-        job_id: state.selectedJobId
-      })
+      body: JSON.stringify(requestBody)
     });
 
     const data = await resp.json();
     if (resp.ok && data.data) {
       const agentRes = data.data;
-      let replyHtml = `${agentRes.final_answer}`;
+      let replyHtml = `${formatAgentResponseText(agentRes.final_answer)}`;
       if (agentRes.steps && agentRes.steps.length > 0) {
-        replyHtml += `<div style="font-size: 11px; color: var(--color-text-subtle); margin-top: 8px; border-top: 1px solid var(--color-border); padding-top: 4px;">Executed ${agentRes.total_steps} steps (${agentRes.total_tool_calls} tool calls) in ${Math.round(agentRes.duration_ms)}ms</div>`;
+        replyHtml += `<div style="font-size: 11px; color: var(--color-text-subtle); margin-top: 8px; border-top: 1px solid var(--color-border); padding-top: 4px;">Executed ${agentRes.total_steps} step(s) (${agentRes.total_tool_calls} tool calls) in ${Math.round(agentRes.duration_ms)}ms</div>`;
       }
       updateChatMessage(typingId, replyHtml);
+      state.chatHistory.push({ role: 'assistant', content: agentRes.final_answer });
     } else {
-      const fallback = generateAgentResponse(msg);
-      updateChatMessage(typingId, fallback);
+      const errorMsg = (data.error && data.error.message) ? data.error.message : (data.detail || 'Service temporarily unavailable');
+      handleChatFailure(typingId, msg, errorMsg);
     }
   } catch (err) {
-    const fallback = generateAgentResponse(msg);
-    updateChatMessage(typingId, fallback);
+    handleChatFailure(typingId, msg, err.message || 'Network connection failed');
+  } finally {
+    setAgentInputBusy(false);
   }
 }
 
-function generateAgentResponse(query) {
-  const q = query.toLowerCase();
-  if (q.includes('graphql')) {
-    return 'For GraphQL at Atlas Labs: Your resume evidences 4 years with React and TypeScript, but no GraphQL schema queries. I suggest building a small demo feature querying GitHub\'s GraphQL API and adding loading/error states to your portfolio.';
+function handleChatFailure(msgElementId, originalMsg, errorDetails) {
+  // Restore user message to input box so it is not lost
+  if (dom.inputAgentMessage) dom.inputAgentMessage.value = originalMsg;
+  // Remove failed turn from state history
+  if (state.chatHistory.length > 0 && state.chatHistory[state.chatHistory.length - 1].role === 'user') {
+    state.chatHistory.pop();
   }
-  if (q.includes('accessibility')) {
-    return 'Accessibility appears in 7 of 12 sample roles. To evidence it, audit keyboard tab order, ARIA attributes, and color contrast on a recent React component and document the WCAG 2.2 AA fixes.';
+  const errorHtml = `
+    <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid var(--color-red, #EF4444); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); color: var(--color-red, #DC2626); font-size: 13px;">
+      <strong>Assistant Notice:</strong> ${escapeHtml(errorDetails)}
+      <div style="margin-top: 6px;">
+        <button type="button" class="btn btn-sm btn-secondary" onclick="handleSendAgentMessage()" style="padding: 2px 8px; font-size: 12px; cursor: pointer;">↻ Retry</button>
+      </div>
+    </div>
+  `;
+  updateChatMessage(msgElementId, errorHtml);
+}
+
+function setAgentInputBusy(busy) {
+  isAgentSending = busy;
+  if (dom.btnSendAgentMessage) {
+    dom.btnSendAgentMessage.disabled = busy;
+    dom.btnSendAgentMessage.style.opacity = busy ? '0.6' : '1.0';
   }
-  if (q.includes('atlas')) {
-    return 'Atlas Labs has an estimated 88% match: Skills 34/40, Experience 23/25, Preferences 21/25, Education 10/10. Your core stack is strong; GraphQL and WCAG accessibility are the two missing evidence items.';
+  if (dom.inputAgentMessage) {
+    dom.inputAgentMessage.disabled = busy;
   }
-  return 'Your confirmed profile evidences 6 core skills and 4 years of frontend experience. You can take a verified skill assessment in the Coding Sandbox to boost your match scores by +5%.';
+}
+
+function formatAgentResponseText(text) {
+  if (!text) return '';
+  let formatted = escapeHtml(text);
+  formatted = formatted.replace(/\n\n/g, '<br><br>');
+  formatted = formatted.replace(/\n- /g, '<br>&bull; ');
+  formatted = formatted.replace(/\n/g, '<br>');
+  formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  return formatted;
 }
 
 function appendChatMessage(sender, text) {

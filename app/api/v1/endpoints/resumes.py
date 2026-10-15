@@ -138,7 +138,19 @@ async def upload_and_match_resume(
 ) -> StandardResponse[UnifiedPipelineResponse]:
     """Execute end-to-end resume intelligence pipeline: parsing, gemini-2 embeddings, DB persistence, Firecrawl scraping, and match ranking."""
     content = await file.read()
-    user_id = current_user.id if current_user else f"usr_guest_{uuid.uuid4().hex[:8]}"
+    if current_user:
+        user_id = current_user.id
+    else:
+        from app.repositories.user_repo import get_user_repository
+        user_repo = get_user_repository()
+        guest_tag = uuid.uuid4().hex[:8]
+        guest_user = await user_repo.create_user(
+            email=f"guest_{guest_tag}@guest.local",
+            hashed_password="guest_no_login_account",
+            full_name="Guest Candidate",
+            role="candidate",
+        )
+        user_id = guest_user.id
 
     pipeline = ResumePipeline(repo=repo)
     profile = await pipeline.process_resume(
@@ -189,6 +201,15 @@ async def upload_and_match_resume(
         top_k=50,
         min_score=0.0,
     )
+
+    # Persist evaluated matches to database
+    from app.repositories.match_repo import get_match_repository
+    match_repo = get_match_repository()
+    for match_res in recommendation_res.matches:
+        try:
+            await match_repo.save_match(match_res)
+        except Exception:
+            pass
 
     all_jobs_list = await job_repo.query_jobs(only_active=True, limit=100)
     jobs_map = {j.id: j for j in all_jobs_list}

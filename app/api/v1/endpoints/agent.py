@@ -39,6 +39,25 @@ async def run_agent_task(
     )
 
 
+@router.post(
+    "/public-chat",
+    response_model=StandardResponse[AgentTaskResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Public conversational career assistant",
+    description="Permits unauthenticated general career questions and learning roadmaps without candidate tools.",
+)
+async def public_agent_chat(
+    payload: AgentTaskRequest = Body(..., embed=False),
+    service: AgentApplicationService = Depends(get_agent_app_service),
+) -> StandardResponse[AgentTaskResponse]:
+    """Execute public career advice and roadmapping without access to private candidate tools."""
+    result = await service.run_public_chat(request=payload)
+    return StandardResponse(
+        data=result,
+        message="Public career guidance generated successfully.",
+    )
+
+
 @router.get(
     "/tools",
     response_model=StandardResponse[List[ToolMetadata]],

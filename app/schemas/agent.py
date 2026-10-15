@@ -22,13 +22,27 @@ class AgentState(str, Enum):
     BUDGET_EXCEEDED = "BUDGET_EXCEEDED"
 
 
-class AgentTaskRequest(BaseModel):
-    """Request payload to initiate a bounded agent task."""
+class ChatRole(str, Enum):
+    """Allowed roles for conversation history. System role is rejected from client."""
+    USER = "user"
+    ASSISTANT = "assistant"
 
-    task: str = Field(..., min_length=3, max_length=2000, description="User instruction or goal for agent")
+
+class ChatMessage(BaseModel):
+    """Bounded, validated individual turn in conversation history."""
+    role: ChatRole = Field(..., description="Role of message author (user or assistant)")
+    content: str = Field(..., min_length=1, max_length=4000, description="Text content of the message")
+
+
+class AgentTaskRequest(BaseModel):
+    """Request payload to initiate a bounded agent task or conversational turn."""
+
+    task: str = Field(..., min_length=1, max_length=2000, description="User instruction, question, or goal for agent")
     candidate_id: Optional[str] = Field(None, description="Candidate profile ID if task is candidate-scoped")
     job_id: Optional[str] = Field(None, description="Job ID if task is job-scoped")
     max_steps: Optional[int] = Field(None, ge=1, le=16, description="Optional override for maximum orchestration steps")
+    conversation_id: Optional[str] = Field(None, max_length=100, description="Optional conversation session identifier")
+    history: List[ChatMessage] = Field(default_factory=list, max_length=20, description="Bounded client-provided conversation history")
 
 
 class AgentStepEvent(BaseModel):

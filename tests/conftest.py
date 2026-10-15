@@ -1,4 +1,8 @@
-"""Global pytest fixtures."""
+import os
+# Default test runs to memory repository backend unless explicitly testing SQL persistence
+os.environ.setdefault("REPOSITORY_BACKEND", "memory")
+os.environ.setdefault("REDIS_ENABLED", "false")
+os.environ.setdefault("EMBEDDING_PROVIDER", "local")
 
 from typing import AsyncGenerator
 import pytest

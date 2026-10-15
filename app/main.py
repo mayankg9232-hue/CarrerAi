@@ -30,6 +30,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan context manager for startup and shutdown routines."""
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION} [Env: {settings.APP_ENV}]")
 
+    # 1. Initialize persistent database connection pool if SQL backend is active
+    if settings.REPOSITORY_BACKEND == "sql":
+        from app.db.connection import get_db_manager
+        db_mgr = get_db_manager()
+        await db_mgr.initialize()
+        logger.info("Database pool initialized (backend: %s)", "PostgreSQL" if db_mgr.is_postgres else "SQLite")
+
     # Seed canonical sample jobs and demo accounts matching CareerMatch AI spec
     try:
         from app.repositories.job_repo import get_job_repository
@@ -82,6 +89,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             for j in sample_jobs:
                 await job_repo.create_job(j)
             logger.info(f"Seeded {len(sample_jobs)} CareerMatch sample jobs for local host demonstration")
+
+            from app.cache.service import get_cache_service
+            cache_svc = get_cache_service()
+            await cache_svc.invalidate_jobs_cache()
 
         from app.repositories.user_repo import get_user_repository
         from app.authentication.service import AuthenticationService
@@ -162,6 +173,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
+    if settings.REPOSITORY_BACKEND == "sql":
+        from app.db.connection import get_db_manager
+        await get_db_manager().close()
+        logger.info("Database connection pool closed successfully.")
 
 
 def create_application() -> FastAPI:

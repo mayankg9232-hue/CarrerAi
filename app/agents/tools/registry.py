@@ -119,15 +119,39 @@ class ToolRegistry:
         job_retriever: Optional[Any] = None,
         firecrawl_adapter: Optional[Any] = None,
     ) -> None:
-        self.resume_repo = resume_repo or get_resume_repository()
-        self.job_repo = job_repo or get_job_repository()
-        self.matching_engine = matching_engine or MatchingEngine(job_repository=self.job_repo)
+        self._resume_repo = resume_repo
+        self._job_repo = job_repo
+        self._matching_engine = matching_engine
         self.llm_service = llm_service
         self.job_retriever = job_retriever
         self.firecrawl_adapter = firecrawl_adapter
         self._tools: Dict[str, ToolDefinition] = {}
         self._register_default_tools()
         self._register_developer_b_tools()
+
+    @property
+    def resume_repo(self) -> IResumeRepository:
+        return self._resume_repo or get_resume_repository()
+
+    @resume_repo.setter
+    def resume_repo(self, value: Optional[IResumeRepository]) -> None:
+        self._resume_repo = value
+
+    @property
+    def job_repo(self) -> IJobRepository:
+        return self._job_repo or get_job_repository()
+
+    @job_repo.setter
+    def job_repo(self, value: Optional[IJobRepository]) -> None:
+        self._job_repo = value
+
+    @property
+    def matching_engine(self) -> MatchingEngine:
+        return self._matching_engine or MatchingEngine(job_repository=self.job_repo)
+
+    @matching_engine.setter
+    def matching_engine(self, value: Optional[MatchingEngine]) -> None:
+        self._matching_engine = value
 
     def register_tool(self, tool: ToolDefinition) -> None:
         """Register an approved tool into the allowlist."""
@@ -301,9 +325,9 @@ class ToolRegistry:
         from app.agents.tools.developer_b_tools import create_developer_b_tools
 
         b_tools = create_developer_b_tools(
-            resume_repo=self.resume_repo,
-            job_repo=self.job_repo,
-            matching_engine=self.matching_engine,
+            resume_repo=self._resume_repo,
+            job_repo=self._job_repo,
+            matching_engine=self._matching_engine,
             llm_service=self.llm_service,
             job_retriever=self.job_retriever,
             firecrawl_adapter=self.firecrawl_adapter,
@@ -315,10 +339,15 @@ class ToolRegistry:
 _global_tool_registry: Optional[ToolRegistry] = None
 
 
-
 def get_tool_registry() -> ToolRegistry:
     """Return singleton allowlisted ToolRegistry."""
     global _global_tool_registry
     if _global_tool_registry is None:
         _global_tool_registry = ToolRegistry()
     return _global_tool_registry
+
+
+def reset_tool_registry(registry: Optional[ToolRegistry] = None) -> None:
+    """Reset singleton tool registry instance."""
+    global _global_tool_registry
+    _global_tool_registry = registry

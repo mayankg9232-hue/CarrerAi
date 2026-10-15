@@ -84,17 +84,25 @@ _global_resume_repo: Optional[IResumeRepository] = None
 
 
 def get_resume_repository() -> IResumeRepository:
-    """Return singleton resume repository instance."""
+    """Return singleton resume repository instance based on configured backend."""
     global _global_resume_repo
     if _global_resume_repo is None:
-        _global_resume_repo = InMemoryResumeRepository()
+        from app.core.config import get_settings
+        settings = get_settings()
+        if settings.REPOSITORY_BACKEND == "sql":
+            from app.db.sql_repositories import SQLResumeRepository
+            _global_resume_repo = SQLResumeRepository()
+        else:
+            _global_resume_repo = InMemoryResumeRepository()
     return _global_resume_repo
 
 
-def reset_resume_repository() -> None:
+def reset_resume_repository(repo: Optional[IResumeRepository] = None) -> None:
     """Reset repository for unit test isolation."""
     global _global_resume_repo
-    if _global_resume_repo is not None:
+    if repo is not None:
+        _global_resume_repo = repo
+    elif _global_resume_repo is not None and isinstance(_global_resume_repo, InMemoryResumeRepository):
         _global_resume_repo._profiles.clear()
     else:
         _global_resume_repo = InMemoryResumeRepository()

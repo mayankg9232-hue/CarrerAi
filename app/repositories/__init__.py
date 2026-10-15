@@ -18,6 +18,13 @@ from app.repositories.user_repo import (
     reset_user_repository,
 )
 
+from app.repositories.match_repo import (
+    IMatchRepository,
+    InMemoryMatchRepository,
+    get_match_repository,
+    reset_match_repository,
+)
+
 __all__ = [
     "IUserRepository",
     "InMemoryUserRepository",
@@ -32,4 +39,8 @@ __all__ = [
     "InMemoryResumeRepository",
     "get_resume_repository",
     "reset_resume_repository",
+    "IMatchRepository",
+    "InMemoryMatchRepository",
+    "get_match_repository",
+    "reset_match_repository",
 ]

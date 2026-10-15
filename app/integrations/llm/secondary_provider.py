@@ -32,7 +32,7 @@ class SecondaryLLMAdapter(LLMProviderInterface):
         model: str = "gemini-1.5-flash",
         base_url: str = "https://generativelanguage.googleapis.com/v1beta",
         timeout: float = 15.0,
-        max_retries: int = 1,
+        max_retries: int = 2,
         provider_name: str = "gemini",
         transport: Optional[httpx.AsyncBaseTransport] = None,
     ) -> None:

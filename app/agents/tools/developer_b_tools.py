@@ -338,14 +338,22 @@ def create_developer_b_tools(
     sandbox_service: Optional[SandboxService] = None,
 ) -> List[Any]:
     """Instantiate and configure Developer B's allowlisted capability tools."""
-    # Resolve dependencies with safe singleton or mock fallbacks
-    _resume_repo = resume_repo or get_resume_repository()
-    _job_repo = job_repo or get_job_repository()
-    _matching_engine = matching_engine or MatchingEngine(job_repository=_job_repo)
+    # Resolve dependencies with dynamic getters to support test isolation resets
+    def _get_resume_repo() -> IResumeRepository:
+        return resume_repo if resume_repo is not None else get_resume_repository()
+
+    def _get_job_repo() -> IJobRepository:
+        return job_repo if job_repo is not None else get_job_repository()
+
+    def _get_matching_engine() -> MatchingEngine:
+        return matching_engine or MatchingEngine(job_repository=_get_job_repo())
+
+    def _get_job_retriever() -> JobRetriever:
+        return job_retriever or JobRetriever(job_repository=_get_job_repo())
+
     _llm_service = llm_service or get_llm_service()
-    _job_retriever = job_retriever or JobRetriever(job_repository=_job_repo)
     _skill_extractor = skill_extractor or SkillExtractor()
-    _skill_verifier = skill_verifier or SkillVerificationService(resume_repo=_resume_repo)
+    _skill_verifier = skill_verifier or SkillVerificationService(resume_repo=resume_repo)
     _sandbox_service = sandbox_service or get_sandbox_service()
 
     # If no Firecrawl adapter provided, determine from environment configuration
@@ -452,10 +460,10 @@ def create_developer_b_tools(
         query_label = args.query_text or ""
 
         if args.candidate_id:
-            cand = await _resume_repo.get_by_id(args.candidate_id)
+            cand = await _get_resume_repo().get_by_id(args.candidate_id)
             if not cand:
                 raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
-            ranked_tuples = await _job_retriever.search_relevant_jobs(
+            ranked_tuples = await _get_job_retriever().search_relevant_jobs(
                 candidate=cand,
                 top_k=args.limit,
                 min_similarity=args.min_similarity,
@@ -464,9 +472,9 @@ def create_developer_b_tools(
         else:
             if not query_label:
                 raise ValueError("Either 'query_text' or 'candidate_id' must be provided.")
-            active_jobs = await _job_repo.query_jobs(only_active=True, limit=100)
+            active_jobs = await _get_job_repo().query_jobs(only_active=True, limit=100)
             try:
-                query_vec = await _job_retriever.embedder.embed_text(query_label)
+                query_vec = await _get_job_retriever().embedder.embed_text(query_label)
             except Exception:
                 local_fallback = LocalDeterministicEmbeddingProvider()
                 query_vec = await local_fallback.embed_text(query_label)
@@ -474,7 +482,7 @@ def create_developer_b_tools(
             ranked: List[tuple[Job, float]] = []
             for j in active_jobs:
                 try:
-                    j_vec = await _job_retriever.get_or_create_job_embedding(j)
+                    j_vec = await _get_job_retriever().get_or_create_job_embedding(j)
                 except Exception:
                     local_fallback = LocalDeterministicEmbeddingProvider()
                     j_vec = await local_fallback.embed_text(prepare_job_embedding_text(j))
@@ -534,13 +542,13 @@ def create_developer_b_tools(
         raw_hash = hashlib.sha256(content_raw.encode("utf-8")).hexdigest()
 
         # Deduplicate by URL or content hash
-        existing = await _job_repo.get_by_source_url(validated_url)
+        existing = await _get_job_repo().get_by_source_url(validated_url)
         if not existing:
-            existing = await _job_repo.get_by_content_hash(raw_hash)
+            existing = await _get_job_repo().get_by_content_hash(raw_hash)
 
         if existing:
             existing.last_seen_at = scraped.get("collected_at")
-            await _job_repo.update_job(existing.id, last_seen_at=existing.last_seen_at)
+            await _get_job_repo().update_job(existing.id, last_seen_at=existing.last_seen_at)
             return IngestJobOutput(
                 job_id=existing.id,
                 title=existing.title,
@@ -567,7 +575,7 @@ def create_developer_b_tools(
             content_hash=raw_hash,
             is_active=True,
         )
-        await _job_repo.create_job(new_job)
+        await _get_job_repo().create_job(new_job)
 
         return IngestJobOutput(
             job_id=new_job.id,
@@ -598,14 +606,14 @@ def create_developer_b_tools(
     # 5. generate_truthful_resume_suggestions
     # --------------------------------------------------------------------------
     async def _handle_truthful_suggestions(args: GenerateTruthfulSuggestionsInput) -> TruthfulResumeSuggestionsOutput:
-        cand = await _resume_repo.get_by_id(args.candidate_id)
+        cand = await _get_resume_repo().get_by_id(args.candidate_id)
         if not cand:
             raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
-        job = await _job_repo.get_by_id(args.job_id)
+        job = await _get_job_repo().get_by_id(args.job_id)
         if not job or not job.is_active:
             raise ValueError(f"Job listing '{args.job_id}' not found or inactive.")
 
-        gap_result = _matching_engine.gap_analyzer.analyze(cand, job)
+        gap_result = _get_matching_engine().gap_analyzer.analyze(cand, job)
 
         # Generate truthful, non-hallucinatory suggestions based strictly on missing skills
         suggestions: List[str] = []
@@ -650,14 +658,14 @@ def create_developer_b_tools(
     # 6. synthesize_grounded_match_explanation
     # --------------------------------------------------------------------------
     async def _handle_synthesize_explanation(args: SynthesizeMatchExplanationInput) -> SynthesizedMatchExplanationOutput:
-        cand = await _resume_repo.get_by_id(args.candidate_id)
+        cand = await _get_resume_repo().get_by_id(args.candidate_id)
         if not cand:
             raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
-        job = await _job_repo.get_by_id(args.job_id)
+        job = await _get_job_repo().get_by_id(args.job_id)
         if not job or not job.is_active:
             raise ValueError(f"Job listing '{args.job_id}' not found or inactive.")
 
-        match_res = await _matching_engine.match_candidate_to_job(candidate=cand, job=job)
+        match_res = await _get_matching_engine().match_candidate_to_job(candidate=cand, job=job)
 
         caveats: List[str] = []
         if match_res.missing_skills:
@@ -699,15 +707,15 @@ def create_developer_b_tools(
     # 7. recommend_skill_assessments
     # --------------------------------------------------------------------------
     async def _handle_recommend_assessments(args: RecommendSkillAssessmentsInput) -> RecommendSkillAssessmentsOutput:
-        cand = await _resume_repo.get_by_id(args.candidate_id)
+        cand = await _get_resume_repo().get_by_id(args.candidate_id)
         if not cand:
             raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
 
         target_skills: List[str] = []
         if args.job_id:
-            job = await _job_repo.get_by_id(args.job_id)
+            job = await _get_job_repo().get_by_id(args.job_id)
             if job and job.is_active:
-                gap = _matching_engine.gap_analyzer.analyze(cand, job)
+                gap = _get_matching_engine().gap_analyzer.analyze(cand, job)
                 target_skills = list(dict.fromkeys(gap.missing_skills + gap.uncertain_skills))
 
         if not target_skills:
@@ -762,7 +770,7 @@ def create_developer_b_tools(
     # 8. verify_skill_from_assessment
     # --------------------------------------------------------------------------
     async def _handle_verify_assessment(args: VerifySkillFromAssessmentInput) -> VerifySkillFromAssessmentOutput:
-        cand = await _resume_repo.get_by_id(args.candidate_id)
+        cand = await _get_resume_repo().get_by_id(args.candidate_id)
         if not cand:
             raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
 

@@ -34,7 +34,7 @@ class AgentResponseValidator:
 
     # Secret and credential leakage patterns
     SECRET_LEAKAGE_PATTERNS = [
-        r"AIza[0-9A-Za-z-_]{35}",           # Google API key
+        r"AIza[0-9A-Za-z-_]{30,}",          # Google API key
         r"sk-[a-zA-Z0-9]{32,}",             # OpenAI secret key
         r"AQ\.[a-zA-Z0-9_-]{30,}",          # Gemini secret key
         r"Bearer\s+ey[A-Za-z0-9_-]{30,}",   # JWT token

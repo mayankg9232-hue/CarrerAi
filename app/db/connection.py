@@ -5,10 +5,12 @@ Supports PostgreSQL (via asyncpg connection pooling) and SQLite (with WAL mode a
 
 import asyncio
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 import logging
 import os
 import sqlite3
 from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union
+import urllib.parse
 
 try:
     import asyncpg
@@ -91,15 +93,27 @@ class DatabaseManager:
         conn.execute("PRAGMA journal_mode = WAL;")
         return conn
 
+    @staticmethod
+    def _clean_postgres_url(url: str) -> str:
+        """Strip asyncpg-unsupported query parameters (like channel_binding) while preserving sslmode."""
+        parsed = urllib.parse.urlsplit(url)
+        query_params = urllib.parse.parse_qsl(parsed.query)
+        filtered = [(k, v) for k, v in query_params if k.lower() not in ("channel_binding",)]
+        clean_query = urllib.parse.urlencode(filtered)
+        return urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, clean_query, parsed.fragment))
+
     async def initialize(self) -> None:
         """Execute DDL to create tables and indexes idempotently."""
         async with self._init_lock:
             if self._initialized:
                 return
 
-            if self.is_postgres and HAS_ASYNCPG:
+            if self.is_postgres:
+                if not HAS_ASYNCPG:
+                    raise DatabaseError("asyncpg library is required for PostgreSQL database connections.")
+
                 try:
-                    clean_url = self.database_url.split("&channel_binding")[0]
+                    clean_url = self._clean_postgres_url(self.database_url)
                     self._pg_pool = await asyncpg.create_pool(
                         clean_url,
                         min_size=1,
@@ -122,12 +136,33 @@ class DatabaseManager:
                     logger.info("PostgreSQL database pool initialized successfully with 4 core tables.")
                     return
                 except Exception as exc:
-                    logger.error("Failed to initialize PostgreSQL pool: %s. Falling back to SQLite.", exc)
-                    self.is_postgres = False
+                    logger.error("Failed to initialize PostgreSQL pool: %s", type(exc).__name__)
+                    raise DatabaseError(f"Failed to connect to PostgreSQL database: {type(exc).__name__} - {exc}") from exc
 
             await asyncio.to_thread(self._sync_init_schema)
             self._initialized = True
             logger.info("SQLite database initialized successfully at '%s'", self._db_path)
+
+    async def get_diagnostic_metadata(self) -> Dict[str, Any]:
+        """Execute safe diagnostic query without printing credentials."""
+        await self.initialize()
+        if self.is_postgres and self._pg_pool:
+            async with self._pg_pool.acquire() as conn:
+                row = await conn.fetchrow("""
+                    SELECT
+                        current_database() AS database_name,
+                        current_schema() AS schema_name,
+                        current_user AS database_user,
+                        NOW() AS checked_at;
+                """)
+                return dict(row) if row else {}
+        else:
+            return {
+                "database_name": self._db_path,
+                "schema_name": "main",
+                "database_user": "sqlite_user",
+                "checked_at": datetime.now(timezone.utc).isoformat(),
+            }
 
     def _sync_init_schema(self) -> None:
         conn = self._get_raw_connection()

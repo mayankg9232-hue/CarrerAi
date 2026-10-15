@@ -10,6 +10,7 @@ from app.integrations.llm.base import (
     LLMError,
     LLMMalformedOutputError,
     LLMProviderInterface,
+    LLMRateLimitError,
     LLMTimeoutError,
     LLMUnavailableError,
 )
@@ -90,7 +91,7 @@ class TwoModelLLMService:
             self.last_metadata = metadata
             return result, metadata
 
-        except (LLMUnavailableError, LLMTimeoutError, LLMCredentialsMissingError) as exc:
+        except (LLMUnavailableError, LLMTimeoutError, LLMCredentialsMissingError, LLMRateLimitError) as exc:
             if not allow_fallback or (self.secondary_provider is None and self.backup_provider is None):
                 logger.warning(
                     f"Primary provider '{self.primary_provider.provider_name}' failed ({type(exc).__name__}), "
@@ -167,7 +168,7 @@ class TwoModelLLMService:
                 max_tokens=max_tokens,
                 task_name=task_name,
             )
-        except (LLMUnavailableError, LLMTimeoutError, LLMCredentialsMissingError) as exc:
+        except (LLMUnavailableError, LLMTimeoutError, LLMCredentialsMissingError, LLMRateLimitError) as exc:
             if not allow_fallback or (self.secondary_provider is None and self.backup_provider is None):
                 raise
 

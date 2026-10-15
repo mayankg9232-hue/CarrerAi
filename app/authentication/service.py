@@ -33,11 +33,21 @@ class AuthenticationService:
         settings: Optional[Settings] = None,
         bcrypt_rounds: int = 12,
     ) -> None:
-        self.repository = repository or get_user_repository()
+        self._repository = repository
         self.settings = settings or get_settings()
         self.bcrypt_rounds = bcrypt_rounds
         self._google_certs_cache: dict[str, str] = {}
         self._google_certs_last_fetch: float = 0.0
+
+    @property
+    def repository(self) -> IUserRepository:
+        if self._repository is not None:
+            return self._repository
+        return get_user_repository()
+
+    @repository.setter
+    def repository(self, repo: Optional[IUserRepository]) -> None:
+        self._repository = repo
 
     def get_service_account_credentials(self) -> Optional[dict]:
         """Load service account JSON credentials if path is configured and exists."""

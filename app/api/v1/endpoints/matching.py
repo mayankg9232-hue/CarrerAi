@@ -118,3 +118,27 @@ async def get_rag_context(
         data=context,
         message="Grounded RAG context assembled successfully.",
     )
+
+
+@router.get(
+    "/{candidate_id}/history",
+    response_model=StandardResponse[list],
+    status_code=status.HTTP_200_OK,
+    summary="Get persisted match history for candidate",
+    description="Retrieve all previously evaluated and persisted match records for candidate from database.",
+)
+async def get_candidate_match_history(
+    candidate_id: str,
+    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    service: MatchingApplicationService = Depends(get_matching_app_service),
+) -> StandardResponse[list]:
+    """Retrieve persisted match history for candidate profile."""
+    records = await service.get_candidate_matches(
+        candidate_id=candidate_id,
+        principal=current_user,
+    )
+    return StandardResponse(
+        data=records,
+        message=f"Retrieved {len(records)} persisted match record(s).",
+    )
+

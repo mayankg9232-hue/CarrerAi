@@ -1,6 +1,7 @@
 """SQL-backed repository implementations for Users, Jobs, Resumes, and Matches."""
 
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 import logging
 from typing import Any, Dict, List, Optional
@@ -8,6 +9,7 @@ import uuid
 
 from app.db.connection import DatabaseManager, UniqueConstraintViolationError, get_db_manager
 from app.repositories.job_repo import IJobRepository
+from app.repositories.match_repo import IMatchRepository
 from app.repositories.resume_repo import IResumeRepository
 from app.repositories.user_repo import IUserRepository, UserRecord
 from app.schemas.job import Job
@@ -110,6 +112,10 @@ class SQLJobRepository(IJobRepository):
         now_iso = datetime.now(timezone.utc).isoformat()
         collected_at = job.collected_at.isoformat() if job.collected_at else now_iso
         last_seen_at = job.last_seen_at.isoformat() if job.last_seen_at else now_iso
+        content_hash = job.content_hash or hashlib.sha256(
+            f"{job.title.strip().lower()}|{job.company.strip().lower()}|{job.description.strip().lower()}".encode("utf-8")
+        ).hexdigest()
+        job.content_hash = content_hash
 
         query = """
         INSERT INTO jobs (
@@ -128,7 +134,7 @@ class SQLJobRepository(IJobRepository):
             job.experience_level,
             job.source,
             job.source_url,
-            job.content_hash,
+            content_hash,
             collected_at,
             last_seen_at,
             1 if job.is_active else 0,
@@ -234,8 +240,22 @@ class SQLJobRepository(IJobRepository):
         location: Optional[str] = None,
         only_active: bool = True,
     ) -> int:
-        jobs = await self.query_jobs(q=q, skills=skills, location=location, only_active=only_active, limit=10000, offset=0)
-        return len(jobs)
+        if skills:
+            jobs = await self.query_jobs(q=q, skills=skills, location=location, only_active=only_active, limit=10000, offset=0)
+            return len(jobs)
+        where_clauses = []
+        params = []
+        if only_active:
+            where_clauses.append("is_active = 1")
+        if location:
+            where_clauses.append("LOWER(location) LIKE ?")
+            params.append(f"%{location.lower()}%")
+        if q:
+            where_clauses.append("(LOWER(title) LIKE ? OR LOWER(description) LIKE ?)")
+            params.extend([f"%{q.lower()}%", f"%{q.lower()}%"])
+        where_sql = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+        row = await self.db.fetchone(f"SELECT COUNT(*) as cnt FROM jobs {where_sql}", tuple(params))
+        return int(row["cnt"]) if row and "cnt" in row else 0
 
     async def mark_stale_jobs(self, stale_threshold_days: int = 30) -> int:
         threshold = (datetime.now(timezone.utc) - timedelta(days=stale_threshold_days)).isoformat()
@@ -283,6 +303,11 @@ class SQLResumeRepository(IResumeRepository):
 
     async def save_profile(self, profile: CandidateProfile) -> CandidateProfile:
         now_iso = profile.created_at.isoformat() if profile.created_at else datetime.now(timezone.utc).isoformat()
+        raw_hash = profile.raw_hash or hashlib.sha256(
+            f"{profile.user_id}|{profile.full_name or ''}|{profile.summary or ''}".encode("utf-8")
+        ).hexdigest()
+        profile.raw_hash = raw_hash
+
         query = """
         INSERT INTO candidate_profiles (
             id, user_id, raw_hash, full_name, email, phone, summary,
@@ -300,10 +325,10 @@ class SQLResumeRepository(IResumeRepository):
         params = (
             profile.id,
             profile.user_id,
-            profile.raw_hash,
+            raw_hash,
             profile.full_name,
             profile.email,
-            getattr(profile, "phone", None),
+            getattr(profile, "phone", getattr(profile, "headline", None)),
             profile.summary,
             json.dumps([s.model_dump(mode="json") for s in profile.skills]),
             json.dumps([e.model_dump(mode="json") for e in profile.experience]),
@@ -314,7 +339,7 @@ class SQLResumeRepository(IResumeRepository):
             await self.db.execute(query, params)
         except UniqueConstraintViolationError:
             # User uploaded identical document hash
-            existing = await self.get_by_raw_hash(profile.user_id, profile.raw_hash)
+            existing = await self.get_by_raw_hash(profile.user_id, raw_hash)
             if existing:
                 return existing
             raise
@@ -357,6 +382,7 @@ class SQLResumeRepository(IResumeRepository):
             user_id=row["user_id"],
             raw_hash=row["raw_hash"],
             full_name=row["full_name"],
+            headline=row.get("phone") or row.get("headline"),
             email=row["email"],
             summary=row["summary"],
             skills=[SkillItem.model_validate(s) for s in raw_skills],
@@ -366,7 +392,7 @@ class SQLResumeRepository(IResumeRepository):
         )
 
 
-class SQLMatchRepository:
+class SQLMatchRepository(IMatchRepository):
     """Persistent SQL-backed repository for match records, score breakdowns, and audit trails."""
 
     def __init__(self, db_manager: Optional[DatabaseManager] = None) -> None:
@@ -401,3 +427,13 @@ class SQLMatchRepository:
             (candidate_id,),
         )
         return rows
+
+    async def get_match(self, candidate_id: str, job_id: str) -> Optional[Dict[str, Any]]:
+        row = await self.db.fetchone(
+            "SELECT * FROM match_records WHERE candidate_id = ? AND job_id = ? ORDER BY created_at DESC LIMIT 1",
+            (candidate_id, job_id),
+        )
+        return row
+
+    async def clear(self) -> None:
+        await self.db.execute("DELETE FROM match_records")

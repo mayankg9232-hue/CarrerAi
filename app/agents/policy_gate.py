@@ -62,8 +62,24 @@ class PolicyGate:
         tool_registry: Optional[ToolRegistry] = None,
         resume_repo: Optional[IResumeRepository] = None,
     ) -> None:
-        self.registry = tool_registry or get_tool_registry()
-        self.resume_repo = resume_repo or get_resume_repository()
+        self._registry = tool_registry
+        self._resume_repo = resume_repo
+
+    @property
+    def registry(self) -> ToolRegistry:
+        return self._registry or get_tool_registry()
+
+    @registry.setter
+    def registry(self, value: Optional[ToolRegistry]) -> None:
+        self._registry = value
+
+    @property
+    def resume_repo(self) -> IResumeRepository:
+        return self._resume_repo or get_resume_repository()
+
+    @resume_repo.setter
+    def resume_repo(self, value: Optional[IResumeRepository]) -> None:
+        self._resume_repo = value
 
     async def authorize_and_validate(
         self,

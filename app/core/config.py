@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     # Database & PostgreSQL
     DATABASE_URL: str = "sqlite:///./app_dev.db"
     POSTGRES_ENDPOINT: str = ""
+    REPOSITORY_BACKEND: str = "sql"  # "sql" or "memory"
 
     # Redis Cache (Upstash TLS or Local)
     REDIS_URL: str = ""
@@ -127,6 +128,17 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return [item.strip() for item in v.split(",") if item.strip()]
         return v
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def validate_database_url(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("DATABASE_URL must not be empty.")
+        clean = v.strip()
+        scheme = clean.split("://")[0].lower() if "://" in clean else ""
+        if scheme not in ("postgresql", "postgres", "sqlite"):
+            raise ValueError(f"Unsupported database scheme: '{scheme}'. Supported schemes: 'postgresql', 'postgres', 'sqlite'.")
+        return clean
 
 
 @lru_cache()

@@ -46,6 +46,8 @@ firebase-*.json
 *.sqlite
 *.sqlite3
 *.db
+*.db-shm
+*.db-wal
 app_dev.db
 
 # Testing & Coverage

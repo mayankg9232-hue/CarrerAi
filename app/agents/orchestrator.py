@@ -53,15 +53,49 @@ class AgentOrchestrator:
         job_repo: Optional[IJobRepository] = None,
         validator: Optional[AgentResponseValidator] = None,
     ) -> None:
-        self.tool_registry = tool_registry or get_tool_registry()
-        self.resume_repo = resume_repo or get_resume_repository()
-        self.job_repo = job_repo or get_job_repository()
-        self.policy_gate = policy_gate or PolicyGate(
+        self._policy_gate = policy_gate
+        self._tool_registry = tool_registry
+        self._resume_repo = resume_repo
+        self._job_repo = job_repo
+        self.llm_service = llm_service or get_llm_service()
+        self.validator = validator or AgentResponseValidator()
+
+    @property
+    def tool_registry(self) -> ToolRegistry:
+        return self._tool_registry or get_tool_registry()
+
+    @tool_registry.setter
+    def tool_registry(self, value: Optional[ToolRegistry]) -> None:
+        self._tool_registry = value
+
+    @property
+    def resume_repo(self) -> IResumeRepository:
+        return self._resume_repo or get_resume_repository()
+
+    @resume_repo.setter
+    def resume_repo(self, value: Optional[IResumeRepository]) -> None:
+        self._resume_repo = value
+
+    @property
+    def job_repo(self) -> IJobRepository:
+        return self._job_repo or get_job_repository()
+
+    @job_repo.setter
+    def job_repo(self, value: Optional[IJobRepository]) -> None:
+        self._job_repo = value
+
+    @property
+    def policy_gate(self) -> PolicyGate:
+        if self._policy_gate is not None:
+            return self._policy_gate
+        return PolicyGate(
             tool_registry=self.tool_registry,
             resume_repo=self.resume_repo,
         )
-        self.llm_service = llm_service or get_llm_service()
-        self.validator = validator or AgentResponseValidator()
+
+    @policy_gate.setter
+    def policy_gate(self, value: Optional[PolicyGate]) -> None:
+        self._policy_gate = value
 
     async def execute_task(
         self,
@@ -237,8 +271,73 @@ class AgentOrchestrator:
                     break
 
             # 4. Final Answer Synthesis & Validation
+            cand_ctx = None
+            if request.candidate_id:
+                try:
+                    c_rec = await self.resume_repo.get_by_id(request.candidate_id)
+                    if c_rec:
+                        cand_ctx = {
+                            "full_name": principal.full_name or c_rec.full_name,
+                            "headline": c_rec.headline or c_rec.current_role,
+                            "skills": [s.name for s in c_rec.skills],
+                            "years_of_experience": c_rec.years_of_experience,
+                        }
+                except Exception as exc:
+                    logger.debug("Candidate context lookup non-critical notice: %s", exc)
+
+            job_ctx = None
+            if request.job_id:
+                try:
+                    j_rec = await self.job_repo.get_by_id(request.job_id)
+                    if j_rec:
+                        job_ctx = {
+                            "title": j_rec.title,
+                            "company": j_rec.company,
+                            "required_skills": j_rec.required_skills,
+                        }
+                except Exception as exc:
+                    logger.debug("Job context lookup non-critical notice: %s", exc)
+
+            grounded_facts = ""
+            if collected_results:
+                grounded_facts = self._synthesize_final_answer(request, collected_results)
+
             if not final_answer:
-                final_answer = self._synthesize_final_answer(request, collected_results)
+                from app.agents.prompts import CAREER_AGENT_SYSTEM_PROMPT, build_conversational_prompt
+
+                conversational_prompt = build_conversational_prompt(
+                    task=request.task,
+                    history=request.history,
+                    candidate_context=cand_ctx,
+                    job_context=job_ctx,
+                    tool_evidence=grounded_facts,
+                )
+
+                try:
+                    llm_generated = await self.llm_service.generate_text(
+                        system_prompt=CAREER_AGENT_SYSTEM_PROMPT,
+                        user_prompt=conversational_prompt,
+                        temperature=0.3,
+                        max_tokens=1500,
+                        task_name="agent_conversational_response",
+                    )
+                    is_match_query = any(w in request.task.lower() for w in ["match", "alignment", "score", "fit", "compare"])
+                    is_resume_query = any(w in request.task.lower() for w in ["resume", "cv", "suggestion", "improve"])
+                    if collected_results and (is_match_query or is_resume_query):
+                        if grounded_facts and ("Overall Alignment Score" in grounded_facts or "Truthful Resume Improvement" in grounded_facts):
+                            final_answer = f"{grounded_facts}\n\n{llm_generated}"
+                        else:
+                            final_answer = llm_generated or grounded_facts
+                    else:
+                        final_answer = llm_generated or "I am here to help you navigate your job search and technical career goals."
+                except Exception as exc:
+                    logger.warning("Agent LLM conversational generation failed: %s", str(exc))
+                    is_match_query = any(w in request.task.lower() for w in ["match", "alignment", "score", "fit", "compare"])
+                    is_resume_query = any(w in request.task.lower() for w in ["resume", "cv", "suggestion", "improve"])
+                    if collected_results and (is_match_query or is_resume_query):
+                        final_answer = grounded_facts
+                    else:
+                        final_answer = "The career assistant service is temporarily unavailable. Please try again shortly."
 
             if not state_machine.is_terminal:
                 state_machine.transition_to(
@@ -291,39 +390,82 @@ class AgentOrchestrator:
 
     def _plan_task(self, request: AgentTaskRequest, principal: AuthenticatedPrincipal) -> List[tuple[str, dict]]:
         """Formulate bounded tool execution plan based on task instructions and context."""
-        task_lower = request.task.lower()
+        task_lower = request.task.lower().strip()
         planned: List[tuple[str, dict]] = []
 
-        # 1. Candidate-Job Match Workflow
+        # 0. Conversational pleasantries and greetings MUST NEVER trigger tools (Case A)
+        greetings = {"hi", "hii", "hiii", "hello", "hey", "heyy", "greetings", "good morning", "good afternoon", "good evening", "howdy", "sup", "yo"}
+        tokens = task_lower.split()
+        first_token = tokens[0] if tokens else ""
+        if task_lower in greetings or (len(tokens) <= 3 and first_token in greetings):
+            return []
+
+        # 0b. Open-ended career advice questions (Case B) MUST NOT trigger automated matching tools
+        is_open_ended_career_question = any(
+            phrase in task_lower for phrase in [
+                "what to do", "what should i do", "how can i get", "how to get", "how to prepare",
+                "what should i learn", "learning roadmap", "career roadmap", "career transition",
+                "tips for", "advice for", "how do i start", "how do i become", "guide me"
+            ]
+        )
+        is_explicit_match_intent = any(
+            kw in task_lower for kw in [
+                "compare my profile", "match my profile", "evaluate match", "run match",
+                "match candidate to job", "calculate match", "calculate alignment", "check fit", "match to job"
+            ]
+        )
+        is_resume_tool_intent = any(
+            phrase in task_lower for phrase in [
+                "resume improvement", "improve resume", "tailor resume", "resume suggestion",
+                "truthful resume", "truthful suggestion", "resume feedback", "resume advice"
+            ]
+        )
+        if is_open_ended_career_question and not (is_explicit_match_intent or is_resume_tool_intent):
+            return []
+
+        # 1. Candidate-Job Match Workflow (Explicit request to match candidate to specific job)
         if request.candidate_id and request.job_id:
-            if "match" in task_lower:
+            if is_explicit_match_intent or any(w in task_lower for w in ["match", "alignment", "score", "fit", "compare"]):
                 planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
                 planned.append(("get_job_details", {"job_id": request.job_id}))
                 planned.append(("match_candidate_to_job", {"candidate_id": request.candidate_id, "job_id": request.job_id}))
                 return planned
-            if any(w in task_lower for w in ["improve", "suggestion", "advice"]):
+            if is_resume_tool_intent or any(phrase in task_lower for phrase in ["improve resume", "tailor resume", "resume suggestion", "truthful suggestion", "truthful resume", "resume improvement"]):
                 planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
                 planned.append(("get_job_details", {"job_id": request.job_id}))
                 planned.append(("generate_truthful_resume_suggestions", {"candidate_id": request.candidate_id, "job_id": request.job_id}))
                 return planned
-            if any(w in task_lower for w in ["synthesize", "explain"]):
+            if any(phrase in task_lower for phrase in ["synthesize match", "explain match", "match explanation"]):
                 planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
                 planned.append(("get_job_details", {"job_id": request.job_id}))
                 planned.append(("synthesize_grounded_match_explanation", {"candidate_id": request.candidate_id, "job_id": request.job_id}))
                 return planned
+            if "gap" in task_lower:
+                planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
+                planned.append(("analyze_skill_gaps", {"candidate_id": request.candidate_id, "job_id": request.job_id}))
+                return planned
+
+        # 2. Case D — Explicit comparison with available jobs / Recommendations
+        if request.candidate_id and any(w in task_lower for w in ["compare", "match"]) and any(w in task_lower for w in ["jobs", "openings", "roles", "positions"]):
             planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
-            planned.append(("get_job_details", {"job_id": request.job_id}))
-            planned.append(("match_candidate_to_job", {"candidate_id": request.candidate_id, "job_id": request.job_id}))
+            extracted_term = None
+            for term in ["machine learning", "ml engineer", "ml", "frontend", "backend", "full stack", "devops", "cloud"]:
+                if term in task_lower:
+                    extracted_term = term
+                    break
+            if extracted_term:
+                planned.append(("semantic_search_jobs", {"candidate_id": request.candidate_id, "query_text": extracted_term, "limit": 5}))
+            else:
+                planned.append(("recommend_jobs_for_candidate", {"candidate_id": request.candidate_id, "min_score": 50.0, "limit": 5}))
             return planned
 
-        # 2. Recommendations Workflow
-        if request.candidate_id and ("recommend" in task_lower or "find" in task_lower or "jobs" in task_lower):
+        if request.candidate_id and any(w in task_lower for w in ["recommend", "find jobs for me", "suitable jobs", "matching jobs for me"]):
             planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
             planned.append(("recommend_jobs_for_candidate", {"candidate_id": request.candidate_id, "min_score": 50.0, "limit": 5}))
             return planned
 
         # 3. Semantic / Vector Search Workflow
-        if any(w in task_lower for w in ["semantic", "vector", "similarity"]):
+        if any(w in task_lower for w in ["semantic", "vector search", "similarity search"]):
             if request.candidate_id:
                 planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
                 planned.append(("semantic_search_jobs", {"candidate_id": request.candidate_id, "limit": 5}))
@@ -331,30 +473,28 @@ class AgentOrchestrator:
             planned.append(("semantic_search_jobs", {"query_text": request.task[:100], "limit": 5}))
             return planned
 
-        # 4. Skill Gap Analysis
-        if request.candidate_id and "gap" in task_lower:
-            planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
-            if request.job_id:
-                planned.append(("analyze_skill_gaps", {"candidate_id": request.candidate_id, "job_id": request.job_id}))
-            return planned
-
-        # 5. Extract Skills from text
-        if "extract" in task_lower and "skill" in task_lower:
+        # 4. Extract Skills from raw text
+        if ("extract" in task_lower or "parse" in task_lower) and "skill" in task_lower:
             planned.append(("extract_skills_from_text", {"text": request.task[:500]}))
             return planned
 
-        # 6. Profile Facts Retrieval
-        if request.candidate_id:
+        # 5. Profile Facts Retrieval
+        if request.candidate_id and any(w in task_lower for w in ["my profile", "my resume", "my cv", "my skills", "show my skills", "get my profile"]):
             planned.append(("get_candidate_profile", {"candidate_id": request.candidate_id}))
             return planned
 
-        # 7. Job Search
-        if "search" in task_lower or "job" in task_lower:
-            planned.append(("query_jobs", {"q": request.task[:50], "limit": 5}))
+        # 6. Explicit Job Search
+        if any(phrase in task_lower for phrase in ["search for jobs", "search jobs", "browse jobs", "list jobs", "find openings"]):
+            query_text = request.task
+            for prefix in ["search for jobs", "search jobs", "browse jobs", "list jobs", "find openings"]:
+                if prefix in task_lower:
+                    query_text = task_lower.split(prefix, 1)[-1].strip(" :,-")
+                    break
+            planned.append(("query_jobs", {"q": query_text[:50] or None, "limit": 5}))
             return planned
 
-        # Default: Search active jobs
-        planned.append(("query_jobs", {"limit": 5}))
+        # Conversational turns (greetings, career transitions, explanations, roadmaps, follow-ups):
+        # Do not force unneeded tool calls — proceed cleanly to conversational synthesis
         return planned
 
     def _serialize_tool_result(self, result: Any) -> Any:

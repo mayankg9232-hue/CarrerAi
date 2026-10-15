@@ -178,8 +178,8 @@ def test_cosine_similarity_with_3072_dim_vectors() -> None:
 async def test_gemini_embedding_live_verification() -> None:
     """Live verification of Gemini Embedding 2 with the active API key."""
     settings = Settings()
-    if not settings.EMBEDDING_API_KEY or settings.EMBEDDING_PROVIDER != "gemini":
-        pytest.skip("EMBEDDING_API_KEY not configured or provider is not gemini")
+    if not settings.EMBEDDING_API_KEY:
+        pytest.skip("EMBEDDING_API_KEY not configured")
 
     provider = GeminiEmbeddingProvider(
         api_key=settings.EMBEDDING_API_KEY,

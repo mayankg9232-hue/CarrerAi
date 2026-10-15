@@ -119,17 +119,30 @@ class InMemoryUserRepository(IUserRepository):
         self._id_by_email.clear()
 
 
-# Global singleton instance for MVP runtime
-_user_repository = InMemoryUserRepository()
+_user_repository: Optional[IUserRepository] = None
 
 
 def get_user_repository() -> IUserRepository:
-    """Dependency provider returning singleton user repository."""
+    """Dependency provider returning singleton user repository based on configured backend."""
+    global _user_repository
+    if _user_repository is None:
+        from app.core.config import get_settings
+        settings = get_settings()
+        if settings.REPOSITORY_BACKEND == "sql":
+            from app.db.sql_repositories import SQLUserRepository
+            _user_repository = SQLUserRepository()
+        else:
+            _user_repository = InMemoryUserRepository()
     return _user_repository
 
 
-def reset_user_repository() -> None:
+def reset_user_repository(repo: Optional[IUserRepository] = None) -> None:
     """Reset singleton repository for test isolation."""
     global _user_repository
-    _user_repository._users_by_id.clear()
-    _user_repository._id_by_email.clear()
+    if repo is not None:
+        _user_repository = repo
+    elif _user_repository is not None and isinstance(_user_repository, InMemoryUserRepository):
+        _user_repository._users_by_id.clear()
+        _user_repository._id_by_email.clear()
+    else:
+        _user_repository = InMemoryUserRepository()

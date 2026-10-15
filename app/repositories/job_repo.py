@@ -211,17 +211,25 @@ _global_job_repo: Optional[IJobRepository] = None
 
 
 def get_job_repository() -> IJobRepository:
-    """Return singleton job repository instance."""
+    """Return singleton job repository instance based on configured backend."""
     global _global_job_repo
     if _global_job_repo is None:
-        _global_job_repo = InMemoryJobRepository()
+        from app.core.config import get_settings
+        settings = get_settings()
+        if settings.REPOSITORY_BACKEND == "sql":
+            from app.db.sql_repositories import SQLJobRepository
+            _global_job_repo = SQLJobRepository()
+        else:
+            _global_job_repo = InMemoryJobRepository()
     return _global_job_repo
 
 
-def reset_job_repository() -> None:
+def reset_job_repository(repo: Optional[IJobRepository] = None) -> None:
     """Reset repository for unit test isolation."""
     global _global_job_repo
-    if _global_job_repo is not None:
+    if repo is not None:
+        _global_job_repo = repo
+    elif _global_job_repo is not None and isinstance(_global_job_repo, InMemoryJobRepository):
         _global_job_repo._jobs.clear()
         _global_job_repo._hash_index.clear()
         _global_job_repo._url_index.clear()
