@@ -24,8 +24,11 @@ const state = {
     experience: [],
     education: []
   },
+  userResumes: [],
+  activeResumeId: null,
   jobs: [],
   selectedJobId: null,
+  savedJobs: [],
   savedJobIds: new Set(JSON.parse(localStorage.getItem('cm_saved_jobs') || '[]')),
   applications: JSON.parse(localStorage.getItem('cm_applications') || '[]'),
   challenges: [],
@@ -44,7 +47,9 @@ const dom = {};
 document.addEventListener('DOMContentLoaded', async () => {
   cacheDomElements();
   bindEventListeners();
+  renderUserInfo();
   await initializeBackendConnection();
+  await checkEmailLinkSignInOnLoad();
 });
 
 function cacheDomElements() {
@@ -73,6 +78,7 @@ function cacheDomElements() {
   dom.btnSampleBackend = document.getElementById('btnSampleBackend');
   dom.pipelineProgressCard = document.getElementById('pipelineProgressCard');
   dom.pipelineProgressPercent = document.getElementById('pipelineProgressPercent');
+  dom.cvParsingProgressBar = document.getElementById('cvParsingProgressBar');
   dom.pipelineStepStatusTitle = document.getElementById('pipelineStepStatusTitle');
   dom.pipelineStepStatusSub = document.getElementById('pipelineStepStatusSub');
   dom.pipeStep1 = document.getElementById('pipeStep1');
@@ -80,12 +86,17 @@ function cacheDomElements() {
   dom.pipeStep3 = document.getElementById('pipeStep3');
   dom.pipeStep4 = document.getElementById('pipeStep4');
   dom.pipeStep5 = document.getElementById('pipeStep5');
+  dom.resumeUploadCard = document.getElementById('resumeUploadCard');
   dom.candidateSummaryBanner = document.getElementById('candidateSummaryBanner');
   dom.summaryCandidateName = document.getElementById('summaryCandidateName');
   dom.summaryCandidateHeadline = document.getElementById('summaryCandidateHeadline');
   dom.summaryCandidateEmail = document.getElementById('summaryCandidateEmail');
   dom.summaryCandidateAvatar = document.getElementById('summaryCandidateAvatar');
+  dom.summaryCandidateBadge = document.getElementById('summaryCandidateBadge');
+  dom.summaryCandidateSkillCount = document.getElementById('summaryCandidateSkillCount');
   dom.summaryCandidateSkills = document.getElementById('summaryCandidateSkills');
+  dom.btnReplaceResumeCompact = document.getElementById('btnReplaceResumeCompact');
+  dom.btnViewFullProfile = document.getElementById('btnViewFullProfile');
   dom.btnUploadAnotherCv = document.getElementById('btnUploadAnotherCv');
   dom.rankedMatchesSection = document.getElementById('rankedMatchesSection');
   dom.rankedMatchesCountBadge = document.getElementById('rankedMatchesCountBadge');
@@ -98,12 +109,24 @@ function cacheDomElements() {
   dom.btnTriggerNewUpload = document.getElementById('btnTriggerNewUpload');
   dom.btnReplaceResume = document.getElementById('btnReplaceResume');
   dom.btnSaveProfile = document.getElementById('btnSaveProfile');
+  dom.storedResumesCard = document.getElementById('storedResumesCard');
+  dom.userResumesList = document.getElementById('userResumesList');
+  dom.btnUploadNewVersion = document.getElementById('btnUploadNewVersion');
+  dom.btnSelectCvFileLegacy = document.getElementById('btnSelectCvFileLegacy');
+  dom.inputCvFileLegacy = document.getElementById('inputCvFileLegacy');
   dom.editHeadline = document.getElementById('editHeadline');
   dom.editSummary = document.getElementById('editSummary');
   dom.editableSkillsList = document.getElementById('editableSkillsList');
   dom.inputNewSkill = document.getElementById('inputNewSkill');
   dom.btnAddSkill = document.getElementById('btnAddSkill');
   dom.confirmedSkillsCount = document.getElementById('confirmedSkillsCount');
+  dom.settingsResumeFilename = document.getElementById('settingsResumeFilename');
+  dom.settingsResumeBadge = document.getElementById('settingsResumeBadge');
+  dom.settingsResumeMeta = document.getElementById('settingsResumeMeta');
+  dom.btnSettingsUploadResume = document.getElementById('btnSettingsUploadResume');
+  dom.settingsFullName = document.getElementById('settingsFullName');
+  dom.settingsEmail = document.getElementById('settingsEmail');
+  dom.settingsLocation = document.getElementById('settingsLocation');
   dom.navSkillsCount = document.getElementById('navSkillsCount');
   dom.btnAiPolishSummary = document.getElementById('btnAiPolishSummary');
   dom.btnAiSuggestSkills = document.getElementById('btnAiSuggestSkills');
@@ -250,6 +273,17 @@ function cacheDomElements() {
   dom.savedGoogleAvatar = document.getElementById('savedGoogleAvatar');
   dom.btnSubmitGoogleAuth = document.getElementById('btnSubmitGoogleAuth');
 
+  // Email Verification UI
+  dom.authVerificationScreen = document.getElementById('authVerificationScreen');
+  dom.verificationEmailTarget = document.getElementById('verificationEmailTarget');
+  dom.btnCheckEmailVerified = document.getElementById('btnCheckEmailVerified');
+  dom.btnResendVerification = document.getElementById('btnResendVerification');
+  dom.resendCooldownLabel = document.getElementById('resendCooldownLabel');
+  dom.btnGetDevVerificationLink = document.getElementById('btnGetDevVerificationLink');
+  dom.btnBackToAuthFromVerification = document.getElementById('btnBackToAuthFromVerification');
+  dom.btnToggleEmailLinkMode = document.getElementById('btnToggleEmailLinkMode');
+  dom.emailLinkToggleContainer = document.getElementById('emailLinkToggleContainer');
+
   // Toast
   dom.toastContainer = document.getElementById('toastContainer');
 }
@@ -277,7 +311,10 @@ function bindEventListeners() {
   if (dom.btnTriggerNewUpload) dom.btnTriggerNewUpload.addEventListener('click', () => toggleDropzone());
   if (dom.btnReplaceResume) dom.btnReplaceResume.addEventListener('click', () => toggleDropzone());
   if (dom.btnSelectCvFile) dom.btnSelectCvFile.addEventListener('click', () => { if (dom.inputCvFile) dom.inputCvFile.click(); });
+  if (dom.btnSelectCvFileLegacy) dom.btnSelectCvFileLegacy.addEventListener('click', () => { if (dom.inputCvFileLegacy) dom.inputCvFileLegacy.click(); });
+  if (dom.btnUploadNewVersion) dom.btnUploadNewVersion.addEventListener('click', () => { if (dom.inputCvFileLegacy) dom.inputCvFileLegacy.click(); else if (dom.inputCvFile) dom.inputCvFile.click(); });
   if (dom.inputCvFile) dom.inputCvFile.addEventListener('change', handleFileInput);
+  if (dom.inputCvFileLegacy) dom.inputCvFileLegacy.addEventListener('change', handleFileInput);
   if (dom.dropzoneCv) {
     dom.dropzoneCv.addEventListener('dragover', (e) => { e.preventDefault(); dom.dropzoneCv.classList.add('dragover'); });
     dom.dropzoneCv.addEventListener('dragleave', () => dom.dropzoneCv.classList.remove('dragover'));
@@ -287,11 +324,16 @@ function bindEventListeners() {
   if (dom.btnSampleFrontend) dom.btnSampleFrontend.addEventListener('click', () => triggerSamplePipeline('frontend'));
   if (dom.btnSampleBackend) dom.btnSampleBackend.addEventListener('click', () => triggerSamplePipeline('backend'));
   if (dom.btnUploadAnotherCv) dom.btnUploadAnotherCv.addEventListener('click', () => {
-    if (dom.candidateSummaryBanner) dom.candidateSummaryBanner.style.display = 'none';
-    if (dom.dropzoneCv) {
-      dom.dropzoneCv.style.display = 'block';
-      dom.dropzoneCv.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (dom.inputCvFile) dom.inputCvFile.click();
+  });
+  if (dom.btnReplaceResumeCompact) dom.btnReplaceResumeCompact.addEventListener('click', () => {
+    if (dom.inputCvFile) dom.inputCvFile.click();
+  });
+  if (dom.btnViewFullProfile) dom.btnViewFullProfile.addEventListener('click', () => {
+    switchView('view-settings');
+  });
+  if (dom.btnSettingsUploadResume) dom.btnSettingsUploadResume.addEventListener('click', () => {
+    if (dom.inputCvFile) dom.inputCvFile.click();
   });
   if (dom.btnAddSkill) dom.btnAddSkill.addEventListener('click', handleAddSkill);
   if (dom.inputNewSkill) dom.inputNewSkill.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill(); } });
@@ -382,6 +424,13 @@ function bindEventListeners() {
   if (dom.btnGoogleSignIn) dom.btnGoogleSignIn.addEventListener('click', handleContinueWithGoogle);
   if (dom.pageAuthForm) dom.pageAuthForm.addEventListener('submit', handlePageAuthSubmit);
 
+  // Email Verification & Passwordless Link
+  if (dom.btnCheckEmailVerified) dom.btnCheckEmailVerified.addEventListener('click', handleCheckEmailVerified);
+  if (dom.btnResendVerification) dom.btnResendVerification.addEventListener('click', handleResendVerification);
+  if (dom.btnGetDevVerificationLink) dom.btnGetDevVerificationLink.addEventListener('click', handleGetDevVerificationLink);
+  if (dom.btnBackToAuthFromVerification) dom.btnBackToAuthFromVerification.addEventListener('click', hideEmailVerificationScreen);
+  if (dom.btnToggleEmailLinkMode) dom.btnToggleEmailLinkMode.addEventListener('click', handleToggleEmailLinkMode);
+
   // Google Account Dialog
   if (dom.btnCloseGoogleChooser) dom.btnCloseGoogleChooser.addEventListener('click', closeGoogleChooserModal);
   if (dom.btnFirebaseGooglePopup) dom.btnFirebaseGooglePopup.addEventListener('click', triggerFirebaseGooglePopup);
@@ -447,16 +496,20 @@ async function initializeBackendConnection() {
     } catch (e) {}
   }
 
-  // 2. Concurrently fetch public catalog data (efficient & non-blocking)
-  await Promise.allSettled([
+  // 2. Concurrently fetch public catalog data and authenticated user records in parallel
+  const initTasks = [
     loadJobs(),
     loadAssessmentChallenges(),
-  ]);
-
-  // 3. If authenticated, fetch candidate profile from server
+  ];
   if (state.token) {
-    await syncCandidateProfile();
+    initTasks.push(
+      syncCandidateProfile(),
+      loadSavedJobs(),
+      loadUserResumes(),
+      loadRankedJobMatches(),
+    );
   }
+  await Promise.allSettled(initTasks);
 
   // 4. Update UI displays
   renderUserInfo();
@@ -466,6 +519,7 @@ async function initializeBackendConnection() {
   renderTrackerTable('all');
   renderSavedJobs();
   updateCounters();
+  updateResumeUiState();
 
   // 5. Pre-select initial job if available
   if (state.jobs.length > 0) {
@@ -481,6 +535,7 @@ async function initializeBackendConnection() {
 async function verifySession() {
   if (!state.token) {
     state.user = null;
+    renderUserInfo();
     updateStatusPill(true, null);
     return;
   }
@@ -492,6 +547,8 @@ async function verifySession() {
     if (resp.ok) {
       const body = await resp.json();
       state.user = body.data;
+      localStorage.setItem('cm_user', JSON.stringify(state.user));
+      renderUserInfo();
       updateStatusPill(true, state.user.full_name);
       return;
     } else {
@@ -500,10 +557,12 @@ async function verifySession() {
       state.user = null;
       localStorage.removeItem('cm_token');
       localStorage.removeItem('cm_user');
+      renderUserInfo();
       updateStatusPill(true, null);
     }
   } catch (e) {
     console.warn('Backend connection check error:', e);
+    renderUserInfo();
     updateStatusPill(false);
   }
 }
@@ -538,50 +597,219 @@ async function syncCandidateProfile() {
 
     if (resp.ok) {
       const body = await resp.json();
-      if (body.data && body.data.length > 0) {
-        const prof = body.data[0];
-        state.candidateProfile.id = prof.id;
-        state.candidateProfile.full_name = (state.user && state.user.full_name) ? state.user.full_name : (prof.full_name || '');
-        state.candidateProfile.email = (state.user && state.user.email) ? state.user.email : (prof.email || '');
-        if (prof.summary) state.candidateProfile.summary = prof.summary;
-        if (prof.skills && prof.skills.length > 0) {
-          state.candidateProfile.skills = prof.skills.map(s => s.name || s);
+      state.userResumes = body.data || [];
+
+      if (state.userResumes.length > 0) {
+        // Find active resume or default to first
+        const activeResume = state.userResumes.find(r => r.is_active) || state.userResumes[0];
+        state.activeResumeId = activeResume.id;
+
+        // Fetch full profile details for this resume
+        const detailResp = await fetch(`${API_BASE}/resumes/${encodeURIComponent(activeResume.id)}`, {
+          headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+
+        if (detailResp.ok) {
+          const detailBody = await detailResp.json();
+          const prof = (detailBody.data && detailBody.data.profile) ? detailBody.data.profile : detailBody.data;
+
+          if (prof) {
+            state.candidateProfile.id = prof.id;
+            state.candidateProfile.full_name = (state.user && state.user.full_name) ? state.user.full_name : (prof.full_name || '');
+            state.candidateProfile.email = (state.user && state.user.email) ? state.user.email : (prof.email || '');
+            if (prof.summary) state.candidateProfile.summary = prof.summary;
+            if (prof.skills && prof.skills.length > 0) {
+              state.candidateProfile.skills = prof.skills.map(s => s.name || s);
+            }
+            if (prof.experience && Array.isArray(prof.experience)) {
+              state.candidateProfile.experience = prof.experience.map(e => ({
+                title: e.title || e.role || 'Software Role',
+                company: e.company || 'Company',
+                duration: e.dates || e.duration || '2022 – Present',
+                description: e.description || e.responsibilities || ''
+              }));
+            }
+            if (prof.education && Array.isArray(prof.education)) {
+              state.candidateProfile.education = prof.education.map(ed => ({
+                degree: ed.degree || ed.degree_name || 'Degree',
+                school: ed.school || ed.institution || 'University',
+                year: ed.year || ed.graduation_year || '2022'
+              }));
+            }
+          }
         }
-        if (prof.experience && Array.isArray(prof.experience)) {
-          state.candidateProfile.experience = prof.experience.map(e => ({
-            title: e.title || e.role || 'Software Role',
-            company: e.company || 'Company',
-            duration: e.dates || e.duration || '2022 – Present',
-            description: e.description || e.responsibilities || ''
-          }));
-        }
-        if (prof.education && Array.isArray(prof.education)) {
-          state.candidateProfile.education = prof.education.map(ed => ({
-            degree: ed.degree || ed.degree_name || 'Degree',
-            school: ed.school || ed.institution || 'University',
-            year: ed.year || ed.graduation_year || '2022'
-          }));
-        }
-        if (dom.editHeadline) dom.editHeadline.value = state.candidateProfile.headline || 'Software Engineer';
-        if (dom.editSummary) dom.editSummary.value = state.candidateProfile.summary;
-        if (dom.overviewResumeFilename) dom.overviewResumeFilename.innerText = `${(state.candidateProfile.full_name || 'My').replace(/\s+/g, '_')}_Resume.pdf`;
+
+        // Update Overview Header Badges & Candidate Summary
+        if (dom.overviewResumeFilename) dom.overviewResumeFilename.innerText = activeResume.filename || `${(state.candidateProfile.full_name || 'My').replace(/\s+/g, '_')}_Resume.pdf`;
         if (dom.overviewResumeBadge) {
-          dom.overviewResumeBadge.innerText = 'Reviewed';
+          dom.overviewResumeBadge.innerText = `Active \u2022 v${activeResume.version}`;
           dom.overviewResumeBadge.style.color = 'var(--color-evidence-text)';
           dom.overviewResumeBadge.style.background = 'var(--color-evidence-bg)';
         }
-        if (dom.resumeDetailFilename) dom.resumeDetailFilename.innerText = `${(state.candidateProfile.full_name || 'My').replace(/\s+/g, '_')}_Resume.pdf`;
-        if (dom.resumeDetailMeta) dom.resumeDetailMeta.innerText = `${state.candidateProfile.skills.length} confirmed skills \u2022 Verified profile`;
+        if (dom.resumeDetailFilename) dom.resumeDetailFilename.innerText = activeResume.filename || 'Resume.pdf';
+        if (dom.resumeDetailMeta) dom.resumeDetailMeta.innerText = `${state.candidateProfile.skills.length} confirmed skills \u2022 Persistent Cloud Record`;
+
+        // Reveal candidate summary banner so user never sees an empty dropzone after login
+        if (dom.candidateSummaryBanner) {
+          dom.candidateSummaryBanner.style.display = 'block';
+          renderCandidateProfileSummary(state.candidateProfile);
+        }
+
+        if (dom.editHeadline) dom.editHeadline.value = state.candidateProfile.headline || 'Software Engineer';
+        if (dom.editSummary) dom.editSummary.value = state.candidateProfile.summary;
+
         renderEditableSkills();
         renderExperienceTimeline();
         renderEducationTimeline();
+        renderUserResumesList();
         updateCounters();
+      } else {
+        renderUserResumesList();
       }
     }
   } catch (e) {
     console.warn('Failed to sync candidate profile from backend:', e);
   }
 }
+
+async function loadUserResumes() {
+  if (!state.token) return;
+  try {
+    const resp = await fetch(`${API_BASE}/resumes`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    if (resp.ok) {
+      const body = await resp.json();
+      state.userResumes = body.data || [];
+      renderUserResumesList();
+    }
+  } catch (err) {
+    console.warn('Failed to load user resumes:', err);
+  }
+}
+
+function renderUserResumesList() {
+  if (!dom.userResumesList) return;
+  dom.userResumesList.innerHTML = '';
+
+  if (!state.userResumes || state.userResumes.length === 0) {
+    dom.userResumesList.innerHTML = `
+      <div style="padding: 20px; text-align: center; color: var(--color-text-subtle); background: var(--color-canvas); border-radius: var(--radius-ctrl); border: 1px dashed var(--color-border);">
+        No saved resumes found. Upload a CV to store it securely in your workspace for job matching.
+      </div>
+    `;
+    return;
+  }
+
+  state.userResumes.forEach(r => {
+    const itemEl = document.createElement('div');
+    itemEl.style.cssText = `
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--color-canvas);
+      border: 1px solid ${r.is_active ? 'var(--color-indigo)' : 'var(--color-border)'};
+      border-radius: var(--radius-ctrl);
+      transition: all 0.2s ease;
+    `;
+
+    const formattedSize = r.file_size ? `${(r.file_size / 1024).toFixed(1)} KB` : 'PDF Document';
+    const dateStr = r.created_at ? new Date(r.created_at).toLocaleDateString() : 'Recent';
+
+    itemEl.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 36px; height: 36px; border-radius: 8px; background: ${r.is_active ? 'var(--color-indigo-subtle)' : 'var(--color-surface)'}; display: flex; align-items: center; justify-content: center; color: ${r.is_active ? 'var(--color-indigo)' : 'var(--color-text-muted)'}; font-weight: 700; font-size: 11px;">
+          DOC
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 600; color: var(--color-navy); font-size: 14px;">${r.filename || 'resume.pdf'}</span>
+            <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text-muted);">v${r.version}</span>
+            ${r.is_active ? '<span style="font-size: 11px; padding: 2px 8px; border-radius: 12px; background: var(--color-evidence-bg); color: var(--color-evidence-text); font-weight: 600;">Active for Matching</span>' : ''}
+          </div>
+          <div style="font-size: 12px; color: var(--color-text-subtle); margin-top: 2px;">
+            ${formattedSize} &bull; Uploaded ${dateStr} &bull; Status: ${r.status}
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        ${r.status === 'failed' ? `<button class="btn btn-secondary btn-sm" onclick="retryResumeProcessing('${r.id}')" style="font-size: 12px; padding: 4px 10px; color: var(--color-indigo); border: 1px solid var(--color-indigo);" title="Retry parsing without re-uploading">↻ Retry Parsing</button>` : ''}
+        ${r.status === 'processing' ? `<button class="btn btn-secondary btn-sm" onclick="syncCandidateProfile()" style="font-size: 12px; padding: 4px 10px;" title="Refresh processing status">↻ Refresh</button>` : ''}
+        ${!r.is_active && r.status === 'completed' ? `<button class="btn btn-secondary btn-sm" onclick="setActiveResume('${r.id}')" style="font-size: 12px; padding: 4px 10px;">Set Active</button>` : ''}
+        <button class="btn btn-sm" onclick="deleteUserResume('${r.id}')" style="font-size: 12px; padding: 4px 8px; color: #EF4444; border: 1px solid #FCA5A5; background: #FEF2F2;" title="Delete this resume">Delete</button>
+      </div>
+    `;
+    dom.userResumesList.appendChild(itemEl);
+  });
+}
+
+window.retryResumeProcessing = async function(resumeId) {
+  if (!state.token) return;
+  showToast('Retrying resume extraction & parsing...', 'info');
+  try {
+    const resp = await fetch(`${API_BASE}/resumes/${encodeURIComponent(resumeId)}/retry`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    const resJson = await resp.json();
+    if (resp.ok) {
+      showToast('Resume processed successfully on retry!', 'success');
+      await syncCandidateProfile();
+      await loadUserResumes();
+    } else {
+      showToast(resJson.message || resJson.detail || 'Retry failed.', 'error');
+    }
+  } catch (err) {
+    showToast(`Retry network error: ${err.message}`, 'error');
+  }
+};
+
+window.setActiveResume = async function(resumeId) {
+  if (!state.token) return;
+  try {
+    const resp = await fetch(`${API_BASE}/resumes/${encodeURIComponent(resumeId)}/active`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    showToast('Active resume selected for live matching.', 'success');
+    await syncCandidateProfile();
+    await loadUserResumes();
+    await loadSavedJobs();
+    await loadRankedJobMatches(true);
+  } catch (err) {
+    console.error('Failed to set active resume:', err);
+    showToast('Failed to activate selected resume.', 'error');
+  }
+};
+
+window.deleteUserResume = async function(resumeId) {
+  if (!state.token) return;
+  if (!confirm('Are you sure you want to delete this resume? Its stored file and profile will be permanently removed.')) {
+    return;
+  }
+  try {
+    const resp = await fetch(`${API_BASE}/resumes/${encodeURIComponent(resumeId)}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      }
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    showToast('Resume and stored file deleted successfully.', 'info');
+    await syncCandidateProfile();
+    await loadUserResumes();
+    await loadSavedJobs();
+    await loadRankedJobMatches(true);
+  } catch (err) {
+    console.error('Failed to delete resume:', err);
+    showToast('Failed to delete resume.', 'error');
+  }
+};
 
 // ==============================================================================
 // VIEW NAVIGATION
@@ -609,6 +837,21 @@ function switchView(viewId) {
     'view-settings': 'Profile & settings'
   };
   if (dom.currentBreadcrumb) dom.currentBreadcrumb.innerText = labelMap[viewId] || 'Workspace';
+
+  if (viewId === 'view-saved') {
+    loadSavedJobs();
+    renderSavedJobs();
+  } else if (viewId === 'view-overview') {
+    updateResumeUiState();
+  } else if (viewId === 'view-settings') {
+    renderCandidateProfileSummary();
+  }
+
+  if ((viewId === 'view-overview' || viewId === 'view-jobs') && state.token) {
+    if (!state.rankedMatches || state.rankedMatches.length === 0) {
+      loadRankedJobMatches();
+    }
+  }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -828,14 +1071,9 @@ function handleAiAutoMatch() {
     };
   });
 
-  state.jobs.sort((a, b) => b.score - a.score);
+  state.jobs.sort((a, b) => (b.score || 0) - (a.score || 0));
 
   renderJobCards(state.jobs, dom.jobFeed);
-  if (state.jobs.length > 0) {
-    renderJobCards(state.jobs.slice(0, 2), dom.overviewMatchesList);
-  }
-
-  showToast(`✨ AI Match & Auto-Rank complete! Top role matches at ${state.jobs[0] ? state.jobs[0].score : 88}%.`, 'success');
 }
 
 // Ask AI About Job Quick Action
@@ -954,18 +1192,17 @@ function setPipelineStep(stepNum, percent, title, sub) {
   if (dom.pipelineProgressPercent) dom.pipelineProgressPercent.innerText = `${percent}%`;
   if (dom.pipelineStepStatusTitle) dom.pipelineStepStatusTitle.innerText = title;
   if (dom.pipelineStepStatusSub) dom.pipelineStepStatusSub.innerText = sub;
+  const bar = dom.cvParsingProgressBar || document.getElementById('cvParsingProgressBar');
+  if (bar) bar.style.width = `${percent}%`;
 
   for (let i = 1; i <= 5; i++) {
     const el = document.getElementById(`pipeStep${i}`);
     if (!el) continue;
+    el.classList.remove('active', 'completed');
     if (i < stepNum) {
-      el.classList.remove('active');
       el.classList.add('completed');
     } else if (i === stepNum) {
       el.classList.add('active');
-      el.classList.remove('completed');
-    } else {
-      el.classList.remove('active', 'completed');
     }
   }
 }
@@ -1023,283 +1260,320 @@ function triggerSamplePipeline(type) {
   uploadAndMatchResume(sampleFile);
 }
 
-function renderCandidateSummaryBanner(profile) {
-  if (!dom.candidateSummaryBanner) return;
-  
-  const name = profile.full_name || 'Candidate';
-  const headline = profile.headline || (profile.summary ? profile.summary.slice(0, 75) + '...' : 'Software Engineer');
-  const email = profile.email || 'candidate@example.com';
-  const skills = (profile.skills || []).map(s => s.name || s);
+function updateResumeUiState() {
+  const uploadCard = dom.resumeUploadCard || document.getElementById('resumeUploadCard') || (dom.dropzoneCv ? dom.dropzoneCv.closest('.card') : null);
+  const summaryBanner = dom.candidateSummaryBanner;
+  const progressCard = dom.pipelineProgressCard;
+  const rankedSection = dom.rankedMatchesSection;
 
-  if (dom.summaryCandidateName) dom.summaryCandidateName.innerText = name;
-  if (dom.summaryCandidateHeadline) dom.summaryCandidateHeadline.innerText = headline;
-  if (dom.summaryCandidateEmail) dom.summaryCandidateEmail.innerText = `${email} • Stored in Database & Vector Store`;
-  
+  const anyCompletedResume = Boolean(
+    state.userResumes && state.userResumes.some(r => r.status === 'completed' && (r.is_active || state.userResumes.length === 1))
+  );
+
+  const isCompleted = anyCompletedResume;
+  const isProcessing = Boolean(
+    state.userResumes && state.userResumes.some(r => r.status === 'processing' && r.is_active)
+  );
+  const isFailed = Boolean(
+    state.userResumes && state.userResumes.some(r => r.status === 'failed' && r.is_active)
+  );
+
+  if (isProcessing) {
+    if (uploadCard) uploadCard.style.display = 'none';
+    if (progressCard) progressCard.style.display = 'block';
+    if (summaryBanner) summaryBanner.style.display = 'none';
+  } else if (isCompleted) {
+    // Hide the entire large resume upload panel including dropzone, instructions, and sample buttons
+    if (uploadCard) uploadCard.style.display = 'none';
+    if (progressCard) progressCard.style.display = 'none';
+    if (summaryBanner) summaryBanner.style.display = 'block';
+    if (rankedSection) rankedSection.style.display = 'block';
+    renderCandidateProfileSummary(state.candidateProfile);
+  } else if (isFailed) {
+    if (uploadCard) uploadCard.style.display = 'block';
+    if (progressCard) progressCard.style.display = 'none';
+    if (summaryBanner) summaryBanner.style.display = 'none';
+  } else {
+    // No resume uploaded yet: show upload panel
+    if (uploadCard) uploadCard.style.display = 'block';
+    if (progressCard) progressCard.style.display = 'none';
+    if (summaryBanner) summaryBanner.style.display = 'none';
+  }
+}
+
+function renderCandidateProfileSummary(profile) {
+  if (!dom.candidateSummaryBanner) return;
+  const prof = profile || state.candidateProfile || {};
+  const user = state.user || {};
+  const activeResume = (state.userResumes && state.userResumes.find(r => r.is_active)) || (state.userResumes && state.userResumes[0]);
+
+  const fullName = prof.full_name || user.full_name || 'Candidate Profile';
+  const headline = prof.headline || (prof.summary ? (prof.summary.length > 70 ? prof.summary.slice(0, 70) + '...' : prof.summary) : 'Software Professional');
+  const email = prof.email || user.email || 'candidate@example.com';
+  const skills = (prof.skills || []).map(s => typeof s === 'string' ? s : (s.name || ''));
+
+  if (dom.summaryCandidateName) dom.summaryCandidateName.textContent = fullName;
+  if (dom.summaryCandidateHeadline) dom.summaryCandidateHeadline.textContent = headline;
+  if (dom.summaryCandidateEmail) {
+    dom.summaryCandidateEmail.innerHTML = `<span>${escapeHtml(email)}</span> &bull; <span>Stored in PostgreSQL</span>`;
+  }
   if (dom.summaryCandidateAvatar) {
-    const initials = name.split(' ').map(w => w.charAt(0).toUpperCase()).join('').slice(0, 2) || 'CV';
-    dom.summaryCandidateAvatar.innerText = initials;
+    const initials = fullName
+      .split(' ')
+      .filter(Boolean)
+      .map(w => w[0].toUpperCase())
+      .join('')
+      .slice(0, 2) || 'CP';
+    dom.summaryCandidateAvatar.textContent = initials;
+  }
+  if (dom.summaryCandidateBadge) {
+    if (activeResume) {
+      dom.summaryCandidateBadge.textContent = `✓ Active • v${activeResume.version || 1}`;
+      dom.summaryCandidateBadge.style.background = '#E6F4EA';
+      dom.summaryCandidateBadge.style.color = '#137333';
+    } else {
+      dom.summaryCandidateBadge.textContent = '✓ Profile Active';
+    }
+  }
+
+  const skillCountEl = dom.summaryCandidateSkillCount || document.getElementById('summaryCandidateSkillCount');
+  if (skillCountEl) {
+    skillCountEl.textContent = `${skills.length} extracted skill${skills.length === 1 ? '' : 's'}`;
   }
 
   if (dom.summaryCandidateSkills) {
-    dom.summaryCandidateSkills.innerHTML = skills.map(skill => 
-      `<span class="skill-match-tag">✓ ${escapeHtml(skill)}</span>`
-    ).join('');
+    dom.summaryCandidateSkills.innerHTML = '';
+    if (skills.length === 0) {
+      dom.summaryCandidateSkills.innerHTML = '<span style="font-size: 12px; color: var(--color-text-muted);">No skills extracted yet.</span>';
+    } else {
+      skills.forEach(skillName => {
+        if (!skillName) return;
+        const chip = document.createElement('span');
+        chip.className = 'candidate-skill-chip';
+        chip.style.cssText = 'background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;';
+        chip.innerHTML = `✓ ${escapeHtml(skillName)}`;
+        dom.summaryCandidateSkills.appendChild(chip);
+      });
+    }
   }
 
-  dom.candidateSummaryBanner.style.display = 'block';
-  if (dom.dropzoneCv) dom.dropzoneCv.style.display = 'none';
+  // Update Settings Resume Management card if present
+  if (dom.settingsResumeFilename && activeResume) {
+    dom.settingsResumeFilename.textContent = activeResume.filename || `${fullName.replace(/\s+/g, '_')}_Resume.pdf`;
+  }
+  if (dom.settingsResumeMeta && activeResume) {
+    dom.settingsResumeMeta.textContent = `Version ${activeResume.version || 1} • ${skills.length} skills • Persistent Cloud Record`;
+  }
+  if (dom.settingsFullName && !dom.settingsFullName.value) {
+    dom.settingsFullName.value = fullName;
+  }
+  if (dom.settingsEmail && !dom.settingsEmail.value) {
+    dom.settingsEmail.value = email;
+  }
 }
 
-function renderRankedMatchesList(rankedMatches) {
-  if (!dom.overviewMatchesList) return;
-  dom.overviewMatchesList.innerHTML = '';
+function renderCandidateSummaryBanner(profile) {
+  renderCandidateProfileSummary(profile);
+}
 
-  if (!rankedMatches || rankedMatches.length === 0) {
-    dom.overviewMatchesList.innerHTML = `
-      <div class="card" style="text-align: center; padding: var(--space-8) var(--space-4);">
-        <div style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 4px;">No matching roles found.</div>
-        <div style="font-size: 13px; color: var(--color-text-muted);">Try uploading a resume with expanded technical skills or experience.</div>
-      </div>`;
+async function loadRankedJobMatches(forceRefresh = false) {
+  if (!state.token) {
+    if (dom.overviewMatchesList) {
+      dom.overviewMatchesList.innerHTML = `
+        <div class="card" style="text-align: center; padding: 36px 20px; background: var(--color-canvas); border: 1px dashed var(--color-border);">
+          <div style="font-size: 28px; margin-bottom: 8px;">📄</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 6px;">Sign in and upload a resume to see ranked job matches</div>
+          <div style="font-size: 13px; color: var(--color-text-muted); max-width: 480px; margin: 0 auto 16px;">
+            We evaluate your technical skills, experience depth, education, and domain alignment against live verified roles.
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="if(dom.inputCvFile) dom.inputCvFile.click();">Choose Resume Document</button>
+        </div>
+      `;
+    }
+    if (dom.rankedMatchesCountBadge) {
+      dom.rankedMatchesCountBadge.textContent = '0 Roles Evaluated';
+    }
     return;
   }
 
+  // Cancel prior in-flight request if user triggered a fresh refresh
+  if (state.matchesAbortController) {
+    try { state.matchesAbortController.abort(); } catch (e) {}
+  }
+  const abortCtrl = new AbortController();
+  state.matchesAbortController = abortCtrl;
+
+  if (state.isLoadingMatches && !forceRefresh) return;
+  state.isLoadingMatches = true;
+
+  if (dom.rankedMatchesSection) dom.rankedMatchesSection.style.display = 'block';
+
+  // Keep counter informative rather than showing static "0 Roles Evaluated" while loading
   if (dom.rankedMatchesCountBadge) {
-    dom.rankedMatchesCountBadge.innerText = `${rankedMatches.length} Roles Evaluated & Ranked`;
+    dom.rankedMatchesCountBadge.textContent = 'Evaluating roles...';
   }
 
-  rankedMatches.forEach((item, index) => {
-    const match = item.match || {};
-    const job = item.job || {};
-    const rank = index + 1;
-    const score = Math.round(match.overall_score || 0);
-    const breakdown = match.breakdown || { skill_score: 50, experience_score: 50, education_score: 50 };
-    const matchedSkills = match.matched_skills || [];
-    const missingSkills = match.missing_skills || [];
-    const explanation = match.explanation || 'Matches based on technical skills and relevant experience requirements.';
-    const isSaved = state.savedJobIds.has(job.id);
-
-    let pillClass = 'high';
-    if (score < 60) pillClass = 'low';
-    else if (score < 75) pillClass = 'medium';
-
-    const card = document.createElement('div');
-    card.className = 'ranked-job-card';
-    card.innerHTML = `
-      <div class="job-card-top" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
-        <div style="display: flex; gap: 12px; align-items: flex-start;">
-          <div class="company-logo-avatar" style="width: 44px; height: 44px; border-radius: 8px; background: var(--color-canvas); border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--color-navy); font-size: 16px;">
-            ${(job.company || 'T').charAt(0)}
-          </div>
-          <div>
-            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-subtle);">
-              <span style="font-weight: 600; color: var(--color-navy);">${escapeHtml(job.company || 'Verified Employer')}</span>
-              <span>&bull;</span>
-              <span>${escapeHtml(job.location || 'Remote / Hybrid')}</span>
-              <span>&bull;</span>
-              <span class="badge-pill" style="font-size: 11px;">#${rank} Rank</span>
-            </div>
-            <h3 style="margin: 4px 0 2px; font-size: 17px; font-weight: 700; color: var(--color-navy);">
-              ${escapeHtml(job.title || 'Engineering Role')}
-            </h3>
-            <div style="font-size: 12.5px; color: var(--color-text-muted);">
-              ${escapeHtml(job.employment_type || 'Full-time')} &bull; ${escapeHtml(job.salary || '$130,000 – $160,000 / yr')}
-            </div>
-          </div>
+  // Only show loading placeholder if list is currently empty or refresh explicitly requested
+  if (!dom.overviewMatchesList || !dom.overviewMatchesList.hasChildNodes() || forceRefresh) {
+    if (dom.overviewMatchesList) {
+      dom.overviewMatchesList.innerHTML = `
+        <div class="card" style="text-align: center; padding: 40px 20px;">
+          <div class="loading-spinner" style="margin: 0 auto 16px; width: 36px; height: 36px; border: 3px solid var(--color-indigo-subtle); border-top-color: var(--color-indigo); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+          <div style="font-size: 15px; font-weight: 700; color: var(--color-navy); margin-bottom: 4px;">Loading ranked job recommendations...</div>
+          <div style="font-size: 12.5px; color: var(--color-text-muted);">Retrieving multi-factor match records from PostgreSQL.</div>
         </div>
-
-        <div style="text-align: right; flex-shrink: 0;">
-          <div class="match-percentage-pill ${pillClass}">
-            ${score}% Match
-          </div>
-          <div class="match-calc-label">Multi-Factor Score</div>
-        </div>
-      </div>
-
-      <!-- 4-Factor Breakdown Grid -->
-      <div class="factor-breakdown-grid">
-        <div class="factor-mini-item">
-          <div class="factor-label-row">
-            <span>Skills (40%)</span>
-            <span>${Math.round(breakdown.skill_score || 0)}%</span>
-          </div>
-          <div class="factor-bar-track">
-            <div class="factor-bar-fill" style="width: ${Math.min(100, Math.round(breakdown.skill_score || 0))}%;"></div>
-          </div>
-        </div>
-        <div class="factor-mini-item">
-          <div class="factor-label-row">
-            <span>Experience (25%)</span>
-            <span>${Math.round(breakdown.experience_score || 0)}%</span>
-          </div>
-          <div class="factor-bar-track">
-            <div class="factor-bar-fill" style="width: ${Math.min(100, Math.round(breakdown.experience_score || 0))}%; background: #10B981;"></div>
-          </div>
-        </div>
-        <div class="factor-mini-item">
-          <div class="factor-label-row">
-            <span>Role / Pref (25%)</span>
-            <span>85%</span>
-          </div>
-          <div class="factor-bar-track">
-            <div class="factor-bar-fill" style="width: 85%; background: #6366F1;"></div>
-          </div>
-        </div>
-        <div class="factor-mini-item">
-          <div class="factor-label-row">
-            <span>Education (10%)</span>
-            <span>${Math.round(breakdown.education_score || 0)}%</span>
-          </div>
-          <div class="factor-bar-track">
-            <div class="factor-bar-fill" style="width: ${Math.min(100, Math.round(breakdown.education_score || 0))}%; background: #F59E0B;"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Skills Overlap & Gaps -->
-      <div class="skills-comparison-row">
-        <div class="matched-skills-wrap">
-          <span class="comp-label">✓ Matched:</span>
-          ${matchedSkills.length > 0
-            ? matchedSkills.map(s => `<span class="skill-match-tag">✓ ${escapeHtml(s)}</span>`).join('')
-            : '<span style="font-size: 11.5px; color: var(--color-text-subtle);">None directly overlapping</span>'
-          }
-        </div>
-        ${missingSkills.length > 0 ? `
-        <div class="missing-skills-wrap">
-          <span class="comp-label">Potential Gaps:</span>
-          ${missingSkills.slice(0, 4).map(s => `<span class="skill-gap-tag">+ ${escapeHtml(s)}</span>`).join('')}
-        </div>
-        ` : ''}
-      </div>
-
-      <!-- Grounded Explainability Quote -->
-      <div class="match-explanation-quote">
-        <strong>Why this fits:</strong> ${escapeHtml(explanation)}
-      </div>
-
-      <!-- Card Action Buttons -->
-      <div class="card-actions-bar">
-        <div style="font-size: 11.5px; color: var(--color-text-subtle);">
-          Source: Firecrawl Job Ingestion &bull; Grounded Verification
-        </div>
-        <div class="card-actions-group" style="display: flex; gap: 8px;">
-          <button class="btn btn-sm btn-ai-outline btn-card-ask-ai" type="button" data-jobid="${job.id}">
-            ✨ Consult Copilot
-          </button>
-          <button class="btn btn-sm ${isSaved ? 'btn-primary' : 'btn-secondary'} btn-card-save" type="button" data-jobid="${job.id}">
-            ${isSaved ? 'Saved' : 'Save Job'}
-          </button>
-          <button class="btn btn-sm btn-primary btn-card-apply" type="button" data-jobid="${job.id}">
-            Apply Now &rarr;
-          </button>
-        </div>
-      </div>
-    `;
-
-    card.querySelector('.btn-card-ask-ai').addEventListener('click', () => askAiAboutJob(job));
-    card.querySelector('.btn-card-save').addEventListener('click', (e) => {
-      toggleSaveJob(job.id);
-      const btn = e.currentTarget;
-      const nowSaved = state.savedJobIds.has(job.id);
-      btn.innerText = nowSaved ? 'Saved' : 'Save Job';
-      btn.className = `btn btn-sm ${nowSaved ? 'btn-primary' : 'btn-secondary'} btn-card-save`;
-    });
-    card.querySelector('.btn-card-apply').addEventListener('click', () => openApplyConfirmation(job.id));
-
-    dom.overviewMatchesList.appendChild(card);
-  });
-}
-
-async function uploadAndMatchResume(file) {
-  if (!file) return;
-
-  const validExtensions = ['.pdf', '.docx', '.txt'];
-  const hasValidExt = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
-  if (!hasValidExt) {
-    showToast('Unsupported format. Please upload a PDF, DOCX, or TXT resume.', 'error');
-    return;
+      `;
+    }
   }
-
-  // 1. Activate and show 5-stage pipeline stepper
-  showPipelineStepper();
-
-  // Step 1: Parsing
-  setPipelineStep(1, 20, 'Ingesting & Parsing Resume with NLP...', 'Extracting structured profile & detected skills from document text');
-
-  const formData = new FormData();
-  formData.append('file', file);
-
-  // Stepper timers to show rich progressive feedback
-  const step2Timer = setTimeout(() => {
-    setPipelineStep(2, 40, 'Generating Dense Vectors via Gemini-Embedding-2...', 'Calling Google Gemini Embeddings API for 768-dimensional semantic vector');
-  }, 400);
-
-  const step3Timer = setTimeout(() => {
-    setPipelineStep(3, 60, 'Persisting Profile & Vectors to Database...', 'Storing candidate entity and embedding vectors in relational vector store');
-  }, 900);
-
-  const step4Timer = setTimeout(() => {
-    setPipelineStep(4, 80, 'Querying Web-Scraped Job Index via Firecrawl...', 'Matching candidate against active engineering roles scraped from verified employer domains');
-  }, 1400);
 
   try {
-    const headers = {};
-    if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
-
-    const resp = await fetch(`${API_BASE}/resumes/upload-and-match`, {
-      method: 'POST',
-      headers,
-      body: formData
+    const endpoint = forceRefresh ? `${API_BASE}/matches/refresh` : `${API_BASE}/matches?async_matching=true`;
+    const resp = await fetch(endpoint, {
+      method: forceRefresh ? 'POST' : 'GET',
+      headers: {
+        'Authorization': `Bearer ${state.token}`
+      },
+      signal: abortCtrl.signal,
     });
 
-    clearTimeout(step2Timer);
-    clearTimeout(step3Timer);
-    clearTimeout(step4Timer);
+    if (!resp.ok) {
+      const errJson = await resp.json().catch(() => ({}));
+      throw new Error(errJson.message || errJson.detail || `Server returned HTTP ${resp.status}`);
+    }
 
-    const resJson = await resp.json();
+    const payload = await resp.json();
+    const data = payload.data || {};
 
-    if (resp.ok && resJson.data) {
-      // Step 5: Matching & Ranking Complete
-      setPipelineStep(5, 100, 'Multi-Factor Matching Engine Finished!', 'Scores calculated: Skills (40%), Experience (25%), Preferences (25%), Education (10%)');
-
-      const data = resJson.data;
-      const profile = data.profile || {};
-      const rankedMatches = data.ranked_matches || [];
-
-      // Update state
-      if (profile.id) state.candidateProfile.id = profile.id;
-      if (profile.full_name) state.candidateProfile.full_name = profile.full_name;
-      if (profile.email) state.candidateProfile.email = profile.email;
-      if (profile.skills && profile.skills.length > 0) {
-        state.candidateProfile.skills = profile.skills.map(s => s.name || s);
+    if (data.status === 'processing') {
+      if (dom.rankedMatchesCountBadge) {
+        dom.rankedMatchesCountBadge.textContent = 'Evaluation Pending';
       }
-      if (profile.summary) state.candidateProfile.summary = profile.summary;
-
-      // Update UI displays after short pause
+      if (dom.overviewMatchesList) {
+        dom.overviewMatchesList.innerHTML = `
+          <div class="card" style="text-align: center; padding: 36px 20px; background: #F8FAFC; border: 1px dashed var(--color-indigo);">
+            <div style="font-size: 28px; margin-bottom: 8px;">⏱️</div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 6px;">Resume Processing In Progress</div>
+            <div style="font-size: 13px; color: var(--color-text-muted); max-width: 480px; margin: 0 auto 16px;">
+              ${escapeHtml(data.message || 'Your resume document is currently being parsed and indexed. Your ranked job matches will be ready shortly.')}
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="loadRankedJobMatches(false)">↻ Check Status</button>
+          </div>
+        `;
+      }
       setTimeout(() => {
-        if (dom.pipelineProgressCard) dom.pipelineProgressCard.style.display = 'none';
+        if (state.token) loadRankedJobMatches(false);
+      }, 2500);
+      return;
+    }
 
-        // Render Candidate Profile Summary
-        renderCandidateSummaryBanner(profile);
+    if (data.status === 'matching') {
+      const evalRoles = data.roles_evaluated || 175;
+      if (dom.rankedMatchesCountBadge) {
+        dom.rankedMatchesCountBadge.textContent = `Evaluating ${evalRoles} Roles...`;
+      }
+      if (dom.overviewMatchesList) {
+        dom.overviewMatchesList.innerHTML = `
+          <div class="card" style="text-align: center; padding: 36px 20px; background: #F8FAFC; border: 1px dashed var(--color-indigo);">
+            <div class="loading-spinner" style="margin: 0 auto 16px; width: 32px; height: 32px; border: 3px solid var(--color-indigo-subtle); border-top-color: var(--color-indigo); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 6px;">Evaluating Catalog Roles</div>
+            <div style="font-size: 13px; color: var(--color-text-muted); max-width: 480px; margin: 0 auto 16px;">
+              ${escapeHtml(data.message || `Matching candidate profile against ${evalRoles} active catalog jobs.`)}
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadRankedJobMatches(false)">↻ Check Status</button>
+          </div>
+        `;
+      }
+      setTimeout(() => {
+        if (state.token) loadRankedJobMatches(false);
+      }, 2500);
+      return;
+    }
 
-        // Render Ranked Matches
-        renderRankedMatchesList(rankedMatches);
+    if (data.status === 'no_resume') {
+      if (dom.rankedMatchesCountBadge) {
+        dom.rankedMatchesCountBadge.textContent = '0 Roles Evaluated';
+      }
+      if (dom.overviewMatchesList) {
+        dom.overviewMatchesList.innerHTML = `
+          <div class="card" style="text-align: center; padding: 36px 20px; background: var(--color-canvas); border: 1px dashed var(--color-border);">
+            <div style="font-size: 28px; margin-bottom: 8px;">📄</div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 6px;">Upload a Resume to See Ranked Job Matches</div>
+            <div style="font-size: 13px; color: var(--color-text-muted); max-width: 480px; margin: 0 auto 16px;">
+              We evaluate your technical skills, experience depth, education, and domain alignment against live verified roles.
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="if(dom.inputCvFile) dom.inputCvFile.click();">Choose Resume Document</button>
+          </div>
+        `;
+      }
+      return;
+    }
 
-        showToast(`✨ Successfully matched resume! ${rankedMatches.length} tech roles ranked by alignment.`, 'success');
-      }, 700);
+    if (data.status === 'empty_catalog') {
+      if (dom.rankedMatchesCountBadge) {
+        dom.rankedMatchesCountBadge.textContent = '0 Roles in Catalog';
+      }
+      if (dom.overviewMatchesList) {
+        dom.overviewMatchesList.innerHTML = `
+          <div class="card" style="text-align: center; padding: 36px 20px;">
+            <div style="font-size: 28px; margin-bottom: 8px;">🏢</div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 6px;">No Active Jobs Available</div>
+            <div style="font-size: 13px; color: var(--color-text-muted); max-width: 480px; margin: 0 auto 16px;">
+              No active job postings are currently indexed in the catalog. Trigger scraping or add job listings to calculate matches.
+            </div>
+          </div>
+        `;
+      }
+      return;
+    }
 
-    } else {
-      if (dom.pipelineProgressCard) dom.pipelineProgressCard.style.display = 'none';
-      showToast(resJson.message || resJson.detail || 'Failed to process resume pipeline.', 'error');
+    if (data.status === 'failed') {
+      if (dom.rankedMatchesCountBadge) {
+        dom.rankedMatchesCountBadge.textContent = 'Evaluation Failed';
+      }
+      if (dom.overviewMatchesList) {
+        dom.overviewMatchesList.innerHTML = `
+          <div class="card" style="text-align: center; padding: 36px 20px; background: #FEF2F2; border: 1px solid #FECACA;">
+            <div style="font-size: 28px; margin-bottom: 8px;">⚠️</div>
+            <div style="font-size: 16px; font-weight: 700; color: #991B1B; margin-bottom: 6px;">Resume Extraction Failed</div>
+            <div style="font-size: 13px; color: #7F1D1D; max-width: 480px; margin: 0 auto 16px;">
+              ${escapeHtml(data.message || 'An error occurred during resume extraction.')}
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="loadRankedJobMatches(true)">↻ Retry Matching</button>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    // Success / completed:
+    state.rankedMatches = data.ranked_matches || [];
+    renderRankedMatchesList(state.rankedMatches, data.roles_evaluated);
+
+    if (dom.statMatchesCount) {
+      dom.statMatchesCount.innerText = state.rankedMatches.length;
     }
   } catch (err) {
-    clearTimeout(step2Timer);
-    clearTimeout(step3Timer);
-    clearTimeout(step4Timer);
-    if (dom.pipelineProgressCard) dom.pipelineProgressCard.style.display = 'none';
-    showToast(`Pipeline connection error: ${err.message}`, 'error');
+    if (err.name === 'AbortError') return;
+    console.error('Failed to load ranked job matches:', err);
+    if (dom.rankedMatchesCountBadge) {
+      dom.rankedMatchesCountBadge.textContent = 'Error Loading Matches';
+    }
+    if (dom.overviewMatchesList) {
+      dom.overviewMatchesList.innerHTML = `
+        <div class="card" style="text-align: center; padding: 32px 16px; background: #FEF2F2; border: 1px solid #FECACA;">
+          <div style="font-size: 15px; font-weight: 700; color: #991B1B; margin-bottom: 6px;">Failed to load job recommendations</div>
+          <div style="font-size: 12.5px; color: #7F1D1D; margin-bottom: 14px;">${escapeHtml(err.message)}</div>
+          <button class="btn btn-secondary btn-sm" onclick="loadRankedJobMatches(true)">↻ Try Again</button>
+        </div>
+      `;
+    }
+  } finally {
+    state.isLoadingMatches = false;
   }
 }
+window.loadRankedJobMatches = loadRankedJobMatches;
+
+// Primary upload and match workflow is defined below in uploadAndMatchResume()
 
 // Backward compatibility alias for any existing caller
 async function uploadCvFile(file) {
@@ -1361,12 +1635,13 @@ function renderCandidateSummaryBanner(profile) {
   }
 }
 
-function renderRankedMatchesList(rankedMatches) {
+function renderRankedMatchesList(rankedMatches, rolesEvaluated = null) {
   if (!dom.overviewMatchesList) return;
   if (dom.rankedMatchesSection) dom.rankedMatchesSection.style.display = 'block';
 
+  const count = rolesEvaluated != null ? rolesEvaluated : (rankedMatches ? rankedMatches.length : 0);
   if (dom.rankedMatchesCountBadge) {
-    dom.rankedMatchesCountBadge.textContent = `${rankedMatches.length} Roles Evaluated & Ranked`;
+    dom.rankedMatchesCountBadge.textContent = `${count} Roles Evaluated`;
   }
 
   dom.overviewMatchesList.innerHTML = '';
@@ -1391,7 +1666,7 @@ function renderRankedMatchesList(rankedMatches) {
     const company = escapeHtml(job.company || 'Tech Company');
     const location = escapeHtml(job.location || 'Remote');
     const salary = escapeHtml(job.salary || '$130,000 – $165,000 / year');
-    const sourceUrl = job.source_url || match.source_url || '#';
+    const postingUrl = getValidJobPostingUrl(job) || getValidJobPostingUrl(match);
     const isTopRank = rank === 1;
 
     // Score tier color
@@ -1572,12 +1847,16 @@ function renderRankedMatchesList(rankedMatches) {
       <!-- Actions Bar -->
       <div class="card-actions-bar">
         <div style="display: flex; gap: 8px; align-items: center;">
-          ${sourceUrl && sourceUrl !== '#' ? `
-            <a href="${escapeHtml(sourceUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
-              <span>View Original Job Posting</span>
+          ${postingUrl ? `
+            <a href="${escapeHtml(postingUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;" title="Open original job posting in a new tab">
+              <span>View original job posting</span>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </a>
-          ` : ''}
+          ` : `
+            <button class="btn btn-secondary btn-sm" type="button" disabled title="Original job posting link not available from source" style="opacity: 0.6; cursor: not-allowed;">
+              View original job posting (Unavailable)
+            </button>
+          `}
           <button class="btn btn-secondary btn-sm btn-save-card" type="button" data-jobid="${escapeHtml(job.id || '')}">
             ${state.savedJobIds.has(job.id) ? 'Saved ★' : 'Save Job'}
           </button>
@@ -1601,7 +1880,14 @@ function renderRankedMatchesList(rankedMatches) {
     const applyBtn = card.querySelector('.btn-apply-card');
     if (applyBtn) {
       applyBtn.onclick = () => {
-        handleApplyDirect(job);
+        const applyUrl = getValidApplyUrl(job) || getValidApplyUrl(match);
+        if (applyUrl) {
+          window.open(applyUrl, '_blank', 'noopener,noreferrer');
+        } else if (typeof openApplyConfirmation === 'function') {
+          openApplyConfirmation(job.id);
+        } else if (typeof handleQuickApply === 'function') {
+          handleQuickApply(job.id);
+        }
       };
     }
 
@@ -1612,6 +1898,42 @@ function renderRankedMatchesList(rankedMatches) {
 // ==============================================================================
 // JOBS CATALOG & MATCHES (LIVE BACKEND API)
 // ==============================================================================
+function getValidJobPostingUrl(job) {
+  if (!job) return null;
+  // Policy: prefer source_url / job_url; fall back to apply_url
+  const rawUrl = job.source_url || job.job_url || job.apply_url || null;
+  if (!rawUrl || typeof rawUrl !== 'string') return null;
+  const trimmed = rawUrl.trim();
+  if (!trimmed || trimmed === '#' || trimmed.toLowerCase().startsWith('javascript:')) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.href;
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
+function getValidApplyUrl(job) {
+  if (!job) return null;
+  // Policy: prefer apply_url; fall back to source_url
+  const rawUrl = job.apply_url || job.source_url || job.job_url || null;
+  if (!rawUrl || typeof rawUrl !== 'string') return null;
+  const trimmed = rawUrl.trim();
+  if (!trimmed || trimmed === '#' || trimmed.toLowerCase().startsWith('javascript:')) return null;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return parsed.href;
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
 async function loadJobs(query = '') {
   let jobsList = [];
 
@@ -1631,14 +1953,16 @@ async function loadJobs(query = '') {
           title: j.title,
           location: j.location || 'Remote',
           salary: '$130,000 – $160,000 / year',
-          score: 88, // default estimate updated via live match
+          score: null, // calculated dynamically against candidate profile
           work_type: 'Hybrid',
           experience_level: 'Mid-level · 3–5 years',
-          evidenced: j.required_skills || ['React', 'TypeScript', 'CSS'],
-          not_evidenced: j.preferred_skills || ['GraphQL'],
+          evidenced: j.required_skills || [],
+          not_evidenced: j.preferred_skills || [],
           source: 'Company careers · Live listing',
+          source_url: j.source_url || null,
+          apply_url: j.apply_url || null,
           description: j.description || '',
-          breakdown: { skills: 34, maxSkills: 40, exp: 23, maxExp: 25, pref: 21, maxPref: 25, edu: 10, maxEdu: 10 }
+          breakdown: null
         }));
       }
     }
@@ -1646,75 +1970,8 @@ async function loadJobs(query = '') {
     console.warn('Jobs API call error:', err);
   }
 
-  // If backend returns empty, provide fallback list
-  if (jobsList.length === 0) {
-    jobsList = [
-      {
-        id: 'job_atlas_01',
-        company: 'Atlas Labs',
-        title: 'Frontend Engineer',
-        location: 'San Francisco, CA · Hybrid (2 days / week)',
-        salary: '$130,000 – $160,000 base / year',
-        score: 88,
-        work_type: 'Hybrid',
-        experience_level: 'Mid-level · 3–5 years',
-        evidenced: ['React', 'TypeScript', 'CSS', 'Jest'],
-        not_evidenced: ['GraphQL', 'Accessibility / WCAG'],
-        source: 'Company careers · Posted Oct 12, 2026',
-        description: 'Atlas Labs is a product team building collaborative work software.',
-        breakdown: { skills: 34, maxSkills: 40, exp: 23, maxExp: 25, pref: 21, maxPref: 25, edu: 10, maxEdu: 10 }
-      },
-      {
-        id: 'job_forma_02',
-        company: 'Forma',
-        title: 'Product Engineer',
-        location: 'US · Remote',
-        salary: '$125,000 – $155,000 base / year',
-        score: 82,
-        work_type: 'Remote',
-        experience_level: 'Mid-level · 3–5 years',
-        evidenced: ['React', 'TypeScript', 'CSS'],
-        not_evidenced: ['Node.js'],
-        source: 'Company careers · Posted Oct 11, 2026',
-        description: 'Build user-facing workflows and design systems for enterprise team analytics.',
-        breakdown: { skills: 32, maxSkills: 40, exp: 22, maxExp: 25, pref: 20, maxPref: 25, edu: 8, maxEdu: 10 }
-      },
-      {
-        id: 'job_northstar_03',
-        company: 'Northstar',
-        title: 'UI Engineer',
-        location: 'San Francisco, CA · Hybrid',
-        salary: '$120,000 – $150,000 base / year',
-        score: 76,
-        work_type: 'Hybrid',
-        experience_level: 'Mid-level · 3–5 years',
-        evidenced: ['React', 'TypeScript', 'CSS'],
-        not_evidenced: ['Accessibility', 'Storybook'],
-        source: 'Company careers · Posted Oct 10, 2026',
-        description: 'Create reusable web components and interface libraries across multiple product lines.',
-        breakdown: { skills: 30, maxSkills: 40, exp: 20, maxExp: 25, pref: 18, maxPref: 25, edu: 8, maxEdu: 10 }
-      },
-      {
-        id: 'job_parcel_04',
-        company: 'Parcel',
-        title: 'Frontend Developer',
-        location: 'US · Remote',
-        salary: '$120,000 – $150,000 base / year',
-        score: 79,
-        work_type: 'Remote',
-        experience_level: 'Mid-level · 3–5 years',
-        evidenced: ['React', 'TypeScript', 'CSS'],
-        not_evidenced: ['Cypress'],
-        source: 'Company careers · Posted Oct 8, 2026',
-        description: 'Modern ecommerce logistics interface development with React and test automation.',
-        breakdown: { skills: 31, maxSkills: 40, exp: 21, maxExp: 25, pref: 19, maxPref: 25, edu: 8, maxEdu: 10 }
-      }
-    ];
-  }
-
   state.jobs = jobsList;
   renderJobCards(jobsList, dom.jobFeed);
-  renderJobCards(jobsList.slice(0, 2), dom.overviewMatchesList);
   populateMatchJobDropdown(jobsList);
   updateCounters();
 }
@@ -1726,8 +1983,8 @@ function renderJobCards(jobsList, targetContainer) {
   if (!jobsList || jobsList.length === 0) {
     targetContainer.innerHTML = `
       <div class="card" style="text-align: center; padding: var(--space-8) var(--space-4);">
-        <div style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 4px;">No sample roles fit these filters.</div>
-        <div style="font-size: 13px; color: var(--color-text-muted); margin-bottom: var(--space-4);">Try widening your salary range or including hybrid and remote work. Your resume is still ready.</div>
+        <div style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 4px;">No roles fit these filters.</div>
+        <div style="font-size: 13px; color: var(--color-text-muted); margin-bottom: var(--space-4);">Try widening your search terms or clearing filters.</div>
         <button class="btn btn-secondary btn-sm" onclick="handleResetFilters()">Clear filters</button>
       </div>`;
     return;
@@ -1735,52 +1992,65 @@ function renderJobCards(jobsList, targetContainer) {
 
   jobsList.forEach(job => {
     const isSaved = state.savedJobIds.has(job.id);
+    const postingUrl = getValidJobPostingUrl(job);
     const card = document.createElement('div');
     card.className = 'job-card';
     card.innerHTML = `
       <div class="job-card-top">
-        <div class="company-logo-avatar">${job.company.charAt(0)}</div>
+        <div class="company-logo-avatar">${escapeHtml(job.company ? job.company.charAt(0) : 'J')}</div>
         <div class="job-card-heading">
           <div class="company-name-row">
-            <span>${job.company}</span>
+            <span>${escapeHtml(job.company)}</span>
             <span class="meta-bullet">&bull;</span>
             <span>Live Listing</span>
           </div>
-          <h3 class="job-card-title">${job.title}</h3>
+          <h3 class="job-card-title">${escapeHtml(job.title)}</h3>
           <div class="job-card-meta">
-            <span>${job.location}</span>
+            <span>${escapeHtml(job.location)}</span>
             <span class="meta-bullet">&bull;</span>
-            <span>${job.salary}</span>
+            <span>${escapeHtml(job.salary)}</span>
           </div>
         </div>
+        ${job.match_status === 'pending' ? `
+        <div class="score-pill-badge" style="background: #FEF3C7; border-color: #FCD34D;">
+          <div class="score-num" style="font-size: 13px; color: #B45309;">⏱️ Updating</div>
+          <div class="score-est-label" style="color: #92400E;">PROCESSING</div>
+        </div>` : (job.score != null ? `
         <div class="score-pill-badge">
           <div class="score-num">${job.score}%</div>
           <div class="score-est-label">EST. MATCH</div>
-        </div>
+        </div>` : '')}
       </div>
 
       <div class="skills-tags-row">
-        ${job.evidenced.map(s => `<span class="tag-evidence">&check; ${s}</span>`).join('')}
-        ${job.not_evidenced.length > 0 ? `<span class="tag-gap">Not evidenced: ${job.not_evidenced.join(' · ')}</span>` : ''}
+        ${(job.evidenced || []).map(s => `<span class="tag-evidence">&check; ${escapeHtml(s)}</span>`).join('')}
+        ${(job.not_evidenced || []).length > 0 ? `<span class="tag-gap">Not evidenced: ${(job.not_evidenced || []).map(s => escapeHtml(s)).join(' · ')}</span>` : ''}
       </div>
 
       <div class="job-card-bottom">
-        <div>${job.source}</div>
+        <div>${escapeHtml(job.source)}</div>
         <div class="card-actions-group">
-          <button class="btn btn-sm btn-ai-outline btn-ask-ai" type="button" data-jobid="${job.id}" title="Consult AI Career Copilot about this role">
+          <button class="btn btn-sm btn-ai-outline btn-ask-ai" type="button" data-jobid="${escapeHtml(job.id)}" title="Consult AI Career Copilot about this role">
             ✨ Ask AI
           </button>
-          <button class="btn btn-sm ${isSaved ? 'btn-primary' : 'btn-secondary'} btn-save-toggle" data-jobid="${job.id}">
+          <button class="btn btn-sm ${isSaved ? 'btn-primary' : 'btn-secondary'} btn-save-toggle" type="button" data-jobid="${escapeHtml(job.id)}">
             ${isSaved ? 'Saved' : 'Save'}
           </button>
-          <button class="btn btn-sm btn-outline btn-view-match" data-jobid="${job.id}">View match</button>
+          ${postingUrl ? `
+          <a href="${escapeHtml(postingUrl)}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline btn-job-posting" title="Open original job posting in a new tab">
+            View original job posting &nearr;
+          </a>` : `
+          <button class="btn btn-sm btn-outline btn-job-posting" type="button" disabled title="Original job posting link not available from source" style="opacity: 0.6; cursor: not-allowed;">
+            View original job posting (Unavailable)
+          </button>`}
         </div>
       </div>
     `;
 
-    card.querySelector('.btn-ask-ai').addEventListener('click', () => askAiAboutJob(job));
-    card.querySelector('.btn-save-toggle').addEventListener('click', () => toggleSaveJob(job.id));
-    card.querySelector('.btn-view-match').addEventListener('click', () => openMatchDetails(job.id));
+    const askBtn = card.querySelector('.btn-ask-ai');
+    if (askBtn) askBtn.addEventListener('click', () => askAiAboutJob(job));
+    const saveToggleBtn = card.querySelector('.btn-save-toggle');
+    if (saveToggleBtn) saveToggleBtn.addEventListener('click', () => toggleSaveJob(job.id));
     targetContainer.appendChild(card);
   });
 }
@@ -1810,7 +2080,8 @@ function populateMatchJobDropdown(jobsList) {
   jobsList.forEach(j => {
     const opt = document.createElement('option');
     opt.value = j.id;
-    opt.innerText = `${j.company} — ${j.title} (${j.score}% · ${j.location})`;
+    const scoreStr = j.score != null ? `${j.score}% · ` : '';
+    opt.innerText = `${j.company} — ${j.title} (${scoreStr}${j.location})`;
     dom.selectMatchingJob.appendChild(opt);
   });
 }
@@ -1889,8 +2160,23 @@ async function calculateLiveMatch(jobId, showNotification = true) {
 }
 
 function renderFallbackMatchBreakdown(job) {
+  if (!job || job.score == null) {
+    if (dom.matchOverallScoreDisplay) dom.matchOverallScoreDisplay.innerText = '--%';
+    if (dom.scoreFactorSkills) dom.scoreFactorSkills.innerText = '-- / 40';
+    if (dom.barFactorSkills) dom.barFactorSkills.style.width = '0%';
+    if (dom.scoreFactorExp) dom.scoreFactorExp.innerText = '-- / 25';
+    if (dom.barFactorExp) dom.barFactorExp.style.width = '0%';
+    if (dom.scoreFactorPref) dom.scoreFactorPref.innerText = '-- / 25';
+    if (dom.barFactorPref) dom.barFactorPref.style.width = '0%';
+    if (dom.scoreFactorEdu) dom.scoreFactorEdu.innerText = '-- / 10';
+    if (dom.barFactorEdu) dom.barFactorEdu.style.width = '0%';
+    if (dom.scoreFormulaDisplay) {
+      dom.scoreFormulaDisplay.innerText = 'Run matching evaluation against your active resume to calculate alignment.';
+    }
+    return;
+  }
   if (dom.matchOverallScoreDisplay) dom.matchOverallScoreDisplay.innerText = `${job.score}%`;
-  const bd = job.breakdown || { skills: 34, maxSkills: 40, exp: 23, maxExp: 25, pref: 21, maxPref: 25, edu: 10, maxEdu: 10 };
+  const bd = job.breakdown || { skills: 0, maxSkills: 40, exp: 0, maxExp: 25, pref: 0, maxPref: 25, edu: 0, maxEdu: 10 };
 
   if (dom.scoreFactorSkills) dom.scoreFactorSkills.innerText = `${bd.skills} / ${bd.maxSkills}`;
   if (dom.barFactorSkills) dom.barFactorSkills.style.width = `${(bd.skills / bd.maxSkills) * 100}%`;
@@ -1910,25 +2196,174 @@ function renderFallbackMatchBreakdown(job) {
 }
 
 // ==============================================================================
-// SAVED JOBS & SHORTLIST
+// SAVED JOBS & SHORTLIST (PERSISTED IN DATABASE)
 // ==============================================================================
-function toggleSaveJob(jobId) {
-  if (state.savedJobIds.has(jobId)) {
+async function loadSavedJobs() {
+  if (!state.token) {
+    renderSavedJobs();
+    updateCounters();
+    return;
+  }
+  try {
+    const resp = await fetch(`${API_BASE}/jobs/saved`, {
+      headers: { 'Authorization': `Bearer ${state.token}` }
+    });
+    if (resp.ok) {
+      const body = await resp.json();
+      const rawJobs = Array.isArray(body.data) ? body.data : (body.data?.jobs || []);
+      state.savedJobs = rawJobs;
+      state.savedJobIds = new Set(state.savedJobs.map(sj => sj.id || sj.job_id));
+      localStorage.setItem('cm_saved_jobs', JSON.stringify(Array.from(state.savedJobIds)));
+      renderSavedJobs();
+      updateCounters();
+    }
+  } catch (e) {
+    console.warn('Failed to load saved jobs from backend:', e);
+    renderSavedJobs();
+    updateCounters();
+  }
+}
+
+async function toggleSaveJob(jobId) {
+  const isCurrentlySaved = state.savedJobIds.has(jobId);
+
+  // Optimistic UI update
+  if (isCurrentlySaved) {
     state.savedJobIds.delete(jobId);
-    showToast('Removed from your saved shortlist.', 'info');
+    state.savedJobs = state.savedJobs.filter(j => (j.id || j.job_id) !== jobId);
   } else {
     state.savedJobIds.add(jobId);
-    showToast('Saved to your focused shortlist. Saving does not submit an application.', 'success');
+    const inCatalog = state.jobs.find(j => j.id === jobId);
+    if (inCatalog) {
+      state.savedJobs.unshift(inCatalog);
+    }
   }
-  renderJobCards(state.jobs, dom.jobFeed);
+  localStorage.setItem('cm_saved_jobs', JSON.stringify(Array.from(state.savedJobIds)));
+
+  // Update save buttons across all rendered cards in DOM
+  document.querySelectorAll(`.btn-save-card[data-jobid="${CSS.escape(jobId)}"]`).forEach(btn => {
+    btn.textContent = state.savedJobIds.has(jobId) ? 'Saved ★' : 'Save Job';
+  });
+  document.querySelectorAll(`.btn-save-toggle[data-jobid="${CSS.escape(jobId)}"]`).forEach(btn => {
+    const saved = state.savedJobIds.has(jobId);
+    btn.textContent = saved ? 'Saved' : 'Save';
+    btn.className = `btn btn-sm ${saved ? 'btn-primary' : 'btn-secondary'} btn-save-toggle`;
+  });
+
+  if (dom.jobFeed) renderJobCards(state.jobs, dom.jobFeed);
   renderSavedJobs();
   updateCounters();
+  updateResumeUiState();
+
+  if (!state.token) {
+    showToast(isCurrentlySaved ? 'Removed from shortlist (guest mode)' : 'Saved to shortlist (sign in to persist across devices)', 'info');
+    return;
+  }
+
+  try {
+    const method = isCurrentlySaved ? 'DELETE' : 'POST';
+    const resp = await fetch(`${API_BASE}/jobs/${encodeURIComponent(jobId)}/save`, {
+      method: method,
+      headers: {
+        'Authorization': `Bearer ${state.token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+    showToast(isCurrentlySaved ? 'Removed from your saved shortlist.' : 'Job saved to your persistent shortlist.', 'success');
+  } catch (err) {
+    console.error('Failed to sync saved job with backend:', err);
+    // Rollback state on failure
+    if (isCurrentlySaved) {
+      state.savedJobIds.add(jobId);
+    } else {
+      state.savedJobIds.delete(jobId);
+      state.savedJobs = state.savedJobs.filter(j => (j.id || j.job_id) !== jobId);
+    }
+    localStorage.setItem('cm_saved_jobs', JSON.stringify(Array.from(state.savedJobIds)));
+    document.querySelectorAll(`.btn-save-card[data-jobid="${CSS.escape(jobId)}"]`).forEach(btn => {
+      btn.textContent = state.savedJobIds.has(jobId) ? 'Saved ★' : 'Save Job';
+    });
+    document.querySelectorAll(`.btn-save-toggle[data-jobid="${CSS.escape(jobId)}"]`).forEach(btn => {
+      const saved = state.savedJobIds.has(jobId);
+      btn.textContent = saved ? 'Saved' : 'Save';
+      btn.className = `btn btn-sm ${saved ? 'btn-primary' : 'btn-secondary'} btn-save-toggle`;
+    });
+    if (dom.jobFeed) renderJobCards(state.jobs, dom.jobFeed);
+    renderSavedJobs();
+    updateCounters();
+    showToast('Failed to update saved job on server. Reverting change.', 'error');
+  }
 }
 
 function renderSavedJobs() {
   if (!dom.savedJobsList) return;
-  const savedList = state.jobs.filter(j => state.savedJobIds.has(j.id));
-  renderJobCards(savedList, dom.savedJobsList);
+  dom.savedJobsList.innerHTML = '';
+
+  let displayList = [];
+  if (state.savedJobs && state.savedJobs.length > 0) {
+    displayList = state.savedJobs.map(sj => {
+      const jobObj = sj.job || sj;
+      const inCatalog = state.jobs.find(j => j.id === (jobObj.id || jobObj.job_id)) || {};
+
+      const matched = Array.isArray(jobObj.matched_skills) ? jobObj.matched_skills : null;
+      const missing = Array.isArray(jobObj.missing_skills) ? jobObj.missing_skills : null;
+      const reqSkills = Array.isArray(jobObj.required_skills) && jobObj.required_skills.length > 0
+        ? jobObj.required_skills
+        : (Array.isArray(inCatalog.required_skills) ? inCatalog.required_skills : (Array.isArray(inCatalog.evidenced) ? inCatalog.evidenced : []));
+      const prefSkills = Array.isArray(jobObj.preferred_skills) && jobObj.preferred_skills.length > 0
+        ? jobObj.preferred_skills
+        : (Array.isArray(inCatalog.preferred_skills) ? inCatalog.preferred_skills : (Array.isArray(inCatalog.not_evidenced) ? inCatalog.not_evidenced : []));
+
+      return {
+        id: jobObj.id || jobObj.job_id,
+        title: jobObj.title || inCatalog.title || 'Saved Position',
+        company: jobObj.company || inCatalog.company || 'Company',
+        location: jobObj.location || inCatalog.location || 'Remote',
+        salary: jobObj.salary || inCatalog.salary || '$130,000 – $160,000 / year',
+        source_url: jobObj.source_url || inCatalog.source_url || null,
+        apply_url: jobObj.apply_url || inCatalog.apply_url || null,
+        score: jobObj.score != null ? Math.round(jobObj.score) : (inCatalog.score != null ? Math.round(inCatalog.score) : null),
+        match_status: jobObj.match_status || inCatalog.match_status || null,
+        required_skills: reqSkills,
+        preferred_skills: prefSkills,
+        evidenced: matched || reqSkills,
+        not_evidenced: missing || prefSkills,
+        description: jobObj.description || inCatalog.description || 'Saved job posting.',
+        is_active: jobObj.is_active !== false,
+        source: jobObj.source || inCatalog.source || 'Saved Job',
+      };
+    });
+  } else if (state.savedJobIds.size > 0) {
+    displayList = state.jobs.filter(j => state.savedJobIds.has(j.id));
+  }
+
+  const savedSubtitle = document.getElementById('savedJobsSubtitle');
+  if (savedSubtitle) {
+    const count = displayList.length;
+    savedSubtitle.textContent = count === 1
+      ? '1 saved job. Revisit the evidence before deciding what\'s next.'
+      : `${count} saved jobs. Revisit the evidence before deciding what\'s next.`;
+  }
+
+  if (displayList.length === 0) {
+    dom.savedJobsList.innerHTML = `
+      <div class="empty-state-box" style="padding: 40px; text-align: center; background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: var(--radius-card); margin-top: 16px;">
+        <div style="font-size: 32px; margin-bottom: 8px;">★</div>
+        <h3 style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 4px;">No saved jobs yet</h3>
+        <p style="font-size: 13px; color: var(--color-text-muted); max-width: 420px; margin: 0 auto 16px;">
+          Browse ranked job opportunities on the <strong>AI Job Matching</strong> dashboard and click <strong>Save Job</strong> to curate your personal shortlist.
+        </p>
+        <button class="btn btn-primary btn-sm" onclick="switchView('view-overview')">Explore Job Matches</button>
+      </div>
+    `;
+    return;
+  }
+
+  renderJobCards(displayList, dom.savedJobsList);
 }
 
 // ==============================================================================
@@ -2115,7 +2550,7 @@ async function handleSubmitCode() {
       method: 'POST',
       headers,
       body: JSON.stringify({
-        candidate_id: state.candidateProfile.id || (state.user ? `profile_${state.user.id}` : 'candidate_sandbox'),
+        candidate_id: state.candidateProfile.id || (state.user ? state.user.id : 'candidate_sandbox'),
         skill: state.activeChallenge ? state.activeChallenge.skill : 'Python',
         language: 'python',
         code: code,
@@ -2163,9 +2598,13 @@ async function handleSendAgentMessage() {
     let endpoint = `${API_BASE}/agent/run`;
 
     const isJobContextView = state.currentView === 'view-matching' || state.currentView === 'view-job-details';
+    
+    // Send canonical profile ID or null so backend resolves contextual profile safely
+    const candidateId = (state.candidateProfile && state.candidateProfile.id) ? state.candidateProfile.id : null;
+
     const requestBody = {
       task: msg,
-      candidate_id: (state.candidateProfile && state.candidateProfile.id) ? state.candidateProfile.id : null,
+      candidate_id: candidateId,
       job_id: isJobContextView ? (state.selectedJobId || null) : null,
       history: state.chatHistory.slice(-10)
     };
@@ -2204,6 +2643,13 @@ async function handleSendAgentMessage() {
   }
 }
 
+window.retryAgentChat = async function() {
+  if (state.token && (!state.candidateProfile || !state.candidateProfile.id || state.candidateProfile.id.startsWith('profile_usr_'))) {
+    await syncCandidateProfile();
+  }
+  handleSendAgentMessage();
+};
+
 function handleChatFailure(msgElementId, originalMsg, errorDetails) {
   // Restore user message to input box so it is not lost
   if (dom.inputAgentMessage) dom.inputAgentMessage.value = originalMsg;
@@ -2215,7 +2661,7 @@ function handleChatFailure(msgElementId, originalMsg, errorDetails) {
     <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid var(--color-red, #EF4444); border-radius: var(--radius-sm); padding: var(--space-2) var(--space-3); color: var(--color-red, #DC2626); font-size: 13px;">
       <strong>Assistant Notice:</strong> ${escapeHtml(errorDetails)}
       <div style="margin-top: 6px;">
-        <button type="button" class="btn btn-sm btn-secondary" onclick="handleSendAgentMessage()" style="padding: 2px 8px; font-size: 12px; cursor: pointer;">↻ Retry</button>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="retryAgentChat()" style="padding: 2px 8px; font-size: 12px; cursor: pointer;">↻ Retry</button>
       </div>
     </div>
   `;
@@ -2319,6 +2765,26 @@ function handleAuthButtonClick() {
     localStorage.removeItem('cm_token');
     localStorage.removeItem('cm_user');
     localStorage.removeItem('cm_candidate_profile');
+    localStorage.removeItem('cm_saved_jobs');
+    state.userResumes = [];
+    state.savedJobs = [];
+    state.savedJobIds = new Set();
+    state.rankedMatches = [];
+    if (dom.overviewMatchesList) {
+      dom.overviewMatchesList.innerHTML = `
+        <div class="card" style="text-align: center; padding: 36px 20px; background: var(--color-canvas); border: 1px dashed var(--color-border);">
+          <div style="font-size: 28px; margin-bottom: 8px;">📄</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 6px;">Sign in and upload a resume to see ranked job matches</div>
+          <div style="font-size: 13px; color: var(--color-text-muted); max-width: 480px; margin: 0 auto 16px;">
+            We evaluate your technical skills, experience depth, education, and domain alignment against live verified roles.
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="if(dom.inputCvFile) dom.inputCvFile.click();">Choose Resume Document</button>
+        </div>
+      `;
+    }
+    if (dom.rankedMatchesCountBadge) {
+      dom.rankedMatchesCountBadge.textContent = '0 Roles Evaluated';
+    }
     showToast('Signed out of workspace.', 'info');
     renderUserInfo();
     renderEditableSkills();
@@ -2333,7 +2799,7 @@ function handleAuthButtonClick() {
       dom.overviewResumeBadge.style.background = 'var(--color-border-subtle)';
     }
     if (dom.resumeDetailFilename) dom.resumeDetailFilename.innerText = 'No resume uploaded';
-    if (dom.dropzoneCv) dom.dropzoneCv.style.display = 'block';
+    updateResumeUiState();
     gateWorkspace();
   } else {
     gateWorkspace();
@@ -2541,79 +3007,84 @@ function buildMockFirebaseToken(email, fullName) {
   return `${header}.${payload}.`;
 }
 
-function handleContinueWithGoogle() {
+async function handleContinueWithGoogle() {
   clearAuthAlert();
-  if (window.location.hostname === 'localhost') {
-    triggerFirebaseGooglePopup();
-  } else {
-    openGoogleChooserModal();
-  }
-}
-
-async function triggerFirebaseGooglePopup() {
-  clearAuthAlert();
-  const btn = dom.btnFirebaseGooglePopup;
+  const btn = dom.btnGoogleSignIn;
   const originalHtml = btn ? btn.innerHTML : '';
   if (btn) {
-    btn.innerHTML = '<span>Connecting to Google...</span>';
+    btn.innerHTML = `
+      <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite; width: 18px; height: 18px;">
+        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+        <path d="M12 2a10 10 0 0 1 10 10" stroke-width="3"></path>
+      </svg>
+      <span>Connecting to Google...</span>
+    `;
     btn.disabled = true;
   }
 
   try {
     const auth = await getOrInitFirebaseAuth();
     if (!auth || !window.FirebaseSDK || !window.FirebaseSDK.GoogleAuthProvider) {
-      showAuthAlert('Cloud authentication is initializing. Please enter your Google account below.', 'info');
-      openGoogleChooserModal();
-      if (dom.inputDeviceGoogleEmail) dom.inputDeviceGoogleEmail.focus();
-      return;
+      throw new Error('Google Authentication is initializing. Please wait a moment and try again.');
     }
+
     const provider = new window.FirebaseSDK.GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
+    provider.setCustomParameters({ prompt: 'select_account' });
+
     const result = await window.FirebaseSDK.signInWithPopup(auth, provider);
-    if (result && result.user) {
-      const idToken = await result.user.getIdToken();
-      const googleUser = result.user;
+    if (!result || !result.user) {
+      throw new Error('No account was returned from Google sign-in.');
+    }
+
+    const googleUser = result.user;
+    const idToken = await googleUser.getIdToken();
+
+    showAuthAlert(`Authenticated as ${googleUser.email}! Connecting workspace...`, 'info');
+
+    const resp = await fetch(`${API_BASE}/auth/firebase-login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id_token: idToken,
+        role: 'candidate',
+        full_name: googleUser.displayName || ''
+      })
+    });
+
+    const resJson = await resp.json();
+    if (resp.ok && resJson.data) {
+      clearAuthAlert();
       closeGoogleChooserModal();
-      showAuthAlert(`Authenticated as ${googleUser.email}! Connecting workspace...`, 'info');
-
-      const resp = await fetch(`${API_BASE}/auth/firebase-login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_token: idToken, role: 'candidate' })
-      });
-
-      const resJson = await resp.json();
-      if (resp.ok && resJson.data) {
-        clearAuthAlert();
-        localStorage.setItem('cm_last_google_account', googleUser.email);
-        localStorage.setItem('cm_last_google_name', googleUser.displayName || resJson.data.user.full_name);
-        await completeSignIn(resJson.data.access_token, resJson.data.user);
-        showToast(`✨ Signed in with Google as ${resJson.data.user.full_name || googleUser.displayName}!`, 'success');
-        return;
-      } else {
-        const errMsg = (resJson.error && resJson.error.message) || resJson.message || 'Google authentication failed';
-        showAuthAlert(errMsg, 'error');
-        showToast(errMsg, 'error');
-      }
+      localStorage.setItem('cm_last_google_account', googleUser.email);
+      localStorage.setItem('cm_last_google_name', googleUser.displayName || resJson.data.user.full_name);
+      await completeSignIn(resJson.data.access_token, resJson.data.user);
+      showToast(`✨ Signed in with Google as ${resJson.data.user.full_name || googleUser.displayName}!`, 'success');
+      return;
+    } else {
+      const errMsg = (resJson.error && resJson.error.message) || resJson.message || 'Google authentication failed';
+      showAuthAlert(errMsg, 'error');
+      showToast(errMsg, 'error');
     }
   } catch (err) {
-    console.warn('Google popup notice:', err);
-    if (err.code === 'auth/popup-closed-by-user') {
-      showAuthAlert('Google popup was closed before completing.', 'info');
+    console.warn('Google sign-in error:', err);
+    if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+      clearAuthAlert();
+    } else if (err.code === 'auth/popup-blocked') {
+      showAuthAlert('Google sign-in popup was blocked by your browser. Please allow popups for localhost:8000 and try again.', 'error');
+      showToast('Popup was blocked by your browser. Please allow popups for localhost.', 'error');
     } else if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.toLowerCase().includes('unauthorized-domain'))) {
-      openGoogleChooserModal();
-      if (dom.inputDeviceGoogleEmail) {
-        dom.inputDeviceGoogleEmail.focus();
+      if (window.location.hostname === '127.0.0.1') {
+        showAuthAlert('Google Sign-In requires localhost:8000. Redirecting to http://localhost:8000...', 'info');
+        setTimeout(() => {
+          window.location.href = window.location.href.replace('127.0.0.1', 'localhost');
+        }, 1200);
+      } else {
+        showAuthAlert('Domain unauthorized for Google OAuth. Please open CareerMatch AI at http://localhost:8000.', 'error');
       }
-      showAuthAlert('Google OAuth popups require localhost. You can enter your Google account below or use localhost:8000.', 'info');
-    } else if (err.code === 'auth/popup-blocked' || (err.message && err.message.toLowerCase().includes('popup-blocked'))) {
-      openGoogleChooserModal();
-      if (dom.inputDeviceGoogleEmail) {
-        dom.inputDeviceGoogleEmail.focus();
-      }
-      showAuthAlert('Popup was blocked by your browser. Please enter your Google account below.', 'info');
     } else {
-      openGoogleChooserModal();
-      showAuthAlert('Could not complete Google popup sign-in. You can sign in by entering your Google account below.', 'info');
+      showAuthAlert(err.message || 'Google authentication was interrupted. Please try again.', 'error');
     }
   } finally {
     if (btn) {
@@ -2621,6 +3092,10 @@ async function triggerFirebaseGooglePopup() {
       btn.disabled = false;
     }
   }
+}
+
+async function triggerFirebaseGooglePopup() {
+  await handleContinueWithGoogle();
 }
 
 async function handleGoogleAccountSignIn(email, fullName) {
@@ -2673,6 +3148,278 @@ async function handleGoogleAccountSignIn(email, fullName) {
   }
 }
 
+let pendingVerificationEmail = '';
+let pendingVerificationRole = 'candidate';
+let pendingVerificationFullName = '';
+let resendCooldownSeconds = 0;
+let resendTimerInterval = null;
+
+function showEmailVerificationScreen(email, role, fullName, emailSent = true) {
+  pendingVerificationEmail = email;
+  pendingVerificationRole = role || 'candidate';
+  pendingVerificationFullName = fullName || '';
+
+  if (dom.verificationEmailTarget) dom.verificationEmailTarget.textContent = email;
+  const descEl = document.getElementById('verificationScreenDesc');
+  if (descEl) {
+    if (emailSent) {
+      descEl.innerHTML = `We've sent a verification link to <strong id="verificationEmailTarget" style="color: #0F172A;">${escapeHtml(email)}</strong>.<br>Please check your inbox and spam/promotions folder, then click the link to activate your career features.`;
+    } else {
+      descEl.innerHTML = `Your account is created, but the verification email has not been sent yet.<br>Click <strong>Resend Verification Email</strong> below to receive your link, or use the instant verification link.`;
+    }
+  }
+  if (dom.authVerificationScreen) dom.authVerificationScreen.style.display = 'block';
+  if (dom.pageAuthForm) dom.pageAuthForm.style.display = 'none';
+  if (dom.btnGoogleSignIn) dom.btnGoogleSignIn.style.display = 'none';
+  const divider = document.querySelector('.auth-divider-line');
+  if (divider) divider.style.display = 'none';
+  const tabs = document.querySelector('.auth-toggle-tabs');
+  if (tabs) tabs.style.display = 'none';
+  if (dom.emailLinkToggleContainer) dom.emailLinkToggleContainer.style.display = 'none';
+  clearAuthAlert();
+}
+
+function hideEmailVerificationScreen() {
+  if (dom.authVerificationScreen) dom.authVerificationScreen.style.display = 'none';
+  if (dom.pageAuthForm) dom.pageAuthForm.style.display = 'block';
+  if (dom.btnGoogleSignIn) dom.btnGoogleSignIn.style.display = 'flex';
+  const divider = document.querySelector('.auth-divider-line');
+  if (divider) divider.style.display = 'flex';
+  const tabs = document.querySelector('.auth-toggle-tabs');
+  if (tabs) tabs.style.display = 'grid';
+  if (dom.emailLinkToggleContainer) dom.emailLinkToggleContainer.style.display = 'block';
+  clearAuthAlert();
+  updatePortalSubmitButtonLabel();
+}
+
+function startResendCooldown(seconds = 60) {
+  resendCooldownSeconds = seconds;
+  if (dom.btnResendVerification) dom.btnResendVerification.disabled = true;
+  if (dom.resendCooldownLabel) {
+    dom.resendCooldownLabel.style.display = 'block';
+    dom.resendCooldownLabel.textContent = `You can resend in ${resendCooldownSeconds}s`;
+  }
+  if (resendTimerInterval) clearInterval(resendTimerInterval);
+  resendTimerInterval = setInterval(() => {
+    resendCooldownSeconds--;
+    if (resendCooldownSeconds <= 0) {
+      clearInterval(resendTimerInterval);
+      resendTimerInterval = null;
+      if (dom.btnResendVerification) dom.btnResendVerification.disabled = false;
+      if (dom.resendCooldownLabel) dom.resendCooldownLabel.style.display = 'none';
+    } else {
+      if (dom.resendCooldownLabel) {
+        dom.resendCooldownLabel.textContent = `You can resend in ${resendCooldownSeconds}s`;
+      }
+    }
+  }, 1000);
+}
+
+async function handleCheckEmailVerified() {
+  const btn = dom.btnCheckEmailVerified;
+  const originalText = btn ? btn.innerText : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = 'Checking status...';
+  }
+  try {
+    const auth = await getOrInitFirebaseAuth();
+    if (auth && auth.currentUser) {
+      await auth.currentUser.reload();
+      if (auth.currentUser.emailVerified) {
+        showToast('Email verified! Finalizing sign in...', 'success');
+        const idToken = await auth.currentUser.getIdToken(true);
+        const resp = await fetch(`${API_BASE}/auth/firebase-login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id_token: idToken,
+            role: pendingVerificationRole,
+            full_name: pendingVerificationFullName || auth.currentUser.displayName || auth.currentUser.email.split('@')[0]
+          })
+        });
+        const resJson = await resp.json();
+        if (resp.ok && resJson.data) {
+          hideEmailVerificationScreen();
+          await completeSignIn(resJson.data.access_token, resJson.data.user);
+          showToast(`Welcome, ${resJson.data.user.full_name}! Email verified.`, 'success');
+          return;
+        } else {
+          showAuthAlert(resJson.message || 'Authentication failed after verification', 'error');
+        }
+      } else {
+        showAuthAlert('Email is not yet verified. Please click the link sent to your inbox and try again.', 'error');
+        showToast('Email not yet verified. Check spam folder if you cannot find the email.', 'error');
+      }
+    } else {
+      showAuthAlert('No pending Firebase session. Please enter your email and password to sign in.', 'error');
+    }
+  } catch (err) {
+    console.error('Check email verification error:', err);
+    showAuthAlert('Error checking verification state: ' + err.message, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = originalText;
+    }
+  }
+}
+
+async function handleResendVerification() {
+  if (resendCooldownSeconds > 0) return;
+  const btn = dom.btnResendVerification;
+  if (btn) btn.disabled = true;
+  clearAuthAlert();
+  showToast('Sending verification email...', 'info');
+
+  try {
+    const auth = await getOrInitFirebaseAuth();
+    let sent = false;
+    let errMsg = '';
+
+    if (auth && auth.currentUser && window.FirebaseSDK && window.FirebaseSDK.sendEmailVerification) {
+      try {
+        await window.FirebaseSDK.sendEmailVerification(auth.currentUser);
+        sent = true;
+      } catch (ve) {
+        console.error('[Firebase Resend Client Notice]', ve);
+        if (ve.code === 'auth/too-many-requests') {
+          errMsg = 'Firebase rate limit: Too many requests sent recently. Please wait before requesting another email, or check your spam/promotions folder.';
+        } else {
+          errMsg = ve.message || 'Client verification request failed.';
+        }
+      }
+    }
+
+    // Backend Identity Toolkit fallback if client was throttled or session was unavailable
+    if (!sent) {
+      try {
+        const idToken = (auth && auth.currentUser) ? await auth.currentUser.getIdToken() : '';
+        const bResp = await fetch(`${API_BASE}/auth/send-verification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_token: idToken, email: pendingVerificationEmail })
+        });
+        const bData = await bResp.json();
+        if (bData.data && bData.data.status === 'sent') {
+          sent = true;
+          errMsg = '';
+        } else if (bData.data && bData.data.status === 'rate_limited') {
+          errMsg = bData.data.message || 'Firebase email rate limit reached.';
+        } else if (bData.data && bData.data.status === 'success' && bData.data.verification_link) {
+          sent = true;
+          errMsg = '';
+        }
+      } catch (be) {
+        console.warn('Backend verification resend notice:', be);
+      }
+    }
+
+    startResendCooldown(60);
+
+    if (sent) {
+      const descEl = document.getElementById('verificationScreenDesc');
+      if (descEl) {
+        descEl.innerHTML = `We've sent a verification link to <strong id="verificationEmailTarget" style="color: #0F172A;">${escapeHtml(pendingVerificationEmail)}</strong>.<br>Please check your email and click the verification link to activate your career features.`;
+      }
+      showAuthAlert(`Verification email dispatched to ${pendingVerificationEmail}! Check your inbox and spam folder.`, 'success');
+      showToast('Verification email resent! Check inbox and spam.', 'success');
+    } else {
+      showAuthAlert(errMsg || 'Failed to resend email right now. Please wait a few minutes or click the instant link below.', 'error');
+      showToast('Could not resend email right now.', 'error');
+    }
+  } catch (err) {
+    console.error('Resend verification error:', err);
+    startResendCooldown(60);
+    showAuthAlert(err.message || 'Failed to resend email', 'error');
+  }
+}
+
+async function handleGetDevVerificationLink() {
+  const email = pendingVerificationEmail || (dom.pageAuthEmail ? dom.pageAuthEmail.value.trim() : '');
+  if (!email) {
+    showAuthAlert('Please enter an email address first.', 'error');
+    return;
+  }
+  showToast('Generating official verification link...', 'info');
+  try {
+    const resp = await fetch(`${API_BASE}/auth/get-verification-link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email })
+    });
+    const resJson = await resp.json();
+    if (resp.ok && resJson.data && resJson.data.verification_link) {
+      const link = resJson.data.verification_link;
+      window.open(link, '_blank');
+      showAuthAlert(`Opened official Firebase verification page in a new tab! Once verified, return here and click "✓ I've Verified My Email".`, 'success');
+      showToast('Instant verification page opened!', 'success');
+    } else {
+      showAuthAlert((resJson.data && resJson.data.message) || resJson.message || 'Could not generate instant verification link.', 'error');
+    }
+  } catch (err) {
+    console.error('Instant verification link error:', err);
+    showAuthAlert('Failed to generate verification link: ' + err.message, 'error');
+  }
+}
+
+async function checkEmailLinkSignInOnLoad() {
+  try {
+    const auth = await getOrInitFirebaseAuth();
+    if (auth && window.FirebaseSDK && window.FirebaseSDK.isSignInWithEmailLink && window.FirebaseSDK.isSignInWithEmailLink(auth, window.location.href)) {
+      let email = window.localStorage.getItem('cm_email_for_link_sign_in');
+      if (!email) {
+        email = window.prompt('Please enter your email to confirm your sign-in:');
+      }
+      if (email && window.FirebaseSDK.signInWithEmailLink) {
+        showToast('Signing in with magic link...', 'info');
+        const result = await window.FirebaseSDK.signInWithEmailLink(auth, email, window.location.href);
+        window.localStorage.removeItem('cm_email_for_link_sign_in');
+        const idToken = await result.user.getIdToken(true);
+        const resp = await fetch(`${API_BASE}/auth/firebase-login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id_token: idToken, role: 'candidate', full_name: result.user.displayName || email.split('@')[0] })
+        });
+        const resJson = await resp.json();
+        if (resp.ok && resJson.data) {
+          await completeSignIn(resJson.data.access_token, resJson.data.user);
+          showToast(`Welcome back, ${resJson.data.user.full_name}! Signed in via email link.`, 'success');
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    }
+  } catch (linkErr) {
+    console.warn('Email link sign-in check notice:', linkErr);
+  }
+}
+
+async function handleToggleEmailLinkMode() {
+  const email = dom.pageAuthEmail ? dom.pageAuthEmail.value.trim() : '';
+  if (!email) {
+    showAuthAlert('Please enter your email address above to receive a passwordless sign-in link.', 'info');
+    if (dom.pageAuthEmail) dom.pageAuthEmail.focus();
+    return;
+  }
+  const auth = await getOrInitFirebaseAuth();
+  if (!auth || !window.FirebaseSDK || !window.FirebaseSDK.sendSignInLinkToEmail) {
+    showAuthAlert('Email link authentication is unavailable at this moment.', 'error');
+    return;
+  }
+  try {
+    const actionCodeSettings = {
+      url: window.location.origin,
+      handleCodeInApp: true,
+    };
+    await window.FirebaseSDK.sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    window.localStorage.setItem('cm_email_for_link_sign_in', email);
+    showAuthAlert(`Passwordless sign-in link sent to ${email}! Open the link in your inbox to sign in instantly.`, 'success');
+    showToast(`Sign-in link sent to ${email}!`, 'success');
+  } catch (err) {
+    showAuthAlert('Failed to send sign-in link: ' + (err.message || err), 'error');
+  }
+}
+
 function fillPageDemo() {
   // Demo fill removed
 }
@@ -2710,31 +3457,56 @@ async function handlePageAuthSubmit(e) {
         try {
           showAuthAlert('Creating account...', 'info');
           const userCred = await window.FirebaseSDK.createUserWithEmailAndPassword(auth, email, password);
-          const idToken = await userCred.user.getIdToken();
-          showAuthAlert('Setting up workspace session...', 'info');
 
-          const resp = await fetch(`${API_BASE}/auth/firebase-login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id_token: idToken, role: role, full_name: fullName })
-          });
+          let emailSent = false;
+          let emailErrorMsg = '';
 
-          const resJson = await resp.json();
-          if (resp.ok && resJson.data) {
-            clearAuthAlert();
-            await completeSignIn(resJson.data.access_token, resJson.data.user);
-            showToast(`Welcome, ${resJson.data.user.full_name || fullName}! Account created.`, 'success');
-            return;
-          } else {
-            const errMsg = (resJson.error && resJson.error.message) || resJson.message || 'Account setup failed';
-            showAuthAlert(errMsg, 'error');
-            showToast(errMsg, 'error');
-            return;
+          try {
+            if (window.FirebaseSDK.sendEmailVerification) {
+              await window.FirebaseSDK.sendEmailVerification(userCred.user);
+              emailSent = true;
+            }
+          } catch (ve) {
+            console.error('[Firebase Verification Send Notice]', ve);
+            if (ve.code === 'auth/too-many-requests') {
+              emailErrorMsg = 'Firebase rate limit: An email was recently requested for this account. Please wait a few minutes before clicking Resend, and check your spam/promotions folder.';
+            } else {
+              emailErrorMsg = ve.message || 'Could not dispatch verification email.';
+            }
+
+            // Fallback via backend Identity Toolkit endpoint
+            try {
+              const idToken = await userCred.user.getIdToken();
+              const bResp = await fetch(`${API_BASE}/auth/send-verification`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id_token: idToken, email: email })
+              });
+              const bJson = await bResp.json();
+              if (bJson.data && bJson.data.status === 'sent') {
+                emailSent = true;
+                emailErrorMsg = '';
+              }
+            } catch (be) {
+              console.warn('Backend verification fallback notice:', be);
+            }
           }
+
+          showEmailVerificationScreen(email, role, fullName, emailSent);
+          startResendCooldown(60);
+
+          if (emailSent) {
+            showAuthAlert(`Verification email dispatched to ${email}. Please check your inbox and spam/promotions folder.`, 'success');
+            showToast(`Verification email sent to ${email}!`, 'success');
+          } else {
+            showAuthAlert(emailErrorMsg || 'Account created. If verification email does not arrive shortly, click "Resend" or the instant link below.', 'warning');
+            showToast('Account created. Check spam or click instant link.', 'warning');
+          }
+          return;
         } catch (fbErr) {
           console.warn('Registration note:', fbErr);
           if (fbErr.code === 'auth/email-already-in-use') {
-            showAuthAlert('This email is already registered. Switched to Sign In mode.', 'info');
+            showAuthAlert('An account with this email already exists. Enter your password to sign in or access the verification resend screen.', 'info');
             setPortalAuthMode(false);
             if (dom.pageAuthEmail) dom.pageAuthEmail.value = email;
             if (dom.pageAuthPassword) dom.pageAuthPassword.focus();
@@ -2756,6 +3528,12 @@ async function handlePageAuthSubmit(e) {
         try {
           showAuthAlert('Authenticating...', 'info');
           const userCred = await window.FirebaseSDK.signInWithEmailAndPassword(auth, email, password);
+          if (!userCred.user.emailVerified) {
+            showEmailVerificationScreen(email, 'candidate', userCred.user.displayName || email.split('@')[0], false);
+            showAuthAlert('Your email address is not yet verified. Click "Resend Verification Email" below to send a fresh verification link.', 'warning');
+            return;
+          }
+
           const idToken = await userCred.user.getIdToken();
           showAuthAlert('Signing you into your workspace...', 'info');
 
@@ -2774,14 +3552,27 @@ async function handlePageAuthSubmit(e) {
           }
         } catch (fbErr) {
           console.warn('Sign-in note:', fbErr);
-          // If user was registered before cloud auth or pre-seeded in database, verify seamlessly
           showAuthAlert('Verifying credentials...', 'info');
         }
       }
     }
 
     // Direct Google Identity Toolkit REST API with API Key (if SDK had network delay or browser sandbox)
-    const apiKey = (firebaseConfigCache && firebaseConfigCache.apiKey) || 'AIzaSyBcuGpHGfq2dO0-3o8j1qtc2ctWbgxK9Uo';
+    let apiKey = (firebaseConfigCache && firebaseConfigCache.apiKey) || (window.firebaseConfig && window.firebaseConfig.apiKey);
+    if (!apiKey) {
+      try {
+        const cfgResp = await fetch(`${API_BASE}/auth/firebase-config`);
+        if (cfgResp.ok) {
+          const cfgJson = await cfgResp.json();
+          if (cfgJson.data && cfgJson.data.apiKey) {
+            apiKey = cfgJson.data.apiKey;
+            firebaseConfigCache = cfgJson.data;
+          }
+        }
+      } catch (ce) {
+        console.warn('Could not load dynamic API key for REST fallback:', ce);
+      }
+    }
     try {
       const endpoint = isPortalSignUp
         ? `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`
@@ -2795,6 +3586,41 @@ async function handlePageAuthSubmit(e) {
         const restJson = await restResp.json();
         const idToken = restJson.idToken;
         if (idToken) {
+          if (isPortalSignUp) {
+            let emailSent = false;
+            let emailErrorMsg = '';
+            try {
+              const oobResp = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requestType: 'VERIFY_EMAIL', idToken: idToken })
+              });
+              if (oobResp.ok) {
+                emailSent = true;
+              } else {
+                const errData = await oobResp.json();
+                const errMsg = (errData && errData.error && errData.error.message) || '';
+                if (errMsg.includes('TOO_MANY_ATTEMPTS_TRY_LATER')) {
+                  emailErrorMsg = 'Firebase rate limit: Too many requests sent recently. Please wait before requesting another email, or check your spam/promotions folder.';
+                } else {
+                  emailErrorMsg = errMsg || 'Could not dispatch verification email.';
+                }
+              }
+            } catch (ve) {
+              console.warn('REST sendOobCode notice:', ve);
+              emailErrorMsg = ve.message || 'Could not dispatch verification email.';
+            }
+            showEmailVerificationScreen(email, role, fullName, emailSent);
+            startResendCooldown(60);
+            if (emailSent) {
+              showAuthAlert(`Verification email dispatched to ${email}. Check your inbox and spam folder.`, 'success');
+              showToast(`Verification email sent to ${email}!`, 'success');
+            } else {
+              showAuthAlert(emailErrorMsg || 'Account created. Click Resend or the instant link below to verify.', 'warning');
+              showToast('Account created. Please verify your email.', 'warning');
+            }
+            return;
+          }
           const resp = await fetch(`${API_BASE}/auth/firebase-login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2804,9 +3630,19 @@ async function handlePageAuthSubmit(e) {
           if (resp.ok && resJson.data) {
             clearAuthAlert();
             await completeSignIn(resJson.data.access_token, resJson.data.user);
-            showToast(isPortalSignUp ? `Welcome, ${resJson.data.user.full_name || fullName}! Account created.` : `Welcome back, ${resJson.data.user.full_name}! Signed in.`, 'success');
+            showToast(`Welcome back, ${resJson.data.user.full_name}! Signed in.`, 'success');
             return;
           }
+        }
+      } else {
+        const restErrData = await restResp.json().catch(() => ({}));
+        const restErrMsg = (restErrData && restErrData.error && restErrData.error.message) || '';
+        if (restErrMsg === 'EMAIL_EXISTS') {
+          showAuthAlert('An account with this email already exists. Enter your password to sign in or access the verification resend screen.', 'info');
+          setPortalAuthMode(false);
+          if (dom.pageAuthEmail) dom.pageAuthEmail.value = email;
+          if (dom.pageAuthPassword) dom.pageAuthPassword.focus();
+          return;
         }
       }
     } catch (restErr) {
@@ -2878,13 +3714,13 @@ async function completeSignIn(token, user) {
 
   // Initialize fresh candidate profile for this specific user
   state.candidateProfile = {
-    id: `profile_${user.id}`,
+    id: null,
     full_name: user.full_name || user.email.split('@')[0],
     email: user.email,
-    headline: user.role === 'recruiter' ? 'Talent Acquisition Partner' : 'Software Engineer',
-    summary: user.role === 'recruiter' ? 'Recruiting technical talent across modern stacks.' : 'Confirmed candidate profile ready for matching and assessment.',
-    skills: user.role === 'recruiter' ? ['Technical Recruiting', 'Sourcing', 'Pipeline'] : ['Python', 'JavaScript', 'SQL', 'Git'],
-    experience_years: 2,
+    headline: user.role === 'recruiter' ? 'Talent Acquisition Partner' : '',
+    summary: '',
+    skills: [],
+    experience_years: 0,
     experience: [],
     education: []
   };
@@ -2896,10 +3732,16 @@ async function completeSignIn(token, user) {
   closeAuthModal();
   updateStatusPill(true, user.full_name);
 
-  // Sync profile & load jobs
-  await syncCandidateProfile();
-  await loadJobs();
+  // Sync profile, persistent resumes, saved jobs, catalog & ranked job matches concurrently
+  await Promise.allSettled([
+    syncCandidateProfile(),
+    loadSavedJobs(),
+    loadUserResumes(),
+    loadRankedJobMatches(),
+    loadJobs(),
+  ]);
   updateCounters();
+  updateResumeUiState();
 }
 
 function openAuthModal() {
@@ -3154,40 +3996,55 @@ function triggerSamplePipeline(sampleKey) {
 async function uploadAndMatchResume(file) {
   if (!file) return;
 
-  if (dom.pipelineProgressCard) dom.pipelineProgressCard.style.display = 'block';
+  showToast('Processing resume and calculating matches...', 'info');
+  if (dom.btnSelectCvFile) {
+    dom.btnSelectCvFile.disabled = true;
+    dom.btnSelectCvFile.innerText = 'Analyzing Resume...';
+  }
+  if (dom.resumeUploadCard) dom.resumeUploadCard.style.display = 'none';
+  if (dom.dropzoneCv) dom.dropzoneCv.style.display = 'none';
   if (dom.candidateSummaryBanner) dom.candidateSummaryBanner.style.display = 'none';
 
-  const steps = [
-    { num: 1, title: 'Ingesting & Parsing Resume Document...', sub: 'Magic bytes validation & NLP skill extraction', pct: '20%' },
-    { num: 2, title: 'Generating Dense Semantic Vectors...', sub: 'Embedding text with Gemini-Embedding-2', pct: '40%' },
-    { num: 3, title: 'Persisting Profile & Vectors...', sub: 'Storing in PostgreSQL vector store', pct: '60%' },
-    { num: 4, title: 'Crawling Active Job Postings...', sub: 'Scraping and refreshing jobs via Firecrawl adapter', pct: '80%' },
-    { num: 5, title: 'Calculating 5-Factor Weighted Scores...', sub: 'Applying deterministic weights & ranking', pct: '95%' }
-  ];
+  let interval = null;
+  if (dom.pipelineProgressCard) {
+    dom.pipelineProgressCard.style.display = 'block';
 
-  let currentStepIdx = 0;
-  const interval = setInterval(() => {
-    if (currentStepIdx < steps.length) {
-      const step = steps[currentStepIdx];
-      if (dom.pipelineStepStatusTitle) dom.pipelineStepStatusTitle.innerText = step.title;
-      if (dom.pipelineStepStatusSub) dom.pipelineStepStatusSub.innerText = step.sub;
-      if (dom.pipelineProgressPercent) dom.pipelineProgressPercent.innerText = step.pct;
+    const bar = dom.cvParsingProgressBar || document.getElementById('cvParsingProgressBar');
+    if (bar) bar.style.width = '10%';
+    if (dom.pipelineProgressPercent) dom.pipelineProgressPercent.innerText = '10%';
 
-      for (let s = 1; s <= 5; s++) {
-        const stepEl = document.getElementById(`pipeStep${s}`);
-        if (stepEl) {
-          if (s < step.num) {
-            stepEl.className = 'stepper-substep completed';
-          } else if (s === step.num) {
-            stepEl.className = 'stepper-substep active';
-          } else {
-            stepEl.className = 'stepper-substep';
+    const steps = [
+      { num: 1, title: 'Reading & Ingesting Resume Document...', sub: 'Extracting text layout, sections, and raw document text', pct: '20%' },
+      { num: 2, title: 'Extracting Skills & Competencies...', sub: 'Detecting frameworks, libraries, tools, and technical skills', pct: '45%' },
+      { num: 3, title: 'Parsing Work Experience & Achievements...', sub: 'Structuring career timeline, roles, and responsibilities', pct: '70%' },
+      { num: 4, title: 'Analyzing Education & Project Details...', sub: 'Parsing academic credentials, degrees, and portfolio', pct: '88%' },
+      { num: 5, title: 'Synthesizing Candidate Profile...', sub: 'Finalizing parsed candidate profile structure', pct: '96%' }
+    ];
+
+    let currentStepIdx = 0;
+    interval = setInterval(() => {
+      if (currentStepIdx < steps.length) {
+        const step = steps[currentStepIdx];
+        if (dom.pipelineStepStatusTitle) dom.pipelineStepStatusTitle.innerText = step.title;
+        if (dom.pipelineStepStatusSub) dom.pipelineStepStatusSub.innerText = step.sub;
+        if (dom.pipelineProgressPercent) dom.pipelineProgressPercent.innerText = step.pct;
+        if (bar) bar.style.width = step.pct;
+
+        for (let s = 1; s <= 5; s++) {
+          const stepEl = document.getElementById(`pipeStep${s}`);
+          if (stepEl) {
+            stepEl.classList.remove('active', 'completed');
+            if (s < step.num) {
+              stepEl.classList.add('completed');
+            } else if (s === step.num) {
+              stepEl.classList.add('active');
+            }
           }
         }
+        currentStepIdx++;
       }
-      currentStepIdx++;
-    }
-  }, 350);
+    }, 380);
+  }
 
   const formData = new FormData();
   formData.append('file', file);
@@ -3204,12 +4061,16 @@ async function uploadAndMatchResume(file) {
       body: formData
     });
 
-    clearInterval(interval);
+    if (interval) clearInterval(interval);
+    if (dom.btnSelectCvFile) {
+      dom.btnSelectCvFile.disabled = false;
+      dom.btnSelectCvFile.innerText = 'Choose Resume Document';
+    }
 
     const json = await response.json();
     if (!response.ok || !json.success) {
       if (dom.pipelineProgressCard) dom.pipelineProgressCard.style.display = 'none';
-      showToast(json.message || 'Pipeline execution failed.', 'error');
+      showToast(json.message || 'Resume processing failed.', 'error');
       return;
     }
 
@@ -3217,239 +4078,45 @@ async function uploadAndMatchResume(file) {
     state.candidateProfile = data.profile;
     localStorage.setItem('cm_candidate_profile', JSON.stringify(data.profile));
 
-    if (dom.pipelineProgressPercent) dom.pipelineProgressPercent.innerText = '100%';
-    if (dom.pipelineStepStatusTitle) dom.pipelineStepStatusTitle.innerText = 'Pipeline Complete!';
-    if (dom.pipelineStepStatusSub) dom.pipelineStepStatusSub.innerText = `Evaluated against ${data.total_matches} roles.`;
-    for (let s = 1; s <= 5; s++) {
-      const stepEl = document.getElementById(`pipeStep${s}`);
-      if (stepEl) stepEl.className = 'stepper-substep completed';
+    if (dom.pipelineProgressCard) {
+      const bar = dom.cvParsingProgressBar || document.getElementById('cvParsingProgressBar');
+      if (bar) bar.style.width = '100%';
+      if (dom.pipelineProgressPercent) dom.pipelineProgressPercent.innerText = '100%';
+      if (dom.pipelineStepStatusTitle) dom.pipelineStepStatusTitle.innerText = 'CV Parsing Complete (100%)';
+      if (dom.pipelineStepStatusSub) dom.pipelineStepStatusSub.innerText = `Resume successfully parsed and matched against ${data.total_matches} roles.`;
+      for (let s = 1; s <= 5; s++) {
+        const stepEl = document.getElementById(`pipeStep${s}`);
+        if (stepEl) {
+          stepEl.classList.remove('active');
+          stepEl.classList.add('completed');
+        }
+      }
     }
 
-    setTimeout(() => {
-      if (dom.pipelineProgressCard) dom.pipelineProgressCard.style.display = 'none';
-      renderCandidateSummaryBanner(data.profile);
+    setTimeout(async () => {
+      state.rankedMatches = data.ranked_matches || [];
+      renderCandidateProfileSummary(data.profile);
       renderRankedMatchesList(data.ranked_matches);
       updateCounters();
-      showToast(`Matched ${data.ranked_matches.length} jobs with explainable 5-factor scoring!`, 'success');
-    }, 600);
+      if (state.token) {
+        await syncCandidateProfile();
+        await loadUserResumes();
+        await loadSavedJobs();
+        await loadRankedJobMatches(true);
+      }
+      updateResumeUiState();
+      showToast(`Matched ${data.ranked_matches.length} jobs aligned with your experience & skills!`, 'success');
+    }, 700);
 
   } catch (err) {
-    clearInterval(interval);
+    if (interval) clearInterval(interval);
+    if (dom.btnSelectCvFile) {
+      dom.btnSelectCvFile.disabled = false;
+      dom.btnSelectCvFile.innerText = 'Choose Resume Document';
+    }
     if (dom.pipelineProgressCard) dom.pipelineProgressCard.style.display = 'none';
-    showToast(`Error running matching pipeline: ${err.message}`, 'error');
+    updateResumeUiState();
+    showToast(`Error parsing resume: ${err.message}`, 'error');
   }
 }
 
-function renderCandidateSummaryBanner(profile) {
-  if (!dom.candidateSummaryBanner) return;
-  dom.candidateSummaryBanner.style.display = 'block';
-
-  if (dom.summaryCandidateName) {
-    dom.summaryCandidateName.innerText = profile.full_name || 'Candidate Profile';
-  }
-  if (dom.summaryCandidateHeadline) {
-    dom.summaryCandidateHeadline.innerText = profile.headline || profile.summary || 'Software Professional';
-  }
-  if (dom.summaryCandidateEmail) {
-    dom.summaryCandidateEmail.innerText = `${profile.email || 'guest@example.com'} • Stored in PostgreSQL`;
-  }
-  if (dom.summaryCandidateAvatar) {
-    const initials = (profile.full_name || 'CP')
-      .split(' ')
-      .map(w => w[0])
-      .join('')
-      .slice(0, 2)
-      .toUpperCase();
-    dom.summaryCandidateAvatar.innerText = initials;
-  }
-
-  if (dom.summaryCandidateSkills) {
-    dom.summaryCandidateSkills.innerHTML = '';
-    const skills = profile.skills || [];
-    skills.forEach(skill => {
-      const tag = document.createElement('span');
-      tag.className = 'skill-match-tag confirmed';
-      tag.innerHTML = `✓ ${escapeHtml(skill.name || skill)}`;
-      dom.summaryCandidateSkills.appendChild(tag);
-    });
-  }
-}
-
-function renderRankedMatchesList(rankedMatches) {
-  if (!dom.overviewMatchesList) return;
-  dom.overviewMatchesList.innerHTML = '';
-
-  if (dom.rankedMatchesCountBadge) {
-    dom.rankedMatchesCountBadge.innerText = `${rankedMatches.length} Roles Evaluated`;
-  }
-
-  if (!rankedMatches || rankedMatches.length === 0) {
-    dom.overviewMatchesList.innerHTML = `
-      <div class="empty-state-card" style="padding: 32px; text-align: center;">
-        <p>No active matching jobs found for this profile. Try uploading another resume.</p>
-      </div>
-    `;
-    return;
-  }
-
-  rankedMatches.forEach(item => {
-    const match = item.match;
-    const job = item.job || {};
-    const breakdown = match.breakdown || {};
-
-    const card = document.createElement('div');
-    card.className = 'card ranked-job-card';
-    card.style.marginBottom = '20px';
-    card.style.padding = '20px';
-
-    const rankClass = match.rank === 1 ? 'rank-badge-pill top-rank' : 'rank-badge-pill';
-    const rankLabel = match.rank === 1 ? '🏆 Rank #1' : `Rank #${match.rank}`;
-    const scoreVal = match.overall_score || 0;
-    const scorePillClass = scoreVal >= 75 ? 'match-percentage-pill high' : (scoreVal >= 55 ? 'match-percentage-pill mid' : 'match-percentage-pill low');
-
-    // Factors
-    const techFactor = breakdown.technical_skills || {};
-    const expFactor = breakdown.relevant_experience || {};
-    const eduFactor = breakdown.education || {};
-    const roleFactor = breakdown.role_alignment || {};
-    const proFactor = breakdown.projects || {};
-
-    const factors = [
-      { name: 'Technical Skills', weight: '40%', score: techFactor.score || 0, avail: techFactor.available !== false },
-      { name: 'Relevant Experience', weight: '25%', score: expFactor.score || 0, avail: expFactor.available !== false },
-      { name: 'Education & Quals', weight: '10%', score: eduFactor.score || 0, avail: eduFactor.available !== false },
-      { name: 'Role Alignment', weight: '15%', score: roleFactor.score || 0, avail: roleFactor.available !== false },
-      { name: 'Projects & Domain', weight: '10%', score: proFactor.score || 0, avail: proFactor.available !== false }
-    ];
-
-    const factorsHtml = factors.map(f => {
-      const barClass = f.avail ? (f.score >= 70 ? 'high' : (f.score >= 50 ? 'mid' : 'low')) : 'unavailable';
-      const scoreDisplay = f.avail ? `${Math.round(f.score)}%` : 'N/A';
-      return `
-        <div class="factor-mini-item">
-          <div class="factor-label-row">
-            <span>${escapeHtml(f.name)}</span>
-            <span class="factor-weight-tag">${f.weight}</span>
-          </div>
-          <div class="factor-bar-track">
-            <div class="factor-bar-fill ${barClass}" style="width: ${f.avail ? f.score : 0}%"></div>
-          </div>
-          <div style="font-size: 11px; font-weight: 700; color: var(--color-navy); margin-top: 2px;">
-            ${scoreDisplay}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    // Matched skills chips
-    const matchedChips = (match.matched_skills || []).map(s => `
-      <span class="skill-match-tag confirmed">✓ ${escapeHtml(s)}</span>
-    `).join('') || '<span style="font-size: 12px; color: var(--color-text-subtle);">None required matched</span>';
-
-    // Missing skills chips
-    const missingChips = (match.missing_skills || []).map(s => `
-      <span class="skill-match-tag missing" style="background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA;">• ${escapeHtml(s)}</span>
-    `).join('') || '<span style="font-size: 12px; color: #16A34A; font-weight: 600;">✓ All mandatory skills satisfied</span>';
-
-    // Strong points list
-    const strengthsHtml = (match.strong_matching_points || []).map(p => `
-      <li>${escapeHtml(p)}</li>
-    `).join('');
-
-    // Gaps list
-    const gapsHtml = (match.missing_qualifications || []).map(g => `
-      <li>${escapeHtml(g)}</li>
-    `).join('');
-
-    // Source link
-    const sourceLink = job.source_url ? `
-      <a href="${escapeHtml(job.source_url)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="display: inline-flex; align-items: center; gap: 6px;">
-        <span>View Original Posting</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      </a>
-    ` : '';
-
-    card.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
-        <div>
-          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
-            <span class="${rankClass}">${rankLabel}</span>
-            <span style="font-size: 13px; font-weight: 600; color: var(--color-indigo);">${escapeHtml(job.company || 'Tech Employer')}</span>
-          </div>
-          <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--color-navy);">
-            ${escapeHtml(job.title || 'Software Engineer')}
-          </h3>
-          <div style="font-size: 13px; color: var(--color-text-subtle); margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap;">
-            <span>📍 ${escapeHtml(job.location || 'Remote')}</span>
-            ${job.salary ? `<span>💰 ${escapeHtml(job.salary)}</span>` : ''}
-            ${job.domain ? `<span>🏷️ ${escapeHtml(job.domain)}</span>` : ''}
-          </div>
-        </div>
-
-        <div style="text-align: right;">
-          <div class="${scorePillClass}" style="font-size: 16px; padding: 6px 14px;">
-            ${Math.round(scoreVal)}% Overall Match
-          </div>
-          <div class="match-calc-label">5-Factor Weighted Score</div>
-        </div>
-      </div>
-
-      <!-- 5-Factor Breakdown Grid -->
-      <div class="factor-breakdown-grid">
-        ${factorsHtml}
-      </div>
-
-      <!-- Experience Comparison Box -->
-      ${match.experience_comparison ? `
-        <div class="experience-comparison-box">
-          <span style="font-size: 16px;">⏱️</span>
-          <span><strong>Experience Analysis:</strong> ${escapeHtml(match.experience_comparison)}</span>
-        </div>
-      ` : ''}
-
-      <!-- Matched and Missing Skills Row -->
-      <div style="margin: 14px 0;">
-        <div style="font-size: 12px; font-weight: 700; color: var(--color-text-main); margin-bottom: 6px;">
-          Skill Competencies Breakdown:
-        </div>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-          <div style="display: flex; gap: 4px; flex-wrap: wrap;">${matchedChips}</div>
-          <div style="display: flex; gap: 4px; flex-wrap: wrap;">${missingChips}</div>
-        </div>
-      </div>
-
-      <!-- Strengths and Gaps Columns -->
-      ${(strengthsHtml || gapsHtml) ? `
-        <div class="match-insights-grid">
-          ${strengthsHtml ? `
-            <div class="insight-subcard strengths">
-              <div class="insight-title">✓ Key Strong Points</div>
-              <ul>${strengthsHtml}</ul>
-            </div>
-          ` : ''}
-          ${gapsHtml ? `
-            <div class="insight-subcard gaps">
-              <div class="insight-title">⚠ Identified Gaps & Missing Qualifications</div>
-              <ul>${gapsHtml}</ul>
-            </div>
-          ` : ''}
-        </div>
-      ` : ''}
-
-      <!-- Card Action Footer -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; border-top: 1px solid var(--color-border-subtle); padding-top: 14px;">
-        <div style="font-size: 11.5px; color: var(--color-text-subtle);">
-          Scraped & verified via Firecrawl API • Scored by 5-Factor Deterministic Engine
-        </div>
-        <div style="display: flex; gap: 8px;">
-          ${sourceLink}
-          <button class="btn btn-primary btn-sm" onclick="handleQuickApply('${escapeHtml(job.id || '')}')">
-            Apply Now
-          </button>
-        </div>
-      </div>
-    `;
-
-    dom.overviewMatchesList.appendChild(card);
-  });
-}

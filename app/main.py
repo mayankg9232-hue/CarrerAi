@@ -3,10 +3,11 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
+import json
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -234,9 +235,21 @@ def create_application() -> FastAPI:
 
         @app.get("/", include_in_schema=False)
         @app.get("/app", include_in_schema=False)
-        async def serve_frontend() -> FileResponse:
+        async def serve_frontend() -> HTMLResponse:
             index_path = frontend_dir / "index.html"
-            return FileResponse(index_path)
+            content = index_path.read_text(encoding="utf-8")
+            config_json = json.dumps({
+                "apiKey": settings.FIREBASE_API_KEY,
+                "authDomain": settings.FIREBASE_AUTH_DOMAIN,
+                "projectId": settings.FIREBASE_PROJECT_ID,
+                "storageBucket": settings.FIREBASE_STORAGE_BUCKET,
+                "messagingSenderId": settings.FIREBASE_MESSAGING_SENDER_ID,
+                "appId": settings.FIREBASE_APP_ID,
+                "measurementId": settings.FIREBASE_MEASUREMENT_ID,
+            })
+            injected = f"<script>window.__FIREBASE_CONFIG__ = {config_json};</script></head>"
+            html_content = content.replace("</head>", injected, 1)
+            return HTMLResponse(content=html_content, media_type="text/html")
 
     if dev_ui_dir.exists():
         app.mount("/dev-ui-assets", StaticFiles(directory="dev_ui"), name="dev_ui_assets")

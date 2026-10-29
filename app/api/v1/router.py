@@ -32,6 +32,7 @@ api_v1_router.include_router(llm.router, prefix="/llm", tags=["LLM"])
 
 # Register matching and recommendation engine (Phase 5 Developer A)
 api_v1_router.include_router(matching.router, prefix="/matching", tags=["Matching"])
+api_v1_router.include_router(matching.router, prefix="/matches", tags=["Matches"])
 
 # Register Agentic AI orchestrator (Phase 6 Developer A)
 api_v1_router.include_router(agent.router, prefix="/agent", tags=["Agent"])

@@ -3,7 +3,7 @@
 from typing import List
 from fastapi import APIRouter, Body, Depends, status
 
-from app.authentication.dependencies import get_current_user
+from app.authentication.dependencies import get_current_user, require_verified_user
 from app.schemas.agent import (
     AgentTaskRequest,
     AgentTaskResponse,
@@ -28,7 +28,7 @@ router = APIRouter()
 )
 async def run_agent_task(
     payload: AgentTaskRequest = Body(..., embed=False),
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
     service: AgentApplicationService = Depends(get_agent_app_service),
 ) -> StandardResponse[AgentTaskResponse]:
     """Execute bounded, state-machine driven agent workflow for candidate or job task."""

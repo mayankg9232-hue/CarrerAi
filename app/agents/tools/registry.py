@@ -176,6 +176,11 @@ class ToolRegistry:
         async def _handle_get_candidate(args: GetCandidateProfileInput) -> CandidateProfile:
             profile = await self.resume_repo.get_by_id(args.candidate_id)
             if not profile:
+                profile = await self.resume_repo.resolve_profile(identifier=args.candidate_id)
+            if not profile and (args.candidate_id.startswith("profile_") or args.candidate_id.startswith("usr_")):
+                uid = args.candidate_id.replace("profile_", "")
+                profile = await self.resume_repo.resolve_profile(user_id=uid)
+            if not profile:
                 raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
             return profile
 

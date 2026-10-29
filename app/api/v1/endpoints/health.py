@@ -24,19 +24,34 @@ class EchoRequest(BaseModel):
     summary="Application Health Check",
 )
 async def check_health() -> StandardResponse[HealthResponse]:
-    """Returns application health status, version, and environment."""
+    """Returns application health status, version, environment, and dynamic service connectivity."""
+    from app.db.connection import get_db_manager
+
+    db_status = "down"
+    if settings.REPOSITORY_BACKEND == "memory":
+        db_status = "up"
+    else:
+        try:
+            db_mgr = get_db_manager()
+            conn_res = await db_mgr.check_connectivity()
+            if conn_res.get("status") == "connected":
+                db_status = "up"
+        except Exception:
+            db_status = "down"
+
+    is_healthy = (db_status == "up")
     health_data = HealthResponse(
-        status="healthy",
+        status="healthy" if is_healthy else "degraded",
         version=settings.APP_VERSION,
         environment=settings.APP_ENV,
         services={
             "api": "up",
-            "database": "up",
+            "database": db_status,
         },
     )
     return StandardResponse(
         data=health_data,
-        message="System is operating normally",
+        message="System is operating normally" if is_healthy else "System operating in degraded mode (database down)",
     )
 
 

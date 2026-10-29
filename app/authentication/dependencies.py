@@ -42,11 +42,38 @@ async def get_current_user(
     if user:
         principal.is_active = user.is_active
         principal.role = user.role
+        if user.full_name:
+            principal.full_name = user.full_name
+        if user.email_verified:
+            principal.email_verified = True
 
     if not principal.is_active:
         raise AuthorizationError("Account is inactive or disabled")
 
     return principal
+
+
+async def require_verified_user(
+    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+) -> AuthenticatedPrincipal:
+    """Ensure that candidate accounts have a verified email address before accessing protected career features.
+
+    Admins and recruiters bypass verification.
+    """
+    settings = get_settings()
+    if not settings.REQUIRE_EMAIL_VERIFICATION:
+        return current_user
+
+    if current_user.role in ("admin", "recruiter"):
+        return current_user
+
+    if not current_user.email_verified:
+        raise AuthorizationError(
+            "Email verification required. Please verify your email to access career matching, resumes, and agent features.",
+            error_code="EMAIL_NOT_VERIFIED",
+        )
+
+    return current_user
 
 
 async def get_optional_current_user(

@@ -29,6 +29,8 @@ class MatchingPipeline:
         """Fetch candidate profile or raise NotFoundError."""
         profile = await self.resume_repo.get_by_id(candidate_id)
         if not profile:
+            profile = await self.resume_repo.resolve_profile(identifier=candidate_id)
+        if not profile:
             raise NotFoundError(f"Candidate profile '{candidate_id}' not found.")
         return profile
 

@@ -187,3 +187,26 @@ async def test_security_headers_on_all_auth_responses(async_client: AsyncClient)
     assert response.headers.get("X-Frame-Options") == "DENY"
     assert response.headers.get("X-XSS-Protection") == "1; mode=block"
     assert response.headers.get("Referrer-Policy") == "strict-origin-when-cross-origin"
+
+
+@pytest.mark.asyncio
+async def test_mock_firebase_token_rejected_when_mock_auth_disabled() -> None:
+    """Test 8: Mock Firebase tokens are rejected when ALLOW_MOCK_FIREBASE is False."""
+    import jwt
+    from app.authentication.service import AuthenticationService
+    from app.core.config import Settings
+    from app.core.exceptions import AuthenticationError
+
+    strict_settings = Settings(ALLOW_MOCK_FIREBASE=False)
+    strict_auth_svc = AuthenticationService(settings=strict_settings)
+
+    mock_payload = {
+        "sub": "attacker_sub",
+        "email": "victim@example.com",
+        "mock_firebase": True,
+    }
+    mock_token = jwt.encode(mock_payload, "test_secret_key_minimum_32_characters_long", algorithm="HS256")
+
+    with pytest.raises(AuthenticationError, match="Mock Firebase tokens are disabled in this environment"):
+        await strict_auth_svc.verify_firebase_token(mock_token)
+

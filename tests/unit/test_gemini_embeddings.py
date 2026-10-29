@@ -6,6 +6,7 @@ import httpx
 
 from app.core.config import Settings
 from app.retrieval.embeddings import (
+    CachedEmbeddingProvider,
     GeminiEmbeddingProvider,
     LocalDeterministicEmbeddingProvider,
     cosine_similarity,
@@ -141,7 +142,9 @@ def test_get_embedding_provider_factory() -> None:
         api_key="test-key-123",
         model="gemini-embedding-2",
     )
-    assert isinstance(p_gemini, GeminiEmbeddingProvider)
+    assert isinstance(p_gemini, (GeminiEmbeddingProvider, CachedEmbeddingProvider))
+    inner = getattr(p_gemini, "inner", p_gemini)
+    assert isinstance(inner, GeminiEmbeddingProvider)
     assert p_gemini.api_key == "test-key-123"
     assert p_gemini.model_short == "gemini-embedding-2"
 
@@ -150,14 +153,16 @@ def test_get_embedding_provider_factory() -> None:
         provider_name="local",
         api_key=None,
     )
-    assert isinstance(p_local, LocalDeterministicEmbeddingProvider)
+    assert isinstance(p_local, (LocalDeterministicEmbeddingProvider, CachedEmbeddingProvider))
+    assert isinstance(getattr(p_local, "inner", p_local), LocalDeterministicEmbeddingProvider)
 
     # Empty key fallback
     p_fallback = get_embedding_provider(
         provider_name="gemini",
         api_key="",
     )
-    assert isinstance(p_fallback, LocalDeterministicEmbeddingProvider)
+    assert isinstance(p_fallback, (LocalDeterministicEmbeddingProvider, CachedEmbeddingProvider))
+    assert isinstance(getattr(p_fallback, "inner", p_fallback), LocalDeterministicEmbeddingProvider)
 
 
 def test_cosine_similarity_with_3072_dim_vectors() -> None:

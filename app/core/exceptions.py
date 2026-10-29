@@ -57,11 +57,20 @@ class AuthenticationError(AppException):
 class AuthorizationError(AppException):
     """Forbidden resource access (403)."""
 
-    def __init__(self, message: str = "Access forbidden"):
+    def __init__(
+        self,
+        message: str = "Access forbidden",
+        code: str = "FORBIDDEN",
+        error_code: Optional[str] = None,
+        field: Optional[str] = None,
+        details: Optional[Any] = None,
+    ):
         super().__init__(
             message=message,
-            code="FORBIDDEN",
+            code=error_code or code,
             status_code=status.HTTP_403_FORBIDDEN,
+            field=field,
+            details=details,
         )
 
 

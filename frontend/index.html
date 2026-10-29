@@ -1,14 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Job Matcher — CareerMatch AI</title>
-  <meta name="description" content="AI Job Matcher connects candidates to tech jobs with explainable matching, skill gap analysis, and verified assessments.">
+  <meta name="description"
+    content="AI Job Matcher connects candidates to tech jobs with explainable matching, skill gap analysis, and verified assessments.">
   <link rel="stylesheet" href="/frontend-assets/styles.css?v=2.1">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234F46E5'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='12' fill='none' stroke-linecap='round'/></svg>">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234F46E5'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='12' fill='none' stroke-linecap='round'/></svg>">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
+
 <body>
   <!-- ==============================================================================
        AUTHENTICATION PORTAL (FIRST SCREEN ENTRY GATEWAY)
@@ -31,7 +35,8 @@
             Find the tech roles that truly fit. <span>Understand why.</span>
           </h1>
           <p class="auth-hero-desc">
-            Transform your CV into an explainable career shortlist. Experience deterministic multi-factor match scores, automated skill-gap analysis, and interactive AI career assistance.
+            Transform your CV into an explainable career shortlist. Experience deterministic multi-factor match scores,
+            automated skill-gap analysis, and interactive AI career assistance.
           </p>
 
           <div class="auth-hero-features">
@@ -74,12 +79,17 @@
         </div>
 
         <!-- Google Sign-In Button -->
-        <button class="btn-google-auth" id="btnGoogleSignIn" type="button" title="Sign in securely with your Google Account">
+        <button class="btn-google-auth" id="btnGoogleSignIn" type="button"
+          title="Sign in securely with your Google Account">
           <svg class="google-icon-svg" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.14z"/>
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            <path fill="#4285F4"
+              d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.14z" />
+            <path fill="#34A853"
+              d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z" />
+            <path fill="#FBBC05"
+              d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
+            <path fill="#EA4335"
+              d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
           </svg>
           <span id="btnGoogleSignInLabel">Continue with Google</span>
         </button>
@@ -107,19 +117,57 @@
 
           <div class="form-group">
             <label class="form-label" for="pageAuthEmail">Email Address</label>
-            <input class="form-input" id="pageAuthEmail" type="email" placeholder="name@example.com" required autocomplete="email">
+            <input class="form-input" id="pageAuthEmail" type="email" placeholder="name@example.com" required
+              autocomplete="email">
           </div>
 
           <div class="form-group">
             <label class="form-label" for="pageAuthPassword">Password</label>
-            <input class="form-input" id="pageAuthPassword" type="password" placeholder="••••••••••••" minlength="8" required autocomplete="current-password">
-            <div class="form-hint" id="pagePasswordHint" style="display: none; font-size: 11px; color: #94A3B8; margin-top: 4px;">Password must contain at least 8 characters.</div>
+            <input class="form-input" id="pageAuthPassword" type="password" placeholder="••••••••••••" minlength="8"
+              required autocomplete="current-password">
+            <div class="form-hint" id="pagePasswordHint"
+              style="display: none; font-size: 11px; color: #94A3B8; margin-top: 4px;">Password must contain at least 8
+              characters.</div>
           </div>
 
           <button class="btn btn-primary btn-portal-submit" id="btnPageAuthSubmit" type="submit">
             Sign In &rarr;
           </button>
         </form>
+
+        <!-- Email Verification Screen -->
+        <div class="auth-verification-box" id="authVerificationScreen" style="display: none; padding: 1.25rem 0.5rem; text-align: center;">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: #EEF2FF; color: #4F46E5; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px;">✉️</div>
+          <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #0F172A;">Check your inbox</h3>
+          <p id="verificationScreenDesc" style="margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #64748B;">
+            We've sent a verification link to <strong id="verificationEmailTarget" style="color: #0F172A;">you@example.com</strong>.<br>
+            Please check your email and click the verification link to activate your career features.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+            <button class="btn btn-primary" id="btnCheckEmailVerified" type="button" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 600;">
+              ✓ I've Verified My Email
+            </button>
+            <button class="btn btn-secondary" id="btnResendVerification" type="button" style="width: 100%; padding: 10px; font-size: 13px; font-weight: 500;">
+              Resend Verification Email
+            </button>
+            <span id="resendCooldownLabel" style="display: none; font-size: 12px; color: #64748B;"></span>
+            <button id="btnGetDevVerificationLink" type="button" style="background: none; border: none; color: #64748B; font-size: 11px; cursor: pointer; text-decoration: underline;">
+              ⚙️ Email not in inbox or spam? Open instant verification link
+            </button>
+          </div>
+
+          <button id="btnBackToAuthFromVerification" type="button" style="background: none; border: none; color: #4F46E5; font-size: 13px; cursor: pointer; text-decoration: underline;">
+            &larr; Back to Sign In
+          </button>
+        </div>
+
+        <!-- Passwordless Email Link Option -->
+        <div style="margin-top: 14px; text-align: center;" id="emailLinkToggleContainer">
+          <button id="btnToggleEmailLinkMode" type="button" style="background: none; border: none; color: #64748B; font-size: 12px; cursor: pointer; text-decoration: underline;">
+            ✨ Prefer passwordless login? Sign in with email link
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -133,17 +181,22 @@
       <div class="google-chooser-header">
         <div style="display: flex; align-items: center; gap: 12px;">
           <svg class="google-icon-svg" viewBox="0 0 24 24" style="width: 26px; height: 26px;">
-            <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.14z"/>
-            <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
-            <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
-            <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+            <path fill="#4285F4"
+              d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.14z" />
+            <path fill="#34A853"
+              d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z" />
+            <path fill="#FBBC05"
+              d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
+            <path fill="#EA4335"
+              d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
           </svg>
           <div>
             <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #111827;">Sign in with Google</h3>
             <p style="margin: 2px 0 0; font-size: 12px; color: #6B7280;">to continue to CareerMatch AI</p>
           </div>
         </div>
-        <button class="btn-close-google-chooser" id="btnCloseGoogleChooser" type="button" aria-label="Close dialog">&times;</button>
+        <button class="btn-close-google-chooser" id="btnCloseGoogleChooser" type="button"
+          aria-label="Close dialog">&times;</button>
       </div>
 
       <!-- Container for Google One Tap / GIS iframe if available -->
@@ -151,7 +204,8 @@
 
       <!-- Direct Google Account Popup Trigger -->
       <div style="margin: 12px 0;">
-        <button class="btn btn-outline" id="btnFirebaseGooglePopup" type="button" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; padding: 10px 14px;">
+        <button class="btn btn-outline" id="btnFirebaseGooglePopup" type="button"
+          style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; padding: 10px 14px;">
           <span>Sign In with Google Account</span>
         </button>
       </div>
@@ -175,23 +229,28 @@
         </div>
 
         <div class="form-group" style="margin-bottom: 14px;">
-          <label class="form-label" for="inputDeviceGoogleEmail" style="font-size: 12.5px; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">
+          <label class="form-label" for="inputDeviceGoogleEmail"
+            style="font-size: 12.5px; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">
             Your Google Account / Gmail
           </label>
           <div style="position: relative;">
-            <input class="form-input" id="inputDeviceGoogleEmail" type="email" placeholder="e.g. yourname@gmail.com" autocomplete="username email" required autofocus style="background: #FFFFFF; border: 1.5px solid #CBD5E1; color: #111827; height: 44px; font-size: 14px; padding: 0 14px; border-radius: 8px; width: 100%;">
+            <input class="form-input" id="inputDeviceGoogleEmail" type="email" placeholder="e.g. yourname@gmail.com"
+              autocomplete="username email" required autofocus
+              style="background: #FFFFFF; border: 1.5px solid #CBD5E1; color: #111827; height: 44px; font-size: 14px; padding: 0 14px; border-radius: 8px; width: 100%;">
           </div>
           <div style="font-size: 11px; color: #6B7280; margin-top: 5px;">
             Select your Gmail from browser autofill or enter your account.
           </div>
         </div>
 
-        <button class="btn btn-primary" id="btnSubmitGoogleAuth" type="submit" style="width: 100%; height: 42px; background: #1A73E8; border: none; font-size: 14px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <button class="btn btn-primary" id="btnSubmitGoogleAuth" type="submit"
+          style="width: 100%; height: 42px; background: #1A73E8; border: none; font-size: 14px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <span>Continue as Google Account &rarr;</span>
         </button>
       </form>
 
-      <div class="google-chooser-footer" style="margin-top: 16px; font-size: 11px; color: #9CA3AF; line-height: 1.4; text-align: center;">
+      <div class="google-chooser-footer"
+        style="margin-top: 16px; font-size: 11px; color: #9CA3AF; line-height: 1.4; text-align: center;">
         Google Identity securely shares your verified email and name with CareerMatch AI.
       </div>
     </div>
@@ -218,65 +277,108 @@
         <ul class="nav-list" role="tablist">
           <li class="nav-item">
             <button class="nav-link active" id="tabOverview" data-view="view-overview" role="tab" aria-selected="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
               <span class="nav-label">AI Job Matching</span>
             </button>
           </li>
           <li class="nav-item" style="display: none !important;" aria-hidden="true">
-            <button class="nav-link" id="tabProfile" data-view="view-resume" role="tab" aria-selected="false" tabindex="-1">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <button class="nav-link" id="tabProfile" data-view="view-resume" role="tab" aria-selected="false"
+              tabindex="-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
               <span class="nav-label">My resume</span>
               <span class="nav-counter" id="navSkillsCount">6</span>
             </button>
           </li>
           <li class="nav-item" style="display: none !important;" aria-hidden="true">
             <button class="nav-link" id="tabJobs" data-view="view-jobs" role="tab" aria-selected="false" tabindex="-1">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+              </svg>
               <span class="nav-label">Job matches</span>
               <span class="nav-counter" id="navJobsCount">12</span>
             </button>
           </li>
           <li class="nav-item" style="display: none !important;" aria-hidden="true">
-            <button class="nav-link" id="tabMatching" data-view="view-matching" role="tab" aria-selected="false" tabindex="-1">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+            <button class="nav-link" id="tabMatching" data-view="view-matching" role="tab" aria-selected="false"
+              tabindex="-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="m4.93 4.93 4.24 4.24" />
+                <path d="m14.83 9.17 4.24-4.24" />
+                <path d="m14.83 14.83 4.24 4.24" />
+                <path d="m9.17 14.83-4.24 4.24" />
+              </svg>
               <span class="nav-label">Match & Explain</span>
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link" id="tabSaved" data-view="view-saved" role="tab" aria-selected="false">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="m19 21-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
               <span class="nav-label">Saved jobs</span>
-              <span class="nav-counter" id="navSavedCount">3</span>
+              <span class="nav-counter" id="navSavedCount">0</span>
             </button>
           </li>
-          <li class="nav-item">
-            <button class="nav-link" id="tabApplications" data-view="view-tracker" role="tab" aria-selected="false">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <li class="nav-item" style="display: none !important;" aria-hidden="true">
+            <button class="nav-link" id="tabApplications" data-view="view-tracker" role="tab" aria-selected="false"
+              tabindex="-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+              </svg>
               <span class="nav-label">Applications</span>
-              <span class="nav-counter" id="navAppsCount">6</span>
+              <span class="nav-counter" id="navAppsCount">0</span>
             </button>
           </li>
-          <li class="nav-item">
-            <button class="nav-link" id="tabInsights" data-view="view-insights" role="tab" aria-selected="false">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <li class="nav-item" style="display: none !important;" aria-hidden="true">
+            <button class="nav-link" id="tabInsights" data-view="view-insights" role="tab" aria-selected="false"
+              tabindex="-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
               <span class="nav-label">Career insights</span>
             </button>
           </li>
-          <li class="nav-item">
-            <button class="nav-link" id="tabAssessments" data-view="view-assessments" role="tab" aria-selected="false">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <li class="nav-item" style="display: none !important;" aria-hidden="true">
+            <button class="nav-link" id="tabAssessments" data-view="view-assessments" role="tab" aria-selected="false"
+              tabindex="-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6" />
+                <polyline points="8 6 2 12 8 18" />
+              </svg>
               <span class="nav-label">Coding Sandbox</span>
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link" id="tabAgent" data-view="view-agent" role="tab" aria-selected="false">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
               <span class="nav-label">Career Agent</span>
             </button>
           </li>
           <li class="nav-item">
             <button class="nav-link" id="tabSettings" data-view="view-settings" role="tab" aria-selected="false">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                  d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+              </svg>
               <span class="nav-label">Profile & settings</span>
             </button>
           </li>
@@ -310,9 +412,10 @@
           <span class="breadcrumb-current" id="currentBreadcrumb">Overview</span>
         </div>
         <div class="topbar-actions">
-          <button class="btn btn-ai-gradient btn-sm" id="btnTopAiCopilot" type="button" title="Launch AI Career Assistant">
+          <button class="btn btn-ai-gradient btn-sm" id="btnTopAiCopilot" type="button"
+            title="Launch AI Career Assistant">
             <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+              <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
             </svg>
             <span>✨ AI Copilot</span>
           </button>
@@ -330,86 +433,51 @@
              1. OVERVIEW VIEW
              ======================================================================== -->
         <section class="view-section active" id="view-overview">
-          <!-- Unified Pipeline Hero Banner -->
-          <div class="pipeline-hero-banner">
-            <div class="pipeline-hero-content">
-              <div class="pipeline-hero-eyebrow">
-                <span class="sparkle-icon">✨</span>
-                <span>AUTONOMOUS RESUME INTELLIGENCE & MATCHING PIPELINE</span>
-              </div>
-              <h1 class="pipeline-hero-title">Upload Your Resume & Get Ranked Job Matches</h1>
-              <p class="pipeline-hero-subtitle">
-                Your resume is ingested and parsed with NLP, embedded into dense semantic vectors using <strong>Gemini-Embedding-2</strong>, persisted in <strong>PostgreSQL</strong>, matched against active engineering roles scraped via <strong>Firecrawl</strong>, and ranked by the <strong>Multi-Factor Matching Engine</strong>.
-              </p>
-              
-              <!-- Active Architecture Badges -->
-              <div class="pipeline-tech-badges">
-                <div class="tech-badge">
-                  <span class="badge-icon">🧠</span>
-                  <div class="badge-text">
-                    <span class="badge-title">Gemini-Embedding-2</span>
-                    <span class="badge-sub">768d Dense Vectors</span>
-                  </div>
-                </div>
-                <div class="tech-badge">
-                  <span class="badge-icon">🗄️</span>
-                  <div class="badge-text">
-                    <span class="badge-title">PostgreSQL Vector DB</span>
-                    <span class="badge-sub">ACID Candidate Store</span>
-                  </div>
-                </div>
-                <div class="tech-badge">
-                  <span class="badge-icon">🕷️</span>
-                  <div class="badge-text">
-                    <span class="badge-title">Firecrawl Web Scraping</span>
-                    <span class="badge-sub">Live Roles Ingested</span>
-                  </div>
-                </div>
-                <div class="tech-badge">
-                  <span class="badge-icon">🎯</span>
-                  <div class="badge-text">
-                    <span class="badge-title">Matching Engine</span>
-                    <span class="badge-sub">Skills 40% &bull; Exp 25% &bull; Edu 10% &bull; Role 15% &bull; Projects 10%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Main Resume Upload Dropzone Card -->
-          <div class="card" style="margin-top: var(--space-6); padding: var(--space-6);">
+          <!-- Main Resume Upload Dropzone Card (Hidden after resume is processed and saved) -->
+          <div class="card" id="resumeUploadCard" style="padding: var(--space-6);">
             <div class="dropzone-box main-pipeline-dropzone" id="dropzoneCv" style="display: block;">
-              <div class="dropzone-icon-circle" style="width: 64px; height: 64px; border-radius: 50%; background: rgba(79, 70, 229, 0.08); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px; color: var(--color-indigo);">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
+              <div class="dropzone-icon-circle"
+                style="width: 64px; height: 64px; border-radius: 50%; background: rgba(79, 70, 229, 0.08); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" style="width: 32px; height: 32px; color: var(--color-indigo);">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
                 </svg>
               </div>
-              <div class="dropzone-title" style="font-size: 18px; font-weight: 700; color: var(--color-navy); margin-top: 8px;">
+              <div class="dropzone-title"
+                style="font-size: 18px; font-weight: 700; color: var(--color-navy); margin-top: 8px;">
                 Drag & Drop your Resume here to Start Matching
               </div>
-              <div class="dropzone-subtitle" style="font-size: 13px; color: var(--color-text-subtle); margin: 6px 0 16px;">
-                Text-based PDF, DOCX, or TXT &bull; Up to 10 MB &bull; Magic bytes verified &bull; Instant pipeline trigger
+              <div class="dropzone-subtitle"
+                style="font-size: 13px; color: var(--color-text-subtle); margin: 6px 0 16px;">
+                Text-based PDF, DOCX, or TXT &bull; Up to 10 MB &bull; Magic bytes verified &bull; Instant pipeline
+                trigger
               </div>
-              <button class="btn btn-primary" type="button" id="btnSelectCvFile" style="padding: 10px 24px; font-size: 14px;">
+              <button class="btn btn-primary" type="button" id="btnSelectCvFile"
+                style="padding: 10px 24px; font-size: 14px;">
                 <span>Choose Resume Document</span>
               </button>
               <input type="file" id="inputCvFile" accept=".pdf,.docx,.txt" style="display: none;">
 
               <!-- Quick Try Sample Resumes -->
-              <div class="quick-sample-row" style="margin-top: 24px; border-top: 1px dashed var(--color-border); padding-top: 16px; width: 100%;">
+              <div class="quick-sample-row"
+                style="margin-top: 24px; border-top: 1px dashed var(--color-border); padding-top: 16px; width: 100%;">
                 <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted); margin-bottom: 8px;">
                   Or click a pre-loaded sample candidate to test the full pipeline instantly:
                 </div>
-                <div class="quick-sample-buttons" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-                  <button type="button" class="btn btn-secondary btn-sm" id="btnSampleAiEngineer" title="Maya Chen: React, TypeScript, GraphQL, Next.js, Node.js">
+                <div class="quick-sample-buttons"
+                  style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnSampleAiEngineer"
+                    title="Maya Chen: React, TypeScript, GraphQL, Next.js, Node.js">
                     🤖 AI / Full-Stack Engineer (Maya Chen)
                   </button>
-                  <button type="button" class="btn btn-secondary btn-sm" id="btnSampleFrontend" title="Alex Mercer: React, Vue, CSS, Jest, Design Systems">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnSampleFrontend"
+                    title="Alex Mercer: React, Vue, CSS, Jest, Design Systems">
                     🎨 Senior Frontend Engineer (Alex Mercer)
                   </button>
-                  <button type="button" class="btn btn-secondary btn-sm" id="btnSampleBackend" title="Jordan Lee: Python, FastAPI, Docker, SQL, Kubernetes">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btnSampleBackend"
+                    title="Jordan Lee: Python, FastAPI, Docker, SQL, Kubernetes">
                     ⚙️ Cloud & Backend Engineer (Jordan Lee)
                   </button>
                 </div>
@@ -417,97 +485,142 @@
             </div>
           </div>
 
-          <!-- Live 5-Step Pipeline Progress Stepper Card (Visible during pipeline execution) -->
-          <div class="card pipeline-progress-card" id="pipelineProgressCard" style="display: none; margin-top: var(--space-6);">
-            <div class="pipeline-progress-header">
-              <div style="display: flex; align-items: center; gap: 10px;">
+
+          <!-- Live CV Parsing & Analysis Progress Card -->
+          <div class="card pipeline-progress-card" id="pipelineProgressCard"
+            style="display: none; margin-top: var(--space-6);">
+            <div class="pipeline-card-header"
+              style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <div class="pipeline-header-title" style="display: flex; align-items: center; gap: 10px;">
                 <div class="spinner-dot"></div>
                 <div>
-                  <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--color-navy);" id="pipelineStepStatusTitle">
-                    Executing Autonomous Matching Pipeline...
+                  <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--color-navy);"
+                    id="pipelineStepStatusTitle">
+                    Parsing & Analyzing Resume Document...
                   </h3>
-                  <div style="font-size: 12px; color: var(--color-text-subtle);" id="pipelineStepStatusSub">
-                    Coordinating ResumePipeline, Gemini Embeddings, Database & Firecrawl Web Scraper
+                  <div style="font-size: 12px; color: var(--color-text-subtle); margin-top: 2px;"
+                    id="pipelineStepStatusSub">
+                    Extracting sections, skills, work experience, and profile details
                   </div>
                 </div>
               </div>
-              <div class="pipeline-percentage-badge" id="pipelineProgressPercent">0%</div>
+              <div
+                style="display: flex; align-items: baseline; gap: 4px; background: #EEF2FF; padding: 6px 14px; border-radius: 999px; border: 1px solid #E0E7FF;">
+                <span style="font-size: 16px; font-weight: 800; color: #4F46E5;" id="pipelineProgressPercent">0%</span>
+                <span
+                  style="font-size: 11px; font-weight: 600; color: #6366F1; text-transform: uppercase; letter-spacing: 0.5px;">Parsed</span>
+              </div>
             </div>
-            
-            <div class="pipeline-stepper-track" style="margin-top: 18px;">
-              <div class="stepper-substep" id="pipeStep1">
-                <div class="substep-indicator">1</div>
-                <div class="substep-content">
-                  <div class="substep-name">Ingest & Parse CV</div>
-                  <div class="substep-desc">Magic bytes & NLP skill extraction</div>
+
+            <!-- Dynamic Animated CV Parsing Progress Bar -->
+            <div
+              style="width: 100%; height: 8px; background: #E2E8F0; border-radius: 999px; margin: 8px 0 16px; overflow: hidden; position: relative;">
+              <div id="cvParsingProgressBar"
+                style="width: 0%; height: 100%; background: linear-gradient(90deg, #4F46E5, #06B6D4); border-radius: 999px; transition: width 0.35s ease;">
+              </div>
+            </div>
+
+            <!-- CV Parsing Stages Stepper Track -->
+            <div class="pipeline-stepper-track">
+              <div class="pipeline-step-item" id="pipeStep1">
+                <div class="step-icon-wrap">1</div>
+                <div class="step-content">
+                  <div class="step-name">Document Ingestion</div>
+                  <div class="step-detail">Extracting text & layout</div>
                 </div>
               </div>
-              <div class="stepper-substep" id="pipeStep2">
-                <div class="substep-indicator">2</div>
-                <div class="substep-content">
-                  <div class="substep-name">Gemini-Embedding-2</div>
-                  <div class="substep-desc">768d Dense vector generation</div>
+              <div class="pipeline-step-item" id="pipeStep2">
+                <div class="step-icon-wrap">2</div>
+                <div class="step-content">
+                  <div class="step-name">Skills & Stack</div>
+                  <div class="step-detail">Detecting core competencies</div>
                 </div>
               </div>
-              <div class="stepper-substep" id="pipeStep3">
-                <div class="substep-indicator">3</div>
-                <div class="substep-content">
-                  <div class="substep-name">PostgreSQL Store</div>
-                  <div class="substep-desc">Profile & vector persistence</div>
+              <div class="pipeline-step-item" id="pipeStep3">
+                <div class="step-icon-wrap">3</div>
+                <div class="step-content">
+                  <div class="step-name">Work Experience</div>
+                  <div class="step-detail">Structuring roles & timeline</div>
                 </div>
               </div>
-              <div class="stepper-substep" id="pipeStep4">
-                <div class="substep-indicator">4</div>
-                <div class="substep-content">
-                  <div class="substep-name">Firecrawl Job Scraping</div>
-                  <div class="substep-desc">Ingest live matching tech jobs</div>
+              <div class="pipeline-step-item" id="pipeStep4">
+                <div class="step-icon-wrap">4</div>
+                <div class="step-content">
+                  <div class="step-name">Education & Projects</div>
+                  <div class="step-detail">Analyzing credentials & background</div>
                 </div>
               </div>
-              <div class="stepper-substep" id="pipeStep5">
-                <div class="substep-indicator">5</div>
-                <div class="substep-content">
-                  <div class="substep-name">Matching & Ranking</div>
-                  <div class="substep-desc">Calculate multi-factor % scores</div>
+              <div class="pipeline-step-item" id="pipeStep5">
+                <div class="step-icon-wrap">5</div>
+                <div class="step-content">
+                  <div class="step-name">Profile Synthesis</div>
+                  <div class="step-detail">Finalizing candidate profile</div>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Candidate Profile Summary Card (Appears after successful processing) -->
-          <div class="candidate-summary-banner" id="candidateSummaryBanner" style="display: none; margin-top: var(--space-6);">
-            <div class="candidate-summary-main">
-              <div class="candidate-avatar" id="summaryCandidateAvatar">MC</div>
-              <div class="candidate-info">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--color-navy);" id="summaryCandidateName">
-                    Candidate Profile
-                  </h2>
-                  <span class="badge-pill" id="summaryCandidateBadge" style="background: #E6F4EA; color: #137333;">
-                    ✓ Pipeline Synced
-                  </span>
-                </div>
-                <div style="font-size: 13px; color: var(--color-text-subtle); margin-top: 3px;" id="summaryCandidateHeadline">
-                  Full Stack / AI Engineer
-                </div>
-                <div style="font-size: 12px; color: var(--color-text-muted); margin-top: 4px;" id="summaryCandidateEmail">
-                  maya.chen@example.com &bull; Stored in Database
+          <div class="candidate-summary-banner" id="candidateSummaryBanner"
+            style="display: none; margin-top: var(--space-4); background: #FFFFFF; border: 1px solid var(--color-border); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);">
+            <div class="candidate-summary-main"
+              style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div class="candidate-avatar" id="summaryCandidateAvatar"
+                  style="width: 52px; height: 52px; border-radius: 12px; background: #EEF2FF; color: #4338CA; font-weight: 800; font-size: 20px; display: flex; align-items: center; justify-content: center;">
+                  MC</div>
+                <div class="candidate-info">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <h2 style="margin: 0; font-size: 18px; font-weight: 700; color: var(--color-navy);"
+                      id="summaryCandidateName">
+                      Candidate Profile
+                    </h2>
+                    <span class="badge-pill" id="summaryCandidateBadge"
+                      style="background: #E6F4EA; color: #137333; font-size: 11.5px; font-weight: 600;">
+                      ✓ Pipeline Synced
+                    </span>
+                  </div>
+                  <div style="font-size: 13.5px; font-weight: 600; color: var(--color-indigo); margin-top: 2px;"
+                    id="summaryCandidateHeadline">
+                    Full Stack / AI Engineer
+                  </div>
+                  <div style="font-size: 12px; color: var(--color-text-muted); margin-top: 3px;"
+                    id="summaryCandidateEmail">
+                    candidate@example.com &bull; Stored in Database
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div class="candidate-skills-cloud" style="margin: 16px 0;">
-              <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--color-text-subtle); margin-bottom: 6px;">
-                Extracted Skills & Evidenced Technologies
-              </div>
-              <div class="candidate-skills-chips" id="summaryCandidateSkills" style="display: flex; gap: 6px; flex-wrap: wrap;">
-                <!-- Chips dynamically injected -->
+              <div class="candidate-summary-actions"
+                style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <button class="btn btn-secondary btn-sm" id="btnReplaceResumeCompact" type="button"
+                  title="Upload a replacement resume document">
+                  <span>📄 Replace Resume</span>
+                </button>
+                <button class="btn btn-outline btn-sm" id="btnViewFullProfile" type="button"
+                  title="View details in Profile & Settings">
+                  <span>⚙️ Profile Settings</span>
+                </button>
+                <button class="btn btn-sm" id="btnUploadAnotherCv" style="display: none;" type="button">
+                  Upload New Resume
+                </button>
               </div>
             </div>
 
-            <div class="candidate-summary-actions" style="margin-top: 12px;">
-              <button class="btn btn-secondary btn-sm" id="btnUploadAnotherCv">
-                Upload New Resume
-              </button>
+            <div class="candidate-skills-cloud"
+              style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--color-border-subtle);">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                <span
+                  style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-subtle);">
+                  Extracted Skills & Evidenced Competencies
+                </span>
+                <span style="font-size: 11.5px; color: var(--color-text-muted);" id="summaryCandidateSkillCount">
+                  0 skills
+                </span>
+              </div>
+              <div class="candidate-skills-chips" id="summaryCandidateSkills"
+                style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <!-- Chips dynamically injected -->
+              </div>
             </div>
           </div>
 
@@ -517,12 +630,18 @@
               <div>
                 <h2 class="card-title" style="font-size: 18px;">Ranked Job Matches</h2>
                 <div class="card-subtext" id="rankedMatchesSubtitle">
-                  Sorted by Multi-Factor Weighted Percentage (Skills 40%, Experience 25%, Education 10%, Role Alignment 15%, Projects 10%)
+                  Sorted by Multi-Factor Weighted Percentage (Skills 40%, Experience 25%, Education 10%, Role Alignment
+                  15%, Projects 10%)
                 </div>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="badge-pill" id="rankedMatchesCountBadge" style="background: var(--color-indigo-subtle); color: var(--color-indigo); font-weight: 700;">
-                  12 Roles Evaluated
+                <button class="btn btn-secondary btn-sm" id="btnRefreshMatches" onclick="loadRankedJobMatches(true)"
+                  style="font-size: 12px; padding: 4px 10px;" title="Recalculate matches against latest catalog jobs">
+                  ↻ Refresh Matches
+                </button>
+                <span class="badge-pill" id="rankedMatchesCountBadge"
+                  style="background: var(--color-indigo-subtle); color: var(--color-indigo); font-weight: 700;">
+                  Evaluating roles...
                 </span>
               </div>
             </div>
@@ -562,7 +681,8 @@
               <div class="page-header-text">
                 <div class="pre-title" id="resumeStepPreTitle">SETUP &bull; STEP 2 OF 3</div>
                 <h1 id="resumeMainTitle">Upload your resume to get started.</h1>
-                <p id="resumeSubTitle">Upload your CV to automatically extract skills, analyze experience, and match with active engineering roles.</p>
+                <p id="resumeSubTitle">Upload your CV to automatically extract skills, analyze experience, and match
+                  with active engineering roles.</p>
               </div>
               <div class="card-actions-group">
                 <button class="btn btn-secondary btn-sm" id="btnTriggerNewUpload">Upload New Resume</button>
@@ -572,381 +692,456 @@
 
             <!-- Upload Dropzone (Open by default) -->
             <div class="dropzone-box" id="dropzoneCvLegacy">
-              <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
               <div class="dropzone-title">Drop your resume PDF or DOCX here</div>
               <div class="dropzone-subtitle">Text-based PDF only &bull; Up to 10 MB &bull; Magic bytes validated</div>
               <button class="btn btn-primary" type="button" id="btnSelectCvFileLegacy">Choose Resume File</button>
               <input type="file" id="inputCvFileLegacy" accept=".pdf,.docx" style="display: none;">
-              <div class="dropzone-specs" style="margin-top: var(--space-4);">No files are shared without your explicit action. Secure and private.</div>
+              <div class="dropzone-specs" style="margin-top: var(--space-4);">No files are shared without your explicit
+                action. Secure and private.</div>
             </div>
 
-          <!-- Structured Review Grid -->
-          <div class="resume-editor-grid">
-            <div class="card">
-              <div class="form-group">
-                <label class="form-label" for="editHeadline">Target headline</label>
-                <input class="form-input" id="editHeadline" type="text" placeholder="e.g. Senior Frontend Engineer / Full Stack Developer" value="">
-              </div>
-
-              <div class="form-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <label class="form-label" for="editSummary" style="margin-bottom: 0;">Professional summary (editable)</label>
-                  <button class="btn btn-ai-outline btn-sm" type="button" id="btnAiPolishSummary" title="Optimize with AI action verbs & metrics">
-                    <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
-                    </svg>
-                    <span>✨ AI Polish</span>
-                  </button>
+            <!-- Stored Resumes Management Card -->
+            <div class="card" id="storedResumesCard" style="margin-bottom: var(--space-6);">
+              <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4); border-bottom: 1px solid var(--color-border-subtle); padding-bottom: var(--space-3);">
+                <div>
+                  <h3 style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 2px;">Your
+                    Saved CV Documents</h3>
+                  <p style="font-size: 13px; color: var(--color-text-muted);">Manage your persistent resumes. Switch
+                    your active resume for job matching or upload a new version.</p>
                 </div>
-                <textarea class="form-textarea" id="editSummary" placeholder="Upload a resume or write your summary here..."></textarea>
+                <button class="btn btn-secondary btn-sm" id="btnUploadNewVersion" type="button">+ Upload New
+                  Version</button>
               </div>
+              <div id="userResumesList" style="display: flex; flex-direction: column; gap: var(--space-3);">
+                <!-- Populated dynamically via loadUserResumes -->
+              </div>
+            </div>
 
-              <!-- Editable Skills with 'x' tags -->
-              <div class="form-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                  <label class="form-label" style="margin-bottom: 0;">Confirmed Skills</label>
-                  <div style="display: flex; align-items: center; gap: var(--space-2);">
-                    <span style="font-size: 11.5px; color: var(--color-text-subtle);" id="confirmedSkillsCount">0 confirmed skills</span>
-                    <button class="btn btn-ai-outline btn-sm" type="button" id="btnAiSuggestSkills" style="padding: 2px 8px; font-size: 11px;" title="Suggest in-demand complementary skills">
-                      ✨ AI Suggest
+            <!-- Structured Review Grid -->
+            <div class="resume-editor-grid">
+              <div class="card">
+                <div class="form-group">
+                  <label class="form-label" for="editHeadline">Target headline</label>
+                  <input class="form-input" id="editHeadline" type="text"
+                    placeholder="e.g. Senior Frontend Engineer / Full Stack Developer" value="">
+                </div>
+
+                <div class="form-group">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label class="form-label" for="editSummary" style="margin-bottom: 0;">Professional summary
+                      (editable)</label>
+                    <button class="btn btn-ai-outline btn-sm" type="button" id="btnAiPolishSummary"
+                      title="Optimize with AI action verbs & metrics">
+                      <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+                      </svg>
+                      <span>✨ AI Polish</span>
                     </button>
                   </div>
+                  <textarea class="form-textarea" id="editSummary"
+                    placeholder="Upload a resume or write your summary here..."></textarea>
                 </div>
-                <div class="skills-editable-wrap" id="editableSkillsList">
-                  <!-- Populated by JS -->
-                </div>
-                <div style="display: flex; gap: var(--space-2);">
-                  <input class="form-input" id="inputNewSkill" type="text" placeholder="Add a skill (e.g. GraphQL, Tailwind, Docker, Node.js)...">
-                  <button class="btn btn-secondary btn-sm" id="btnAddSkill">Add</button>
-                </div>
-              </div>
 
-              <!-- Experience Timeline -->
-              <div class="form-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <label class="form-label" style="margin-bottom: 0;">Work Experience</label>
-                  <button class="btn btn-outline btn-sm" type="button" id="btnAddExp">+ Add experience</button>
+                <!-- Editable Skills with 'x' tags -->
+                <div class="form-group">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label class="form-label" style="margin-bottom: 0;">Confirmed Skills</label>
+                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                      <span style="font-size: 11.5px; color: var(--color-text-subtle);" id="confirmedSkillsCount">0
+                        confirmed skills</span>
+                      <button class="btn btn-ai-outline btn-sm" type="button" id="btnAiSuggestSkills"
+                        style="padding: 2px 8px; font-size: 11px;" title="Suggest in-demand complementary skills">
+                        ✨ AI Suggest
+                      </button>
+                    </div>
+                  </div>
+                  <div class="skills-editable-wrap" id="editableSkillsList">
+                    <!-- Populated by JS -->
+                  </div>
+                  <div style="display: flex; gap: var(--space-2);">
+                    <input class="form-input" id="inputNewSkill" type="text"
+                      placeholder="Add a skill (e.g. GraphQL, Tailwind, Docker, Node.js)...">
+                    <button class="btn btn-secondary btn-sm" id="btnAddSkill">Add</button>
+                  </div>
                 </div>
-                <div id="experienceItemsList">
-                  <div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;" id="emptyExpNote">Upload your resume above or click "+ Add experience" to record career history.</div>
-                </div>
-              </div>
 
-              <!-- Education -->
-              <div class="form-group">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <label class="form-label" style="margin-bottom: 0;">Education & Degrees</label>
-                  <button class="btn btn-outline btn-sm" type="button" id="btnAddEdu">+ Add education</button>
+                <!-- Experience Timeline -->
+                <div class="form-group">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="margin-bottom: 0;">Work Experience</label>
+                    <button class="btn btn-outline btn-sm" type="button" id="btnAddExp">+ Add experience</button>
+                  </div>
+                  <div id="experienceItemsList">
+                    <div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;"
+                      id="emptyExpNote">Upload your resume above or click "+ Add experience" to record career history.
+                    </div>
+                  </div>
                 </div>
-                <div id="educationItemsList">
-                  <div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;" id="emptyEduNote">Upload your resume above or click "+ Add education" to specify qualifications.</div>
-                </div>
-              </div>
-            </div>
 
-            <!-- Right Column: Source Card & Excerpt -->
-            <div style="display: flex; flex-direction: column; gap: var(--space-6);">
-              <div class="card">
-                <div class="card-header-bar">
-                  <h3 class="card-title" style="font-size: 14px;">Resume source</h3>
-                  <button class="btn btn-outline btn-sm" id="btnReplaceResume">Upload</button>
-                </div>
-                <div style="font-size: 13.5px; font-weight: 700; color: var(--color-navy);" id="resumeDetailFilename">No resume uploaded</div>
-                <div style="font-size: 12px; color: var(--color-text-subtle); margin-top: 2px;" id="resumeDetailMeta">PDF / DOCX supported &bull; Max 10 MB</div>
-
-                <div style="margin-top: var(--space-5); border-top: 1px solid var(--color-border-subtle); padding-top: var(--space-4);">
-                  <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--color-text-subtle); margin-bottom: var(--space-2);">Source Excerpt &bull; Page 1</div>
-                  <div style="background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); padding: var(--space-3); font-family: var(--font-mono); font-size: 11px; color: var(--color-text-muted); line-height: 1.6;" id="resumeSourceExcerpt">
-                    No resume uploaded yet.<br><br>
-                    Upload your PDF or DOCX resume to view extracted source text and parsed skills here.
+                <!-- Education -->
+                <div class="form-group">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label class="form-label" style="margin-bottom: 0;">Education & Degrees</label>
+                    <button class="btn btn-outline btn-sm" type="button" id="btnAddEdu">+ Add education</button>
+                  </div>
+                  <div id="educationItemsList">
+                    <div style="font-size: 12.5px; color: var(--color-text-subtle); padding: var(--space-3) 0;"
+                      id="emptyEduNote">Upload your resume above or click "+ Add education" to specify qualifications.
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div class="legal-caveat-box">
-                <div style="font-weight: 700; color: var(--color-navy); margin-bottom: 2px;">Your review matters</div>
-                Extraction can miss context. A missing skill means <strong>not evidenced</strong> in your resume text, not that you don't possess the skill. Changes to confirmed evidence recalculate alignment estimates.
+              <!-- Right Column: Source Card & Excerpt -->
+              <div style="display: flex; flex-direction: column; gap: var(--space-6);">
+                <div class="card">
+                  <div class="card-header-bar">
+                    <h3 class="card-title" style="font-size: 14px;">Resume source</h3>
+                    <button class="btn btn-outline btn-sm" id="btnReplaceResume">Upload</button>
+                  </div>
+                  <div style="font-size: 13.5px; font-weight: 700; color: var(--color-navy);" id="resumeDetailFilename">
+                    No resume uploaded</div>
+                  <div style="font-size: 12px; color: var(--color-text-subtle); margin-top: 2px;" id="resumeDetailMeta">
+                    PDF / DOCX supported &bull; Max 10 MB</div>
+
+                  <div
+                    style="margin-top: var(--space-5); border-top: 1px solid var(--color-border-subtle); padding-top: var(--space-4);">
+                    <div
+                      style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--color-text-subtle); margin-bottom: var(--space-2);">
+                      Source Excerpt &bull; Page 1</div>
+                    <div
+                      style="background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); padding: var(--space-3); font-family: var(--font-mono); font-size: 11px; color: var(--color-text-muted); line-height: 1.6;"
+                      id="resumeSourceExcerpt">
+                      No resume uploaded yet.<br><br>
+                      Upload your PDF or DOCX resume to view extracted source text and parsed skills here.
+                    </div>
+                  </div>
+                </div>
+
+                <div class="legal-caveat-box">
+                  <div style="font-weight: 700; color: var(--color-navy); margin-bottom: 2px;">Your review matters</div>
+                  Extraction can miss context. A missing skill means <strong>not evidenced</strong> in your resume text,
+                  not that you don't possess the skill. Changes to confirmed evidence recalculate alignment estimates.
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- ========================================================================
+          <!-- ========================================================================
              3. JOB MATCHES VIEW (SEARCH & FILTER SIDEBAR)
              ======================================================================== -->
-        <section class="view-section" id="view-jobs">
-          <div class="page-header-row">
-            <div class="page-header-text">
-              <div class="pre-title">Your Experience, In Context</div>
-              <h1>A shortlist with a reason.</h1>
-              <p>Explore sample roles aligned with your reviewed resume and preferences.</p>
+          <section class="view-section" id="view-jobs">
+            <div class="page-header-row">
+              <div class="page-header-text">
+                <div class="pre-title">Your Experience, In Context</div>
+                <h1>A shortlist with a reason.</h1>
+                <p>Explore sample roles aligned with your reviewed resume and preferences.</p>
+              </div>
             </div>
-          </div>
 
-          <!-- Search Bar Form (Omni-search + AI Match & Rank) -->
-          <form class="search-direction-card search-ai-card" id="jobSearchForm" style="margin-bottom: var(--space-4);">
-            <div class="search-input-wrapper">
-              <svg class="search-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              <input class="form-input search-omni-input" id="inputJobQuery" type="text" placeholder="Search by role, framework, or skill (e.g. React, TypeScript, Python, Distributed Systems)..." value="Frontend">
-              <button class="btn-clear-search" type="button" id="btnClearJobQuery" aria-label="Clear search">&times;</button>
-            </div>
-            <div class="search-actions-row">
-              <button class="btn btn-secondary" type="submit" id="btnSubmitSearch">Search Roles</button>
-              <button class="btn btn-ai-gradient" type="button" id="btnAiMatchJobs">
-                <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+            <!-- Search Bar Form (Omni-search + AI Match & Rank) -->
+            <form class="search-direction-card search-ai-card" id="jobSearchForm"
+              style="margin-bottom: var(--space-4);">
+              <div class="search-input-wrapper">
+                <svg class="search-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <span>✨ AI Auto-Match & Rank</span>
-              </button>
+                <input class="form-input search-omni-input" id="inputJobQuery" type="text"
+                  placeholder="Search by role, framework, or skill (e.g. React, TypeScript, Python, Distributed Systems)..."
+                  value="Frontend">
+                <button class="btn-clear-search" type="button" id="btnClearJobQuery"
+                  aria-label="Clear search">&times;</button>
+              </div>
+              <div class="search-actions-row">
+                <button class="btn btn-secondary" type="submit" id="btnSubmitSearch">Search Roles</button>
+                <button class="btn btn-ai-gradient" type="button" id="btnAiMatchJobs">
+                  <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
+                  </svg>
+                  <span>✨ AI Auto-Match & Rank</span>
+                </button>
+              </div>
+            </form>
+
+            <!-- AI Smart Quick Filters -->
+            <div class="smart-ai-pills-row" style="margin-bottom: var(--space-4);">
+              <span class="smart-pills-label">✨ AI Filters:</span>
+              <button class="ai-filter-pill active" type="button" data-filter="all">All Roles</button>
+              <button class="ai-filter-pill" type="button" data-filter="best-match">🔥 Best Match (80%+)</button>
+              <button class="ai-filter-pill" type="button" data-filter="react">React & TS</button>
+              <button class="ai-filter-pill" type="button" data-filter="backend">Backend & Cloud</button>
+              <button class="ai-filter-pill" type="button" data-filter="remote">Remote Only</button>
             </div>
-          </form>
 
-          <!-- AI Smart Quick Filters -->
-          <div class="smart-ai-pills-row" style="margin-bottom: var(--space-4);">
-            <span class="smart-pills-label">✨ AI Filters:</span>
-            <button class="ai-filter-pill active" type="button" data-filter="all">All Roles</button>
-            <button class="ai-filter-pill" type="button" data-filter="best-match">🔥 Best Match (80%+)</button>
-            <button class="ai-filter-pill" type="button" data-filter="react">React & TS</button>
-            <button class="ai-filter-pill" type="button" data-filter="backend">Backend & Cloud</button>
-            <button class="ai-filter-pill" type="button" data-filter="remote">Remote Only</button>
-          </div>
+            <!-- Active Chips Bar -->
+            <div class="active-chips-bar">
+              <span
+                style="font-size: 12.5px; font-weight: 600; color: var(--color-text-muted); margin-right: 4px;">Active
+                filters:</span>
+              <span class="filter-chip">Mid-level &times;</span>
+              <span class="filter-chip">$120k&ndash;$160k &times;</span>
+              <span class="filter-chip">Hybrid + Remote &times;</span>
+              <button class="btn btn-sm btn-secondary" style="margin-left: auto;" id="btnResetFilters">Reset
+                filters</button>
+            </div>
 
-          <!-- Active Chips Bar -->
-          <div class="active-chips-bar">
-            <span style="font-size: 12.5px; font-weight: 600; color: var(--color-text-muted); margin-right: 4px;">Active filters:</span>
-            <span class="filter-chip">Mid-level &times;</span>
-            <span class="filter-chip">$120k&ndash;$160k &times;</span>
-            <span class="filter-chip">Hybrid + Remote &times;</span>
-            <button class="btn btn-sm btn-secondary" style="margin-left: auto;" id="btnResetFilters">Reset filters</button>
-          </div>
-
-          <!-- Matches Layout (Sidebar + Results) -->
-          <div class="matches-layout">
-            <!-- Filter Sidebar -->
-            <aside class="filter-sidebar">
-              <div class="filter-group">
-                <div class="filter-title">
-                  <span>Experience level</span>
+            <!-- Matches Layout (Sidebar + Results) -->
+            <div class="matches-layout">
+              <!-- Filter Sidebar -->
+              <aside class="filter-sidebar">
+                <div class="filter-group">
+                  <div class="filter-title">
+                    <span>Experience level</span>
+                  </div>
+                  <label class="checkbox-label"><input type="checkbox" checked> Mid-level &bull; 3&ndash;5 years</label>
+                  <label class="checkbox-label"><input type="checkbox"> Senior &bull; 5+ years</label>
+                  <label class="checkbox-label"><input type="checkbox"> Lead / Staff</label>
                 </div>
-                <label class="checkbox-label"><input type="checkbox" checked> Mid-level &bull; 3&ndash;5 years</label>
-                <label class="checkbox-label"><input type="checkbox"> Senior &bull; 5+ years</label>
-                <label class="checkbox-label"><input type="checkbox"> Lead / Staff</label>
-              </div>
 
-              <div class="filter-group">
-                <div class="filter-title">
-                  <span>Base salary (USD / yr)</span>
+                <div class="filter-group">
+                  <div class="filter-title">
+                    <span>Base salary (USD / yr)</span>
+                  </div>
+                  <div style="font-size: 12px; color: var(--color-indigo); font-weight: 600; margin-bottom: 6px;"
+                    id="salaryRangeLabel">$120,000 &ndash; $160,000</div>
+                  <input type="range" min="80000" max="220000" step="5000" value="120000"
+                    style="width: 100%; accent-color: var(--color-indigo);">
                 </div>
-                <div style="font-size: 12px; color: var(--color-indigo); font-weight: 600; margin-bottom: 6px;" id="salaryRangeLabel">$120,000 &ndash; $160,000</div>
-                <input type="range" min="80000" max="220000" step="5000" value="120000" style="width: 100%; accent-color: var(--color-indigo);">
-              </div>
 
-              <div class="filter-group">
-                <div class="filter-title">
-                  <span>Work type</span>
+                <div class="filter-group">
+                  <div class="filter-title">
+                    <span>Work type</span>
+                  </div>
+                  <label class="checkbox-label"><input type="checkbox" checked> Hybrid</label>
+                  <label class="checkbox-label"><input type="checkbox" checked> Remote</label>
+                  <label class="checkbox-label"><input type="checkbox"> On-site</label>
                 </div>
-                <label class="checkbox-label"><input type="checkbox" checked> Hybrid</label>
-                <label class="checkbox-label"><input type="checkbox" checked> Remote</label>
-                <label class="checkbox-label"><input type="checkbox"> On-site</label>
-              </div>
 
-              <div class="filter-group">
-                <div class="filter-title">
-                  <span>Employment</span>
+                <div class="filter-group">
+                  <div class="filter-title">
+                    <span>Employment</span>
+                  </div>
+                  <label class="checkbox-label"><input type="checkbox" checked> Full-time</label>
+                  <label class="checkbox-label"><input type="checkbox"> Contract</label>
                 </div>
-                <label class="checkbox-label"><input type="checkbox" checked> Full-time</label>
-                <label class="checkbox-label"><input type="checkbox"> Contract</label>
-              </div>
-            </aside>
+              </aside>
 
-            <!-- Results Column -->
-            <div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
-                <div style="font-size: 13.5px; font-weight: 700; color: var(--color-navy);" id="jobsResultsCountLabel">3 matching roles &bull; Sample corpus</div>
-                <div style="font-size: 12px; color: var(--color-text-subtle);">Sort: <strong>Highest estimated match</strong></div>
-              </div>
+              <!-- Results Column -->
+              <div>
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+                  <div style="font-size: 13.5px; font-weight: 700; color: var(--color-navy);"
+                    id="jobsResultsCountLabel">3 matching roles &bull; Sample corpus</div>
+                  <div style="font-size: 12px; color: var(--color-text-subtle);">Sort: <strong>Highest estimated
+                      match</strong></div>
+                </div>
 
-              <div class="job-cards-list" id="jobFeed">
-                <!-- Dynamically populated job cards -->
+                <div class="job-cards-list" id="jobFeed">
+                  <!-- Dynamically populated job cards -->
+                </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
-        <!-- ========================================================================
+          <!-- ========================================================================
              4. MATCH & EXPLAIN VIEW ("WHY AN ESTIMATED 88%?")
              ======================================================================== -->
-        <section class="view-section" id="view-matching">
-          <!-- Job Selection Bar for Matching -->
-          <div class="search-direction-card" style="margin-bottom: var(--space-6);">
-            <div style="flex: 1;">
-              <label class="form-label" style="font-size: 11px;" for="selectMatchingJob">Select Job for Multi-Factor Explainability</label>
-              <select class="form-select" id="selectMatchingJob">
-                <option value="job_atlas_01">Atlas Labs — Frontend Engineer ($130k–$160k · SF Hybrid)</option>
-                <option value="job_forma_02">Forma — Product Engineer ($125k–$155k · Remote)</option>
-                <option value="job_northstar_03">Northstar — UI Engineer ($120k–$150k · SF Hybrid)</option>
-              </select>
-            </div>
-            <div style="align-self: flex-end;">
-              <button class="btn btn-primary" id="btnCalculateMatch">Calculate Match & Breakdown</button>
-            </div>
-          </div>
-
-          <!-- Matching Results Dashboard -->
-          <div id="matchingResultsDashboard">
-            <!-- Header Card with Score Gauge -->
-            <div class="job-detail-header-card">
-              <button class="back-link-btn" id="btnBackToMatches">&larr; Back to job matches</button>
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-4);">
-                <div>
-                  <div style="font-size: 12px; font-weight: 600; color: var(--color-text-subtle);">Atlas Labs &bull; Sample job &bull; Posted Oct 12, 2026</div>
-                  <h1 style="font-size: 24px; font-weight: 700; color: var(--color-navy); margin: 4px 0;" id="matchJobTitleDisplay">Frontend Engineer</h1>
-                  <div style="font-size: 13px; color: var(--color-text-muted);">San Francisco, CA &bull; Hybrid (2 days / week) &bull; $130,000&ndash;$160,000 base &bull; Mid-level</div>
-                </div>
-                <!-- Score Pill Badge -->
-                <div class="score-pill-badge" id="scoreGaugeElem">
-                  <div class="score-num" id="matchOverallScoreDisplay">88%</div>
-                  <div class="score-est-label">EST. MATCH</div>
-                </div>
+          <section class="view-section" id="view-matching">
+            <!-- Job Selection Bar for Matching -->
+            <div class="search-direction-card" style="margin-bottom: var(--space-6);">
+              <div style="flex: 1;">
+                <label class="form-label" style="font-size: 11px;" for="selectMatchingJob">Select Job for Multi-Factor
+                  Explainability</label>
+                <select class="form-select" id="selectMatchingJob">
+                  <option value="job_atlas_01">Atlas Labs — Frontend Engineer ($130k–$160k · SF Hybrid)</option>
+                  <option value="job_forma_02">Forma — Product Engineer ($125k–$155k · Remote)</option>
+                  <option value="job_northstar_03">Northstar — UI Engineer ($120k–$150k · SF Hybrid)</option>
+                </select>
               </div>
-
-              <div style="display: flex; gap: var(--space-3); margin-top: var(--space-5); border-top: 1px solid var(--color-border-subtle); padding-top: var(--space-4); flex-wrap: wrap;">
-                <button class="btn btn-secondary btn-sm" id="btnOpenExternalApp">View original application &nearr;</button>
-                <button class="btn btn-secondary btn-sm" id="btnSaveToShortlist">Saved to shortlist</button>
-                <button class="btn btn-primary btn-sm" id="btnMarkApplied">Mark as applied</button>
+              <div style="align-self: flex-end;">
+                <button class="btn btn-primary" id="btnCalculateMatch">Calculate Match & Breakdown</button>
               </div>
             </div>
 
-            <!-- Two-Column Breakdown -->
-            <div class="detail-two-col">
-              <!-- Left Column: Requirements Compared -->
-              <div class="card">
-                <h3 class="card-title" style="margin-bottom: var(--space-2);">Requirements, compared with your resume</h3>
-                <div style="font-size: 12.5px; color: var(--color-text-subtle); margin-bottom: var(--space-4);">
-                  Not evidenced reflects this resume only, not your full ability.
+            <!-- Matching Results Dashboard -->
+            <div id="matchingResultsDashboard">
+              <!-- Header Card with Score Gauge -->
+              <div class="job-detail-header-card">
+                <button class="back-link-btn" id="btnBackToMatches">&larr; Back to job matches</button>
+                <div
+                  style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-4);">
+                  <div>
+                    <div style="font-size: 12px; font-weight: 600; color: var(--color-text-subtle);">Atlas Labs &bull;
+                      Sample job &bull; Posted Oct 12, 2026</div>
+                    <h1 style="font-size: 24px; font-weight: 700; color: var(--color-navy); margin: 4px 0;"
+                      id="matchJobTitleDisplay">Frontend Engineer</h1>
+                    <div style="font-size: 13px; color: var(--color-text-muted);">San Francisco, CA &bull; Hybrid (2
+                      days / week) &bull; $130,000&ndash;$160,000 base &bull; Mid-level</div>
+                  </div>
+                  <!-- Score Pill Badge -->
+                  <div class="score-pill-badge" id="scoreGaugeElem">
+                    <div class="score-num" id="matchOverallScoreDisplay">--%</div>
+                    <div class="score-est-label">EST. MATCH</div>
+                  </div>
                 </div>
 
-                <div class="requirement-row">
-                  <div class="req-left">
-                    <div class="req-name">React + TypeScript</div>
-                    <div class="req-evidence">Confirmed in Lumen Studio experience</div>
-                  </div>
-                  <span class="tag-evidence">&check; Matched</span>
-                </div>
-
-                <div class="requirement-row">
-                  <div class="req-left">
-                    <div class="req-name">Modern CSS + Jest</div>
-                    <div class="req-evidence">Confirmed in skills and project evidence</div>
-                  </div>
-                  <span class="tag-evidence">&check; Matched</span>
-                </div>
-
-                <div class="requirement-row">
-                  <div class="req-left">
-                    <div class="req-name">GraphQL</div>
-                    <div class="req-evidence">No GraphQL experience found in your resume</div>
-                  </div>
-                  <span class="tag-gap">Not evidenced</span>
-                </div>
-
-                <div class="requirement-row">
-                  <div class="req-left">
-                    <div class="req-name">Accessibility / WCAG</div>
-                    <div class="req-evidence">No specific accessibility work found</div>
-                  </div>
-                  <span class="tag-gap">Not evidenced</span>
-                </div>
-
-                <div class="requirement-row">
-                  <div class="req-left">
-                    <div class="req-name">3&ndash;5 years frontend experience</div>
-                    <div class="req-evidence">4 years across Lumen Studio and Brightline Digital</div>
-                  </div>
-                  <span class="tag-evidence">&check; Aligned</span>
-                </div>
-
-                <!-- Turn the Gaps into a Plan -->
-                <div style="margin-top: var(--space-6); background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); padding: var(--space-4);">
-                  <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin-bottom: 6px;">Turn the gaps into a plan</div>
-                  <div style="font-size: 12px; color: var(--color-text-muted); line-height: 1.5; margin-bottom: 6px;">
-                    <strong>GraphQL:</strong> Build a small query-driven React feature and document what you learned.<br>
-                    <strong>Accessibility:</strong> Audit keyboard navigation, semantic markup and contrast in a portfolio project.
-                  </div>
-                  <div style="font-size: 11px; color: var(--color-text-subtle);">Already have this experience? Add accurate evidence to your resume profile.</div>
+                <div
+                  style="display: flex; gap: var(--space-3); margin-top: var(--space-5); border-top: 1px solid var(--color-border-subtle); padding-top: var(--space-4); flex-wrap: wrap;">
+                  <button class="btn btn-secondary btn-sm" id="btnOpenExternalApp">View original application
+                    &nearr;</button>
+                  <button class="btn btn-secondary btn-sm" id="btnSaveToShortlist">Saved to shortlist</button>
+                  <button class="btn btn-primary btn-sm" id="btnMarkApplied">Mark as applied</button>
                 </div>
               </div>
 
-              <!-- Right Column: "Why an estimated 88%?" Weighted Breakdown -->
-              <div class="card">
-                <h3 class="card-title" style="margin-bottom: 2px;">Why an estimated 88%?</h3>
-                <div style="font-size: 12px; color: var(--color-text-subtle); margin-bottom: var(--space-5);">
-                  A weighted alignment estimate based on your confirmed profile.
+              <!-- Two-Column Breakdown -->
+              <div class="detail-two-col">
+                <!-- Left Column: Requirements Compared -->
+                <div class="card">
+                  <h3 class="card-title" style="margin-bottom: var(--space-2);">Requirements, compared with your resume
+                  </h3>
+                  <div style="font-size: 12.5px; color: var(--color-text-subtle); margin-bottom: var(--space-4);">
+                    Not evidenced reflects this resume only, not your full ability.
+                  </div>
+
+                  <div class="requirement-row">
+                    <div class="req-left">
+                      <div class="req-name">React + TypeScript</div>
+                      <div class="req-evidence">Confirmed in Lumen Studio experience</div>
+                    </div>
+                    <span class="tag-evidence">&check; Matched</span>
+                  </div>
+
+                  <div class="requirement-row">
+                    <div class="req-left">
+                      <div class="req-name">Modern CSS + Jest</div>
+                      <div class="req-evidence">Confirmed in skills and project evidence</div>
+                    </div>
+                    <span class="tag-evidence">&check; Matched</span>
+                  </div>
+
+                  <div class="requirement-row">
+                    <div class="req-left">
+                      <div class="req-name">GraphQL</div>
+                      <div class="req-evidence">No GraphQL experience found in your resume</div>
+                    </div>
+                    <span class="tag-gap">Not evidenced</span>
+                  </div>
+
+                  <div class="requirement-row">
+                    <div class="req-left">
+                      <div class="req-name">Accessibility / WCAG</div>
+                      <div class="req-evidence">No specific accessibility work found</div>
+                    </div>
+                    <span class="tag-gap">Not evidenced</span>
+                  </div>
+
+                  <div class="requirement-row">
+                    <div class="req-left">
+                      <div class="req-name">3&ndash;5 years frontend experience</div>
+                      <div class="req-evidence">4 years across Lumen Studio and Brightline Digital</div>
+                    </div>
+                    <span class="tag-evidence">&check; Aligned</span>
+                  </div>
+
+                  <!-- Turn the Gaps into a Plan -->
+                  <div
+                    style="margin-top: var(--space-6); background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); padding: var(--space-4);">
+                    <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin-bottom: 6px;">Turn
+                      the gaps into a plan</div>
+                    <div style="font-size: 12px; color: var(--color-text-muted); line-height: 1.5; margin-bottom: 6px;">
+                      <strong>GraphQL:</strong> Build a small query-driven React feature and document what you
+                      learned.<br>
+                      <strong>Accessibility:</strong> Audit keyboard navigation, semantic markup and contrast in a
+                      portfolio project.
+                    </div>
+                    <div style="font-size: 11px; color: var(--color-text-subtle);">Already have this experience? Add
+                      accurate evidence to your resume profile.</div>
+                  </div>
                 </div>
 
-                <!-- Factor 1: Skills -->
-                <div class="breakdown-factor-item">
-                  <div class="factor-top-row">
-                    <span>Skills</span>
-                    <span id="scoreFactorSkills">34 / 40</span>
+                <!-- Right Column: Weighted Breakdown -->
+                <div class="card">
+                  <h3 class="card-title" id="matchBreakdownHeading" style="margin-bottom: 2px;">Multi-Factor Match
+                    Breakdown</h3>
+                  <div style="font-size: 12px; color: var(--color-text-subtle); margin-bottom: var(--space-5);">
+                    A weighted alignment estimate based on your confirmed profile and real role requirements.
                   </div>
-                  <div class="factor-bar-track">
-                    <div class="factor-bar-fill" id="barFactorSkills" style="width: 85%;"></div>
-                  </div>
-                  <div class="factor-explanation-note">React, TypeScript, CSS and Jest evidenced. GraphQL and accessibility are not evidenced.</div>
-                </div>
 
-                <!-- Factor 2: Experience -->
-                <div class="breakdown-factor-item">
-                  <div class="factor-top-row">
-                    <span>Experience</span>
-                    <span id="scoreFactorExp">23 / 25</span>
+                  <!-- Factor 1: Skills -->
+                  <div class="breakdown-factor-item">
+                    <div class="factor-top-row">
+                      <span>Skills</span>
+                      <span id="scoreFactorSkills">-- / 40</span>
+                    </div>
+                    <div class="factor-bar-track">
+                      <div class="factor-bar-fill" id="barFactorSkills" style="width: 0%;"></div>
+                    </div>
+                    <div class="factor-explanation-note">Evaluated by comparing required and preferred technical skills.
+                    </div>
                   </div>
-                  <div class="factor-bar-track">
-                    <div class="factor-bar-fill" id="barFactorExp" style="width: 92%;"></div>
-                  </div>
-                  <div class="factor-explanation-note">4 years aligns with the 3&ndash;5 year requirement. Scope of product ownership needs review.</div>
-                </div>
 
-                <!-- Factor 3: Preferences -->
-                <div class="breakdown-factor-item">
-                  <div class="factor-top-row">
-                    <span>Preferences</span>
-                    <span id="scoreFactorPref">21 / 25</span>
+                  <!-- Factor 2: Experience -->
+                  <div class="breakdown-factor-item">
+                    <div class="factor-top-row">
+                      <span>Experience</span>
+                      <span id="scoreFactorExp">-- / 25</span>
+                    </div>
+                    <div class="factor-bar-track">
+                      <div class="factor-bar-fill" id="barFactorExp" style="width: 0%;"></div>
+                    </div>
+                    <div class="factor-explanation-note">Evaluated by comparing verified years and role seniority depth.
+                    </div>
                   </div>
-                  <div class="factor-bar-track">
-                    <div class="factor-bar-fill" id="barFactorPref" style="width: 84%;"></div>
-                  </div>
-                  <div class="factor-explanation-note">SF hybrid and salary overlap fit your preferences; full range is not an exact match.</div>
-                </div>
 
-                <!-- Factor 4: Education -->
-                <div class="breakdown-factor-item">
-                  <div class="factor-top-row">
-                    <span>Education</span>
-                    <span id="scoreFactorEdu">10 / 10</span>
+                  <!-- Factor 3: Preferences -->
+                  <div class="breakdown-factor-item">
+                    <div class="factor-top-row">
+                      <span>Preferences</span>
+                      <span id="scoreFactorPref">-- / 25</span>
+                    </div>
+                    <div class="factor-bar-track">
+                      <div class="factor-bar-fill" id="barFactorPref" style="width: 0%;"></div>
+                    </div>
+                    <div class="factor-explanation-note">Evaluated by location, work modality, and compensation overlap.
+                    </div>
                   </div>
-                  <div class="factor-bar-track">
-                    <div class="factor-bar-fill" id="barFactorEdu" style="width: 100%;"></div>
+
+                  <!-- Factor 4: Education -->
+                  <div class="breakdown-factor-item">
+                    <div class="factor-top-row">
+                      <span>Education</span>
+                      <span id="scoreFactorEdu">-- / 10</span>
+                    </div>
+                    <div class="factor-bar-track">
+                      <div class="factor-bar-fill" id="barFactorEdu" style="width: 0%;"></div>
+                    </div>
+                    <div class="factor-explanation-note">Evaluated by degree alignment or equivalent technical
+                      experience.</div>
                   </div>
-                  <div class="factor-explanation-note">B.S. Computer Science meets the degree or equivalent-experience requirement.</div>
-                </div>
 
-                <!-- Total Formula Box -->
-                <div style="margin-top: var(--space-5); padding: var(--space-3); background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); text-align: center; font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--color-indigo);" id="scoreFormulaDisplay">
-                  34 + 23 + 21 + 10 = 88 / 100
-                </div>
+                  <!-- Total Formula Box -->
+                  <div
+                    style="margin-top: var(--space-5); padding: var(--space-3); background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); text-align: center; font-family: var(--font-mono); font-size: 13px; font-weight: 700; color: var(--color-indigo);"
+                    id="scoreFormulaDisplay">
+                    Select a role to view formula calculation
+                  </div>
 
-                <!-- Mandatory Legal Caveat -->
-                <div class="legal-caveat-box">
-                  <strong>88% does not mean an 88% chance of an interview or offer.</strong> Employers make their own hiring decisions. Scores estimate alignment with stated requirements.
+                  <!-- Mandatory Legal Caveat -->
+                  <div class="legal-caveat-box">
+                    <strong>Estimated match scores do not guarantee an interview or offer.</strong> Employers make their
+                    own hiring decisions. Scores estimate alignment with stated requirements.
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
           </section>
         </div>
 
@@ -958,7 +1153,7 @@
             <div class="page-header-text">
               <div class="pre-title">Your Focused Shortlist</div>
               <h1>Keep the possibilities that matter.</h1>
-              <p>3 saved sample jobs. Revisit the evidence before deciding what's next.</p>
+              <p id="savedJobsSubtitle">Revisit your shortlisted roles and evidence before deciding what's next.</p>
             </div>
           </div>
 
@@ -1037,25 +1232,33 @@
             <div class="page-header-text">
               <div class="pre-title">Small Steps, Clearer Direction</div>
               <h1>Build on what you already know.</h1>
-              <p>Learning suggestions from your confirmed profile and 12 sample jobs &mdash; not labor-market trends.</p>
+              <p>Learning suggestions from your confirmed profile and 12 sample jobs &mdash; not labor-market trends.
+              </p>
             </div>
           </div>
 
           <!-- Top Metrics -->
           <div class="insights-top-metrics">
             <div class="insight-metric-card">
-              <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted);">A solid frontend foundation</div>
-              <div style="font-size: 24px; font-weight: 700; color: var(--color-navy); margin: 4px 0;">6 confirmed skills</div>
-              <div style="font-size: 12px; color: var(--color-text-subtle);">React, TypeScript, CSS, Jest, Figma, Git</div>
+              <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted);">A solid frontend
+                foundation</div>
+              <div style="font-size: 24px; font-weight: 700; color: var(--color-navy); margin: 4px 0;">6 confirmed
+                skills</div>
+              <div style="font-size: 12px; color: var(--color-text-subtle);">React, TypeScript, CSS, Jest, Figma, Git
+              </div>
             </div>
             <div class="insight-metric-card">
-              <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted);">Your experience fits the direction</div>
-              <div style="font-size: 24px; font-weight: 700; color: var(--color-navy); margin: 4px 0;">4 years relevant</div>
+              <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted);">Your experience fits the
+                direction</div>
+              <div style="font-size: 24px; font-weight: 700; color: var(--color-navy); margin: 4px 0;">4 years relevant
+              </div>
               <div style="font-size: 12px; color: var(--color-text-subtle);">Mid-level engineering alignment</div>
             </div>
             <div class="insight-metric-card">
-              <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted);">An intentional next step</div>
-              <div style="font-size: 24px; font-weight: 700; color: var(--color-indigo); margin: 4px 0;">Accessibility</div>
+              <div style="font-size: 12px; font-weight: 600; color: var(--color-text-muted);">An intentional next step
+              </div>
+              <div style="font-size: 24px; font-weight: 700; color: var(--color-indigo); margin: 4px 0;">Accessibility
+              </div>
               <div style="font-size: 12px; color: var(--color-text-subtle);">Appears in 7 of 12 sample roles</div>
             </div>
           </div>
@@ -1105,19 +1308,30 @@
               <h3 class="card-title" style="margin-bottom: var(--space-4);">A practical two-week plan</h3>
               <div style="display: flex; flex-direction: column; gap: var(--space-4);">
                 <div style="border-left: 3px solid var(--color-indigo); padding-left: var(--space-3);">
-                  <div style="font-size: 11px; font-weight: 700; color: var(--color-indigo); text-transform: uppercase;">This Week</div>
-                  <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin: 2px 0;">Make one feature keyboard-friendly</div>
-                  <div style="font-size: 12px; color: var(--color-text-muted);">Audit focus order, labels and contrast in a React project. Record what you improved.</div>
+                  <div
+                    style="font-size: 11px; font-weight: 700; color: var(--color-indigo); text-transform: uppercase;">
+                    This Week</div>
+                  <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin: 2px 0;">Make one
+                    feature keyboard-friendly</div>
+                  <div style="font-size: 12px; color: var(--color-text-muted);">Audit focus order, labels and contrast
+                    in a React project. Record what you improved.</div>
                 </div>
                 <div style="border-left: 3px solid #8B5CF6; padding-left: var(--space-3);">
-                  <div style="font-size: 11px; font-weight: 700; color: #8B5CF6; text-transform: uppercase;">Next Week</div>
-                  <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin: 2px 0;">Build a small GraphQL feature</div>
-                  <div style="font-size: 12px; color: var(--color-text-muted);">Query a public demo endpoint, add loading/error UI and cover the behavior with tests.</div>
+                  <div style="font-size: 11px; font-weight: 700; color: #8B5CF6; text-transform: uppercase;">Next Week
+                  </div>
+                  <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin: 2px 0;">Build a small
+                    GraphQL feature</div>
+                  <div style="font-size: 12px; color: var(--color-text-muted);">Query a public demo endpoint, add
+                    loading/error UI and cover the behavior with tests.</div>
                 </div>
                 <div style="border-left: 3px solid var(--color-evidence-text); padding-left: var(--space-3);">
-                  <div style="font-size: 11px; font-weight: 700; color: var(--color-evidence-text); text-transform: uppercase;">Then</div>
-                  <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin: 2px 0;">Update with evidence</div>
-                  <div style="font-size: 12px; color: var(--color-text-muted);">Describe work you actually completed. Review your profile before recalculating matches.</div>
+                  <div
+                    style="font-size: 11px; font-weight: 700; color: var(--color-evidence-text); text-transform: uppercase;">
+                    Then</div>
+                  <div style="font-size: 13px; font-weight: 700; color: var(--color-navy); margin: 2px 0;">Update with
+                    evidence</div>
+                  <div style="font-size: 12px; color: var(--color-text-muted);">Describe work you actually completed.
+                    Review your profile before recalculating matches.</div>
                 </div>
               </div>
             </div>
@@ -1132,7 +1346,8 @@
             <div class="page-header-text">
               <div class="pre-title">Verified Skill Benchmarks</div>
               <h1>Interactive Coding Sandbox</h1>
-              <p>Solve targeted algorithm and engineering challenges. Successful test executions verify your skill badge and grant a deterministic matching boost.</p>
+              <p>Solve targeted algorithm and engineering challenges. Successful test executions verify your skill badge
+                and grant a deterministic matching boost.</p>
             </div>
           </div>
 
@@ -1152,7 +1367,8 @@
               <div class="card-header-bar">
                 <div>
                   <h3 class="card-title" id="activeChallengeTitle">Python: Two Sum Indices</h3>
-                  <div class="card-subtext" id="activeChallengeDesc">Return indices of the two numbers that add up to target.</div>
+                  <div class="card-subtext" id="activeChallengeDesc">Return indices of the two numbers that add up to
+                    target.</div>
                 </div>
                 <button class="btn btn-primary btn-sm" id="btnSubmitCode">Run Code & Verify</button>
               </div>
@@ -1190,13 +1406,19 @@ two_sum([2, 7, 11, 15], 9)
           </div>
 
           <div class="card" style="max-width: 800px; margin: 0 auto;">
-            <div id="agentChatLog" style="min-height: 300px; max-height: 450px; overflow-y: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);">
-              <div style="background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); padding: var(--space-3); max-width: 85%;">
-                <strong>CareerMatch Agent:</strong> Welcome! I am your explainable AI career assistant. I can help analyze your job alignment, explain skill overlap, suggest targeted coding assessments, or recommend ways to evidence in-demand technologies. What would you like to explore?
+            <div id="agentChatLog"
+              style="min-height: 300px; max-height: 450px; overflow-y: auto; padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);">
+              <div
+                style="background: var(--color-canvas); border: 1px solid var(--color-border); border-radius: var(--radius-ctrl); padding: var(--space-3); max-width: 85%;">
+                <strong>CareerMatch Agent:</strong> Welcome! I am your explainable AI career assistant. I can help
+                analyze your job alignment, explain skill overlap, suggest targeted coding assessments, or recommend
+                ways to evidence in-demand technologies. What would you like to explore?
               </div>
             </div>
-            <div style="display: flex; gap: var(--space-2); padding: var(--space-3); border-top: 1px solid var(--color-border-subtle);">
-              <input class="form-input" id="inputAgentMessage" type="text" placeholder="Ask about resume gaps, match rationale, or assessment tips...">
+            <div
+              style="display: flex; gap: var(--space-2); padding: var(--space-3); border-top: 1px solid var(--color-border-subtle);">
+              <input class="form-input" id="inputAgentMessage" type="text"
+                placeholder="Ask about resume gaps, match rationale, or assessment tips...">
               <button class="btn btn-primary" id="btnSendAgentMessage">Send</button>
             </div>
           </div>
@@ -1228,8 +1450,31 @@ two_sum([2, 7, 11, 15], 9)
               </div>
               <div class="form-group">
                 <label class="form-label">Location</label>
-                <input class="form-input" id="settingsLocation" type="text" placeholder="e.g. San Francisco, CA / Remote" value="">
+                <input class="form-input" id="settingsLocation" type="text"
+                  placeholder="e.g. San Francisco, CA / Remote" value="">
               </div>
+            </div>
+
+            <div class="card" id="settingsResumeCard">
+              <h3 class="card-title" style="margin-bottom: var(--space-4);">Resume Document & Storage</h3>
+              <div style="font-size: 13px; color: var(--color-text-subtle); margin-bottom: 12px;">
+                Your active resume is used to calculate match scores and explainability breakdowns.
+              </div>
+              <div class="settings-resume-info-box"
+                style="background: #F8FAFC; border: 1px solid var(--color-border); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div style="font-weight: 700; color: var(--color-navy); font-size: 14px;" id="settingsResumeFilename">
+                    No resume uploaded</div>
+                  <span class="badge-pill" id="settingsResumeBadge"
+                    style="background: #E6F4EA; color: #137333; font-size: 11px;">Active</span>
+                </div>
+                <div style="font-size: 12px; color: var(--color-text-muted); margin-top: 4px;" id="settingsResumeMeta">
+                  Upload a PDF to activate matching</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" id="btnSettingsUploadResume" type="button"
+                style="display: inline-flex; align-items: center; gap: 6px;">
+                <span>📄 Upload Replacement Resume</span>
+              </button>
             </div>
 
             <div class="card">
@@ -1238,9 +1483,12 @@ two_sum([2, 7, 11, 15], 9)
               <label class="checkbox-label"><input type="checkbox" checked> Application reminder follow-ups</label>
               <label class="checkbox-label"><input type="checkbox"> Product updates</label>
 
-              <div style="margin-top: var(--space-6); border-top: 1px solid var(--color-border-subtle); padding-top: var(--space-4);">
-                <div style="font-size: 13px; font-weight: 700; color: #DC2626; margin-bottom: 4px;">Delete workspace</div>
-                <div style="font-size: 12px; color: var(--color-text-subtle); margin-bottom: var(--space-3);">Permanently remove your confirmed profile, resume, and tracker records.</div>
+              <div
+                style="margin-top: var(--space-6); border-top: 1px solid var(--color-border-subtle); padding-top: var(--space-4);">
+                <div style="font-size: 13px; font-weight: 700; color: #DC2626; margin-bottom: 4px;">Delete workspace
+                </div>
+                <div style="font-size: 12px; color: var(--color-text-subtle); margin-bottom: var(--space-3);">
+                  Permanently remove your confirmed profile, resume, and tracker records.</div>
                 <button class="btn btn-danger btn-sm" id="btnDeleteAccount">Request account deletion</button>
               </div>
             </div>
@@ -1274,7 +1522,8 @@ two_sum([2, 7, 11, 15], 9)
         <div class="form-group">
           <label class="form-label" for="authPassword">Password</label>
           <input class="form-input" id="authPassword" type="password" placeholder="••••••••••••" required>
-          <div style="font-size: 11px; color: var(--color-text-subtle); margin-top: 4px;">&check; At least 8 characters &bull; &check; Includes numbers or symbols</div>
+          <div style="font-size: 11px; color: var(--color-text-subtle); margin-top: 4px;">&check; At least 8 characters
+            &bull; &check; Includes numbers or symbols</div>
         </div>
 
         <div class="form-group" id="groupRole" style="display: none;">
@@ -1285,12 +1534,15 @@ two_sum([2, 7, 11, 15], 9)
           </select>
         </div>
 
-        <button class="btn btn-primary" style="width: 100%; margin-top: var(--space-3);" type="submit" id="btnAuthSubmit">Log in</button>
+        <button class="btn btn-primary" style="width: 100%; margin-top: var(--space-3);" type="submit"
+          id="btnAuthSubmit">Log in</button>
       </form>
 
       <div style="text-align: center; margin-top: var(--space-4); font-size: 12.5px; color: var(--color-text-muted);">
         <span id="authTogglePrompt">New to CareerMatch?</span>
-        <button id="btnToggleAuthMode" style="background: none; border: none; color: var(--color-indigo); font-weight: 600; cursor: pointer; text-decoration: underline; margin-left: 4px;">Create an account</button>
+        <button id="btnToggleAuthMode"
+          style="background: none; border: none; color: var(--color-indigo); font-weight: 600; cursor: pointer; text-decoration: underline; margin-left: 4px;">Create
+          an account</button>
       </div>
     </div>
   </div>
@@ -1301,9 +1553,11 @@ two_sum([2, 7, 11, 15], 9)
   <div class="modal-backdrop" id="modalApplyConfirm" role="dialog" aria-modal="true">
     <div class="modal-box">
       <button class="modal-close-btn" id="btnCloseApplyModal">&times;</button>
-      <div style="font-size: 12px; font-weight: 600; color: var(--color-text-subtle);" id="applyConfirmCompanyLabel">Atlas Labs &bull; Sample job</div>
+      <div style="font-size: 12px; font-weight: 600; color: var(--color-text-subtle);" id="applyConfirmCompanyLabel">
+        Atlas Labs &bull; Sample job</div>
       <div class="modal-title" style="margin-top: 4px;">Did you submit your application?</div>
-      <div class="modal-subtitle">CareerMatch can't confirm what happened on the employer's site. Only mark Applied after you have submitted there.</div>
+      <div class="modal-subtitle">CareerMatch can't confirm what happened on the employer's site. Only mark Applied
+        after you have submitted there.</div>
 
       <div class="form-group">
         <label class="form-label">Application date</label>
@@ -1334,17 +1588,20 @@ two_sum([2, 7, 11, 15], 9)
 
         <div class="form-group">
           <label class="form-label" for="inputExpCompany">Company or Organization</label>
-          <input class="form-input" id="inputExpCompany" type="text" placeholder="e.g. Stripe, Airbnb, Acme Corp" required>
+          <input class="form-input" id="inputExpCompany" type="text" placeholder="e.g. Stripe, Airbnb, Acme Corp"
+            required>
         </div>
 
         <div class="form-group">
           <label class="form-label" for="inputExpDuration">Dates / Duration</label>
-          <input class="form-input" id="inputExpDuration" type="text" placeholder="e.g. 2022 – Present (2 years)" required>
+          <input class="form-input" id="inputExpDuration" type="text" placeholder="e.g. 2022 – Present (2 years)"
+            required>
         </div>
 
         <div class="form-group">
           <label class="form-label" for="inputExpDescription">Key Impact & Tech Stack</label>
-          <textarea class="form-textarea" id="inputExpDescription" placeholder="Led development of user workflows in React, TypeScript and GraphQL..."></textarea>
+          <textarea class="form-textarea" id="inputExpDescription"
+            placeholder="Led development of user workflows in React, TypeScript and GraphQL..."></textarea>
         </div>
 
         <div style="display: flex; gap: var(--space-3); margin-top: var(--space-4);">
@@ -1362,17 +1619,20 @@ two_sum([2, 7, 11, 15], 9)
     <div class="modal-box">
       <button class="modal-close-btn" id="btnCloseEduModal" aria-label="Close dialog">&times;</button>
       <div class="modal-title">Add Education</div>
-      <div class="modal-subtitle">Include degrees, bootcamps, or certifications to evidence qualification criteria.</div>
+      <div class="modal-subtitle">Include degrees, bootcamps, or certifications to evidence qualification criteria.
+      </div>
 
       <form id="formAddEducation">
         <div class="form-group">
           <label class="form-label" for="inputEduDegree">Degree or Program</label>
-          <input class="form-input" id="inputEduDegree" type="text" placeholder="e.g. B.S. in Computer Science" required>
+          <input class="form-input" id="inputEduDegree" type="text" placeholder="e.g. B.S. in Computer Science"
+            required>
         </div>
 
         <div class="form-group">
           <label class="form-label" for="inputEduSchool">Institution or University</label>
-          <input class="form-input" id="inputEduSchool" type="text" placeholder="e.g. Stanford University, UC Berkeley, Coursera" required>
+          <input class="form-input" id="inputEduSchool" type="text"
+            placeholder="e.g. Stanford University, UC Berkeley, Coursera" required>
         </div>
 
         <div class="form-group">
@@ -1392,7 +1652,7 @@ two_sum([2, 7, 11, 15], 9)
   <button class="fab-ai-assistant" id="fabAiAssistant" type="button" aria-label="Open AI Career Copilot">
     <div class="fab-ai-pulse"></div>
     <svg class="fab-ai-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
     </svg>
     <span class="fab-ai-text">✨ AI Copilot</span>
   </button>
@@ -1407,47 +1667,67 @@ two_sum([2, 7, 11, 15], 9)
       getAuth,
       signInWithEmailAndPassword,
       createUserWithEmailAndPassword,
+      sendEmailVerification,
+      sendSignInLinkToEmail,
+      isSignInWithEmailLink,
+      signInWithEmailLink,
       signInWithPopup,
       GoogleAuthProvider,
       signOut,
       onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBcuGpHGfq2dO0-3o8j1qtc2ctWbgxK9Uo",
-      authDomain: "aihiring-3d070.firebaseapp.com",
-      projectId: "aihiring-3d070",
-      storageBucket: "aihiring-3d070.firebasestorage.app",
-      messagingSenderId: "14319993219",
-      appId: "1:14319993219:web:39f05a13de221b4bfb36b6",
-      measurementId: "G-EMPGKM4ZG6"
-    };
+    async function resolveFirebaseConfig() {
+      if (window.__FIREBASE_CONFIG__ && window.__FIREBASE_CONFIG__.apiKey) {
+        return window.__FIREBASE_CONFIG__;
+      }
+      try {
+        const apiBase = window.CAREERMATCH_API_BASE || '/api/v1';
+        const resp = await fetch(`${apiBase}/auth/firebase-config`);
+        if (resp.ok) {
+          const json = await resp.json();
+          if (json.data && json.data.apiKey) return json.data;
+        }
+      } catch (err) {
+        console.warn('Could not load remote Firebase configuration:', err);
+      }
+      return null;
+    }
 
     window.FirebaseSDK = {
       initializeApp,
       getAuth,
       signInWithEmailAndPassword,
       createUserWithEmailAndPassword,
+      sendEmailVerification,
+      sendSignInLinkToEmail,
+      isSignInWithEmailLink,
+      signInWithEmailLink,
       signInWithPopup,
       GoogleAuthProvider,
       signOut,
       onAuthStateChanged,
-      config: firebaseConfig
+      config: null
     };
 
-    try {
-      const app = initializeApp(firebaseConfig);
-      window.firebaseApp = app;
-      window.firebaseAuth = getAuth(app);
-      window.firebaseConfig = firebaseConfig;
-    } catch (e) {
-      console.warn("Firebase client init notice:", e);
-    }
-
-    window.dispatchEvent(new CustomEvent('firebasesdk:ready'));
+    resolveFirebaseConfig().then((cfg) => {
+      if (cfg && cfg.apiKey) {
+        try {
+          const app = initializeApp(cfg);
+          window.firebaseApp = app;
+          window.firebaseAuth = getAuth(app);
+          window.firebaseConfig = cfg;
+          window.FirebaseSDK.config = cfg;
+        } catch (e) {
+          console.warn("Firebase client init notice:", e);
+        }
+      }
+      window.dispatchEvent(new CustomEvent('firebasesdk:ready'));
+    });
   </script>
 
   <!-- Application Logic -->
   <script src="/frontend-assets/app.js?v=2.1"></script>
 </body>
+
 </html>

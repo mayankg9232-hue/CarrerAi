@@ -38,7 +38,12 @@ class Job(BaseModel):
     department: Optional[str] = Field(default=None, description="Department or business unit")
     employment_type: Optional[str] = Field(default=None, description="Employment type (Full-time, Contract, etc.)")
     workplace_type: Optional[str] = Field(default=None, description="Workplace type (remote, hybrid, onsite)")
-    source_url: Optional[str] = Field(default=None, description="Source URL")
+    source_url: Optional[str] = Field(default=None, description="Source URL of original posting")
+    apply_url: Optional[str] = Field(default=None, description="Direct application URL")
+    score: Optional[float] = Field(default=None, description="Match score against user's active resume")
+    matched_skills: Optional[List[str]] = Field(default=None, description="Matched skills for user's active resume")
+    missing_skills: Optional[List[str]] = Field(default=None, description="Missing skills for user's active resume")
+    match_status: Optional[str] = Field(default=None, description="Match status ('completed', 'pending', 'unavailable', 'no_resume')")
     collected_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     posted_at: Optional[datetime] = Field(default=None, description="Original publication timestamp from ATS")
     updated_at: Optional[datetime] = Field(default=None, description="Last updated timestamp from ATS")
@@ -60,3 +65,24 @@ class JobIngestResponse(BaseModel):
     ingested_count: int = Field(ge=0, description="Number of newly ingested and normalized listings")
     skipped_duplicates: int = Field(ge=0, description="Number of duplicate listings skipped")
     jobs: List[Job] = Field(default_factory=list, description="List of processed jobs")
+
+
+class SavedJobItem(BaseModel):
+    """Relationship model representing a job saved to an authenticated user's shortlist."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    id: str = Field(description="Unique saved-job relationship identifier")
+    user_id: str = Field(description="Authenticated owner user identifier")
+    job_id: str = Field(description="Foreign key identifier to shared job listing")
+    saved_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="UTC timestamp of save action")
+    notes: Optional[str] = Field(default=None, description="Optional personal notes")
+    job: Optional[Job] = Field(default=None, description="Eager-loaded job listing details")
+
+
+class SavedJobResponse(BaseModel):
+    """Paginated response containing list of saved job entities and total count."""
+
+    count: int = Field(ge=0, description="Total count of saved jobs for user")
+    jobs: List[Job] = Field(default_factory=list, description="Array of saved job listing entities")
+

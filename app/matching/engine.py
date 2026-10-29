@@ -143,9 +143,30 @@ class MatchingEngine:
                 seen_keys.add(key)
                 unique_jobs.append(j)
 
+        if not unique_jobs:
+            return []
+
+        # 1. Batch precompute any missing job embeddings in a single API call
+        await self.retriever.precompute_job_embeddings(unique_jobs)
+
+        # 2. Embed candidate profile ONCE for the entire batch
+        candidate_text = prepare_candidate_embedding_text(candidate)
+        try:
+            candidate_vec = await self.embedder.embed_text(candidate_text)
+        except Exception:
+            fallback = LocalDeterministicEmbeddingProvider()
+            candidate_vec = await fallback.embed_text(candidate_text)
+
+        # 3. Evaluate each job using instant in-memory cosine similarity (0 network calls)
         matches: List[MatchResult] = []
         for job in unique_jobs:
-            result = await self.match_candidate_to_job(candidate, job)
+            try:
+                job_vec = await self.retriever.get_or_create_job_embedding(job)
+                sim = cosine_similarity(candidate_vec, job_vec)
+            except Exception:
+                sim = 0.0
+
+            result = await self.match_candidate_to_job(candidate, job, semantic_similarity=sim)
             if result.overall_score >= min_score:
                 result.job = job
                 matches.append(result)

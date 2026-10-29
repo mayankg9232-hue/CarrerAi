@@ -342,6 +342,16 @@ def create_developer_b_tools(
     def _get_resume_repo() -> IResumeRepository:
         return resume_repo if resume_repo is not None else get_resume_repository()
 
+    async def _resolve_candidate(candidate_id: str) -> Optional[CandidateProfile]:
+        repo = _get_resume_repo()
+        cand = await repo.get_by_id(candidate_id)
+        if not cand:
+            cand = await repo.resolve_profile(identifier=candidate_id)
+        if not cand and (candidate_id.startswith("profile_") or candidate_id.startswith("usr_")):
+            uid = candidate_id.replace("profile_", "")
+            cand = await repo.resolve_profile(user_id=uid)
+        return cand
+
     def _get_job_repo() -> IJobRepository:
         return job_repo if job_repo is not None else get_job_repository()
 
@@ -460,7 +470,7 @@ def create_developer_b_tools(
         query_label = args.query_text or ""
 
         if args.candidate_id:
-            cand = await _get_resume_repo().get_by_id(args.candidate_id)
+            cand = await _resolve_candidate(args.candidate_id)
             if not cand:
                 raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
             ranked_tuples = await _get_job_retriever().search_relevant_jobs(
@@ -606,7 +616,7 @@ def create_developer_b_tools(
     # 5. generate_truthful_resume_suggestions
     # --------------------------------------------------------------------------
     async def _handle_truthful_suggestions(args: GenerateTruthfulSuggestionsInput) -> TruthfulResumeSuggestionsOutput:
-        cand = await _get_resume_repo().get_by_id(args.candidate_id)
+        cand = await _resolve_candidate(args.candidate_id)
         if not cand:
             raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
         job = await _get_job_repo().get_by_id(args.job_id)
@@ -658,7 +668,7 @@ def create_developer_b_tools(
     # 6. synthesize_grounded_match_explanation
     # --------------------------------------------------------------------------
     async def _handle_synthesize_explanation(args: SynthesizeMatchExplanationInput) -> SynthesizedMatchExplanationOutput:
-        cand = await _get_resume_repo().get_by_id(args.candidate_id)
+        cand = await _resolve_candidate(args.candidate_id)
         if not cand:
             raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
         job = await _get_job_repo().get_by_id(args.job_id)
@@ -707,7 +717,7 @@ def create_developer_b_tools(
     # 7. recommend_skill_assessments
     # --------------------------------------------------------------------------
     async def _handle_recommend_assessments(args: RecommendSkillAssessmentsInput) -> RecommendSkillAssessmentsOutput:
-        cand = await _get_resume_repo().get_by_id(args.candidate_id)
+        cand = await _resolve_candidate(args.candidate_id)
         if not cand:
             raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
 
@@ -770,7 +780,7 @@ def create_developer_b_tools(
     # 8. verify_skill_from_assessment
     # --------------------------------------------------------------------------
     async def _handle_verify_assessment(args: VerifySkillFromAssessmentInput) -> VerifySkillFromAssessmentOutput:
-        cand = await _get_resume_repo().get_by_id(args.candidate_id)
+        cand = await _resolve_candidate(args.candidate_id)
         if not cand:
             raise ValueError(f"Candidate profile '{args.candidate_id}' not found.")
 

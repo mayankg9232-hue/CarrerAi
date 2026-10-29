@@ -142,6 +142,11 @@ class PolicyGate:
         if candidate_id:
             candidate = await self.resume_repo.get_by_id(candidate_id)
             if not candidate:
+                candidate = await self.resume_repo.resolve_profile(
+                    identifier=candidate_id,
+                    user_id=principal.id if principal.role not in ("admin", "recruiter") else None,
+                )
+            if not candidate:
                 raise NotFoundError(f"Candidate profile '{candidate_id}' not found.")
 
             # Enforce candidate isolation: Candidate can only inspect their own profile

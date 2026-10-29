@@ -8,6 +8,11 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 try:
+    import fitz  # PyMuPDF
+except ImportError:
+    fitz = None
+
+try:
     import pypdf
 except ImportError:
     pypdf = None
@@ -110,9 +115,30 @@ class NLPResumeParser(IResumeParser):
                 raise UnreadableCVError(f"Failed to decode plain text document: {str(exc)}")
 
     def _extract_pdf_text(self, file_bytes: bytes) -> str:
-        """Extract text from PDF pages using pypdf."""
-        if pypdf is None:
-            raise ResumeParsingError("pypdf dependency is not installed on this system.")
+        """Extract text from PDF pages using PyMuPDF (fitz) or pypdf."""
+        # 1. Prefer PyMuPDF (fitz) for speed and layout-preserving text extraction
+        if fitz is not None:
+            try:
+                doc = fitz.open(stream=file_bytes, filetype="pdf")
+                if len(doc) == 0:
+                    raise UnreadableCVError("PDF contains zero pages.")
+                extracted_pages = []
+                for page in doc:
+                    txt = page.get_text()
+                    if txt and txt.strip():
+                        extracted_pages.append(txt.strip())
+                doc.close()
+                combined = "\n".join(extracted_pages).strip()
+                if combined:
+                    return combined
+            except UnreadableCVError:
+                raise
+            except Exception:
+                pass  # Fall back to pypdf
+
+        # 2. Fall back to pypdf
+        if pypdf is None and fitz is None:
+            raise ResumeParsingError("Neither PyMuPDF nor pypdf dependency is installed on this system.")
 
         try:
             reader = pypdf.PdfReader(io.BytesIO(file_bytes))

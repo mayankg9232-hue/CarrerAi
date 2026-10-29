@@ -75,6 +75,37 @@ class IJobRepository(ABC):
         """List all stored jobs."""
         pass
 
+    # Saved Jobs Operations
+    @abstractmethod
+    async def save_job(self, user_id: str, job_id: str, notes: Optional[str] = None) -> bool:
+        """Save a job for a user idempotently."""
+        pass
+
+    @abstractmethod
+    async def unsave_job(self, user_id: str, job_id: str) -> bool:
+        """Remove a saved job for a user."""
+        pass
+
+    @abstractmethod
+    async def get_saved_jobs(self, user_id: str, limit: int = 50, offset: int = 0) -> List[Job]:
+        """Retrieve paginated list of saved jobs for a user."""
+        pass
+
+    @abstractmethod
+    async def get_saved_job_ids(self, user_id: str) -> List[str]:
+        """Retrieve all saved job IDs for a user."""
+        pass
+
+    @abstractmethod
+    async def count_saved_jobs(self, user_id: str) -> int:
+        """Count total saved jobs for a user."""
+        pass
+
+    @abstractmethod
+    async def is_job_saved(self, user_id: str, job_id: str) -> bool:
+        """Check if a specific job is saved by a user."""
+        pass
+
     @abstractmethod
     async def clear(self) -> None:
         """Clear all stored jobs (for tests)."""
@@ -89,6 +120,7 @@ class InMemoryJobRepository(IJobRepository):
         self._hash_index: Dict[str, str] = {}  # content_hash -> job_id
         self._url_index: Dict[str, str] = {}   # source_url -> job_id
         self._platform_index: Dict[str, str] = {}  # "platform:ext_id" -> job_id
+        self._saved_jobs: Dict[str, List[str]] = {}  # user_id -> [job_id]
 
     async def create_job(self, job: Job) -> Job:
         self._jobs[job.id] = job
@@ -215,10 +247,40 @@ class InMemoryJobRepository(IJobRepository):
     async def list_all(self) -> List[Job]:
         return list(self._jobs.values())
 
+    async def save_job(self, user_id: str, job_id: str, notes: Optional[str] = None) -> bool:
+        if job_id not in self._jobs:
+            return False
+        user_list = self._saved_jobs.setdefault(user_id, [])
+        if job_id not in user_list:
+            user_list.append(job_id)
+        return True
+
+    async def unsave_job(self, user_id: str, job_id: str) -> bool:
+        user_list = self._saved_jobs.get(user_id, [])
+        if job_id in user_list:
+            user_list.remove(job_id)
+            return True
+        return False
+
+    async def get_saved_jobs(self, user_id: str, limit: int = 50, offset: int = 0) -> List[Job]:
+        user_list = self._saved_jobs.get(user_id, [])
+        paginated_ids = user_list[offset:offset + limit]
+        return [self._jobs[jid] for jid in paginated_ids if jid in self._jobs]
+
+    async def get_saved_job_ids(self, user_id: str) -> List[str]:
+        return list(self._saved_jobs.get(user_id, []))
+
+    async def count_saved_jobs(self, user_id: str) -> int:
+        return len(self._saved_jobs.get(user_id, []))
+
+    async def is_job_saved(self, user_id: str, job_id: str) -> bool:
+        return job_id in self._saved_jobs.get(user_id, [])
+
     async def clear(self) -> None:
         self._jobs.clear()
         self._hash_index.clear()
         self._url_index.clear()
+        self._saved_jobs.clear()
 
 
 _global_job_repo: Optional[IJobRepository] = None

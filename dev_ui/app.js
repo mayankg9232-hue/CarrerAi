@@ -173,6 +173,13 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const auth = await getOrInitFirebaseAuth();
       const userCred = await window.FirebaseSDK.createUserWithEmailAndPassword(auth, email, password);
+      if (window.FirebaseSDK && window.FirebaseSDK.sendEmailVerification) {
+        try {
+          await window.FirebaseSDK.sendEmailVerification(userCred.user);
+        } catch (ve) {
+          console.warn("DevUI sendEmailVerification notice:", ve);
+        }
+      }
       const idToken = await userCred.user.getIdToken();
 
       // Exchange with backend

@@ -1,11 +1,13 @@
+import hashlib
 import uuid
-from typing import List, Optional
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Body, Depends, File, UploadFile, status
 
-from app.authentication.dependencies import get_current_user, get_optional_current_user
+from app.authentication.dependencies import get_current_user, get_optional_current_user, require_verified_user
 from app.authorization.dependencies import assert_resource_owner
 from app.core.config import get_settings
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import AuthorizationError, NotFoundError
 from app.db.connection import get_db_manager
 from app.matching.engine import MatchingEngine
 from app.pipelines.resume_pipeline import ResumePipeline
@@ -16,9 +18,104 @@ from app.schemas.auth import AuthenticatedPrincipal
 from app.schemas.common import StandardResponse
 from app.schemas.job import Job
 from app.schemas.matching import JobMatchItem, UnifiedPipelineResponse
-from app.schemas.resume import CandidateProfile
+from app.schemas.resume import (
+    CandidateProfile,
+    ResumeDetailResponse,
+    ResumeListItem,
+    ResumeRecord,
+    SetActiveResumeRequest,
+)
+from app.services.matching_service import MatchingApplicationService
+from app.services.storage_service import get_storage_service
 
 router = APIRouter()
+
+
+async def _save_and_persist_resume(
+    content: bytes,
+    filename: str,
+    content_type: Optional[str],
+    user_id: str,
+    repo: IResumeRepository,
+) -> tuple[ResumeRecord, CandidateProfile, bool]:
+    """
+    Common helper for saving resume file & metadata with SHA-256 deduplication.
+    Returns (ResumeRecord, CandidateProfile, is_reused).
+    """
+    raw_hash = hashlib.sha256(content).hexdigest()
+
+    # Check for existing resume with identical content for this user (user-isolated deduplication)
+    existing_resume = await repo.get_resume_by_hash(user_id=user_id, raw_hash=raw_hash)
+    if existing_resume and existing_resume.status == "completed":
+        profile = None
+        if existing_resume.profile_id:
+            profile = await repo.get_by_id(existing_resume.profile_id)
+        if profile:
+            # Mark active and return cached results without re-parsing or re-embedding
+            await repo.set_active_resume(user_id, existing_resume.id)
+            existing_resume.is_active = True
+            MatchingApplicationService.invalidate_cache(user_id)
+            return existing_resume, profile, True
+
+    # Persist file in private local storage
+    storage = get_storage_service()
+    storage_key = await storage.save_file(
+        user_id=user_id,
+        filename=filename,
+        content=content,
+    )
+
+    # Determine version number for this user
+    user_resumes = await repo.get_user_resumes(user_id)
+    next_version = len(user_resumes) + 1
+
+    # Record initial state as processing (Stage A/B boundary)
+    # The new resume is not active until text extraction and profile normalization succeed
+    resume_record = ResumeRecord(
+        id=f"res_{uuid.uuid4().hex[:12]}",
+        user_id=user_id,
+        filename=filename,
+        storage_key=storage_key,
+        file_size=len(content),
+        mime_type=content_type or "application/pdf",
+        raw_hash=raw_hash,
+        status="processing",
+        is_active=False,
+        version=next_version,
+        profile_id=None,
+        extracted_text=None,
+        error_message=None,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+    )
+    await repo.create_resume(resume_record)
+
+    # Parse resume text and extract structured profile via pipeline
+    pipeline = ResumePipeline(repo=repo)
+    try:
+        profile = await pipeline.process_resume(
+            file_bytes=content,
+            filename=filename,
+            content_type=content_type,
+            user_id=user_id,
+        )
+        resume_record.status = "completed"
+        resume_record.profile_id = profile.id
+        resume_record.extracted_text = profile.summary or ""
+        resume_record.error_message = None
+        resume_record.is_active = True
+        resume_record.updated_at = datetime.now(timezone.utc)
+        saved_record = await repo.create_resume(resume_record)
+        await repo.set_active_resume(user_id, resume_record.id)
+        MatchingApplicationService.invalidate_cache(user_id)
+        return saved_record, profile, False
+    except Exception as exc:
+        resume_record.status = "failed"
+        resume_record.error_message = str(exc)
+        resume_record.is_active = False
+        resume_record.updated_at = datetime.now(timezone.utc)
+        await repo.create_resume(resume_record)
+        raise
 
 
 async def ensure_active_jobs_catalog(job_repo: IJobRepository) -> None:
@@ -127,8 +224,7 @@ async def ensure_active_jobs_catalog(job_repo: IJobRepository) -> None:
     "/upload-and-match",
     response_model=StandardResponse[UnifiedPipelineResponse],
     status_code=status.HTTP_201_CREATED,
-    summary="Upload resume, generate gemini embeddings, persist, webscrape jobs via Firecrawl, and rank matches",
-    description="Accepts PDF, DOCX, or TXT file, parses skills, generates gemini-embedding-2 embeddings, stores in database, searches/scrapes matching tech jobs, and returns ranked match percentages.",
+    summary="Upload resume, persist file, generate embeddings, webscrape jobs via Firecrawl, and rank matches",
 )
 async def upload_and_match_resume(
     file: UploadFile = File(...),
@@ -136,9 +232,13 @@ async def upload_and_match_resume(
     repo: IResumeRepository = Depends(get_resume_repository),
     job_repo: IJobRepository = Depends(get_job_repository),
 ) -> StandardResponse[UnifiedPipelineResponse]:
-    """Execute end-to-end resume intelligence pipeline: parsing, gemini-2 embeddings, DB persistence, Firecrawl scraping, and match ranking."""
+    """Execute end-to-end resume intelligence pipeline with persistent file storage and matching."""
     content = await file.read()
+    filename = file.filename or "resume.pdf"
+
     if current_user:
+        if current_user.role not in ("admin", "recruiter") and not current_user.email_verified:
+            raise AuthorizationError("Email verification required. Please verify your email before uploading resumes.", error_code="EMAIL_NOT_VERIFIED")
         user_id = current_user.id
     else:
         from app.repositories.user_repo import get_user_repository
@@ -152,17 +252,17 @@ async def upload_and_match_resume(
         )
         user_id = guest_user.id
 
-    pipeline = ResumePipeline(repo=repo)
-    profile = await pipeline.process_resume(
-        file_bytes=content,
-        filename=file.filename or "resume.pdf",
+    resume_record, profile, _ = await _save_and_persist_resume(
+        content=content,
+        filename=filename,
         content_type=file.content_type,
         user_id=user_id,
+        repo=repo,
     )
 
     settings = get_settings()
 
-    # 1. Neural Embeddings (gemini-embedding-2)
+    # 1. Neural Embeddings (gemini-embedding-2 or local fallback)
     embedder = get_embedding_provider()
     candidate_text = prepare_candidate_embedding_text(profile)
     vector = []
@@ -178,6 +278,7 @@ async def upload_and_match_resume(
     storage_meta = {
         "engine": "postgresql" if db_mgr.is_postgres else "sqlite",
         "persisted": True,
+        "resume_id": resume_record.id,
         "profile_id": profile.id,
         "vector_dimensions": len(vector) if vector else 768,
     }
@@ -241,25 +342,69 @@ async def upload_and_match_resume(
 
 
 @router.post(
+    "",
+    response_model=StandardResponse[ResumeDetailResponse],
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload, persist, and parse candidate resume",
+    description="Uploads a resume, stores the physical PDF in durable storage, creates a database record, and parses candidate skills.",
+)
+async def create_resume(
+    file: UploadFile = File(...),
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
+    repo: IResumeRepository = Depends(get_resume_repository),
+) -> StandardResponse[ResumeDetailResponse]:
+    """Upload and durably store a new resume with automatic deduplication."""
+    content = await file.read()
+    filename = file.filename or "resume.pdf"
+    record, profile, reused = await _save_and_persist_resume(
+        content=content,
+        filename=filename,
+        content_type=file.content_type,
+        user_id=current_user.id,
+        repo=repo,
+    )
+
+    # Compute and persist fresh matching results for this new active profile
+    try:
+        from app.repositories.job_repo import get_job_repository
+        from app.repositories.match_repo import get_match_repository
+        from app.matching.engine import MatchingEngine
+        job_repo = get_job_repository()
+        match_repo = get_match_repository()
+        await ensure_active_jobs_catalog(job_repo)
+        engine = MatchingEngine(job_repository=job_repo)
+        rec_res = await engine.recommend_jobs_for_candidate(candidate=profile, top_k=50, min_score=0.0)
+        for m in rec_res.matches:
+            await match_repo.save_match(m)
+    except Exception as exc:
+        logger.warning("Match generation on create_resume failed: %s", exc)
+
+    msg = "Identical resume already stored. Existing record reused." if reused else "Resume uploaded, persisted, and parsed successfully."
+    return StandardResponse(
+        data=ResumeDetailResponse(resume=record, profile=profile),
+        message=msg,
+    )
+
+
+@router.post(
     "/upload",
     response_model=StandardResponse[CandidateProfile],
     status_code=status.HTTP_201_CREATED,
-    summary="Upload and parse candidate CV document",
-    description="Accepts PDF, DOCX, or TXT file up to 5 MB, parses text safely, and extracts structured profile.",
+    summary="Upload and parse candidate CV document (legacy compatible)",
 )
 async def upload_resume(
     file: UploadFile = File(...),
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
     repo: IResumeRepository = Depends(get_resume_repository),
 ) -> StandardResponse[CandidateProfile]:
-    """Upload candidate CV document and extract structured candidate profile."""
+    """Upload candidate CV document, save file, and return candidate profile."""
     content = await file.read()
-    pipeline = ResumePipeline(repo=repo)
-    profile = await pipeline.process_resume(
-        file_bytes=content,
+    _, profile, _ = await _save_and_persist_resume(
+        content=content,
         filename=file.filename or "resume.pdf",
         content_type=file.content_type,
         user_id=current_user.id,
+        repo=repo,
     )
     return StandardResponse(
         data=profile,
@@ -268,53 +413,329 @@ async def upload_resume(
 
 
 @router.get(
-    "/{profile_id}",
-    response_model=StandardResponse[CandidateProfile],
-    summary="Get candidate profile by ID",
-    description="Retrieve extracted candidate profile. Enforces candidate ownership isolation.",
+    "",
+    response_model=StandardResponse[List[ResumeListItem]],
+    summary="List candidate's saved resumes",
+    description="Lists lightweight resume metadata for the authenticated user, or all for recruiter.",
 )
-async def get_candidate_profile(
-    profile_id: str,
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+async def list_candidate_resumes(
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
     repo: IResumeRepository = Depends(get_resume_repository),
-) -> StandardResponse[CandidateProfile]:
-    """Retrieve candidate profile with server-side ownership authorization check."""
-    profile = await repo.get_by_id(profile_id)
-    if not profile:
-        raise NotFoundError(f"Candidate profile '{profile_id}' not found.")
+) -> StandardResponse[List[ResumeListItem]]:
+    """List lightweight resume metadata scoped to the authenticated user."""
+    if current_user.role in ("admin", "recruiter"):
+        profiles = await repo.list_all()
+        items = [
+            ResumeListItem(
+                id=p.id,
+                user_id=p.user_id,
+                filename=f"{p.full_name or 'Candidate'}_resume.pdf",
+                file_size=0,
+                mime_type="application/pdf",
+                status="completed",
+                is_active=True,
+                version=1,
+                profile_id=p.id,
+                created_at=p.created_at or datetime.now(timezone.utc),
+            )
+            for p in profiles
+        ]
+        return StandardResponse(data=items, message=f"Retrieved {len(items)} resumes.")
 
-    # Candidate isolation: only owner, recruiter, or admin can access
-    assert_resource_owner(
-        resource_user_id=profile.user_id,
-        principal=current_user,
-        allowed_roles=["admin", "recruiter"],
-    )
+    # Candidate view
+    user_resumes = await repo.get_user_resumes(current_user.id)
+    items: List[ResumeListItem] = []
+    if user_resumes:
+        for r in user_resumes:
+            items.append(
+                ResumeListItem(
+                    id=r.id,
+                    user_id=r.user_id,
+                    filename=r.filename,
+                    file_size=r.file_size,
+                    mime_type=r.mime_type,
+                    status=r.status,
+                    is_active=r.is_active,
+                    version=r.version,
+                    profile_id=r.profile_id,
+                    created_at=r.created_at,
+                )
+            )
+    else:
+        # Fallback check for any legacy profiles
+        profiles = await repo.get_by_user_id(current_user.id)
+        for p in profiles:
+            items.append(
+                ResumeListItem(
+                    id=p.id,
+                    user_id=p.user_id,
+                    filename="resume.pdf",
+                    file_size=0,
+                    mime_type="application/pdf",
+                    status="completed",
+                    is_active=True,
+                    version=1,
+                    profile_id=p.id,
+                    created_at=p.created_at or datetime.now(timezone.utc),
+                )
+            )
 
     return StandardResponse(
-        data=profile,
-        message="Candidate profile retrieved successfully.",
+        data=items,
+        message=f"Retrieved {len(items)} resumes.",
     )
 
 
 @router.get(
-    "",
-    response_model=StandardResponse[List[CandidateProfile]],
-    summary="List candidate profiles",
-    description="List profiles belonging to the current user (or all profiles for recruiters/admins).",
+    "/{resume_id}/status",
+    response_model=StandardResponse[Dict[str, Any]],
+    summary="Get resume processing status",
+    description="Check processing state (uploaded, processing, completed, failed) of a resume.",
 )
-async def list_candidate_profiles(
+async def get_resume_status(
+    resume_id: str,
     current_user: AuthenticatedPrincipal = Depends(get_current_user),
     repo: IResumeRepository = Depends(get_resume_repository),
-) -> StandardResponse[List[CandidateProfile]]:
-    """List profiles belonging to authenticated principal."""
-    if current_user.role in ("admin", "recruiter"):
-        profiles = await repo.list_all()
-    else:
-        profiles = await repo.get_by_user_id(current_user.id)
-
+) -> StandardResponse[Dict[str, Any]]:
+    """Check authoritative processing status for a resume."""
+    resume = await repo.get_resume(resume_id)
+    if not resume:
+        raise NotFoundError(f"Resume '{resume_id}' not found.")
+    assert_resource_owner(
+        resource_user_id=resume.user_id,
+        principal=current_user,
+        allowed_roles=["admin", "recruiter"],
+    )
     return StandardResponse(
-        data=profiles,
-        message="Candidate profiles retrieved successfully.",
+        data={
+            "id": resume.id,
+            "filename": resume.filename,
+            "status": resume.status,
+            "version": resume.version,
+            "is_active": resume.is_active,
+            "profile_id": resume.profile_id,
+            "error_message": resume.error_message,
+            "updated_at": resume.updated_at.isoformat() if resume.updated_at else None,
+        },
+        message=f"Resume processing status is '{resume.status}'.",
+    )
+
+
+@router.post(
+    "/{resume_id}/retry",
+    response_model=StandardResponse[ResumeDetailResponse],
+    summary="Retry failed or pending resume processing",
+    description="Retries text extraction and skill parsing for an existing stored resume file without re-uploading.",
+)
+async def retry_resume_processing(
+    resume_id: str,
+    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    repo: IResumeRepository = Depends(get_resume_repository),
+) -> StandardResponse[ResumeDetailResponse]:
+    """Retry resume parsing for an existing stored file without creating duplicate records."""
+    from app.core.exceptions import BadRequestError
+
+    resume = await repo.get_resume(resume_id)
+    if not resume:
+        raise NotFoundError(f"Resume '{resume_id}' not found.")
+
+    assert_resource_owner(
+        resource_user_id=resume.user_id,
+        principal=current_user,
+        allowed_roles=["admin"],
+    )
+
+    if resume.status == "completed" and resume.profile_id:
+        profile = await repo.get_by_id(resume.profile_id)
+        if profile:
+            return StandardResponse(
+                data=ResumeDetailResponse(resume=resume, profile=profile),
+                message="Resume is already processed successfully.",
+            )
+
+    storage = get_storage_service()
+    content = await storage.get_file(resume.storage_key)
+
+    resume.status = "processing"
+    resume.updated_at = datetime.now(timezone.utc)
+    await repo.create_resume(resume)
+
+    pipeline = ResumePipeline(repo=repo)
+    try:
+        profile = await pipeline.process_resume(
+            file_bytes=content,
+            filename=resume.filename,
+            content_type=resume.mime_type,
+            user_id=resume.user_id,
+        )
+        resume.status = "completed"
+        resume.profile_id = profile.id
+        resume.extracted_text = profile.summary or ""
+        resume.error_message = None
+        resume.updated_at = datetime.now(timezone.utc)
+        saved = await repo.create_resume(resume)
+        return StandardResponse(
+            data=ResumeDetailResponse(resume=saved, profile=profile),
+            message="Resume processing retried and completed successfully.",
+        )
+    except Exception as exc:
+        resume.status = "failed"
+        resume.error_message = str(exc)
+        resume.updated_at = datetime.now(timezone.utc)
+        await repo.create_resume(resume)
+        raise BadRequestError(f"Resume retry failed: {str(exc)}")
+
+
+@router.get(
+    "/{resume_id}",
+    response_model=StandardResponse[Any],
+    summary="Get resume or candidate profile by ID",
+    description="Retrieve authorized resume and its parsed profile or candidate profile by ID.",
+)
+async def get_resume_or_profile(
+    resume_id: str,
+    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    repo: IResumeRepository = Depends(get_resume_repository),
+) -> StandardResponse[Any]:
+    """Retrieve resume record and profile with server-side ownership authorization check."""
+    resume = await repo.get_resume(resume_id)
+    if resume:
+        assert_resource_owner(
+            resource_user_id=resume.user_id,
+            principal=current_user,
+            allowed_roles=["admin", "recruiter"],
+        )
+        profile = None
+        if resume.profile_id:
+            profile = await repo.get_by_id(resume.profile_id)
+        return StandardResponse(
+            data=ResumeDetailResponse(resume=resume, profile=profile),
+            message="Resume details retrieved successfully.",
+        )
+
+    profile = await repo.get_by_id(resume_id)
+    if not profile:
+        profile = await repo.resolve_profile(
+            identifier=resume_id,
+            user_id=current_user.id if current_user.role not in ("admin", "recruiter") else None,
+        )
+
+    if profile:
+        assert_resource_owner(
+            resource_user_id=profile.user_id,
+            principal=current_user,
+            allowed_roles=["admin", "recruiter"],
+        )
+        return StandardResponse(
+            data=profile,
+            message="Candidate profile retrieved successfully.",
+        )
+
+    raise NotFoundError(f"Resume or candidate profile '{resume_id}' not found.")
+
+
+@router.patch(
+    "/{resume_id}/active",
+    response_model=StandardResponse[ResumeRecord],
+    summary="Select a resume for matching",
+    description="Marks the specified resume as active and deactivates other resumes for this candidate.",
+)
+async def set_active_resume(
+    resume_id: str,
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
+    repo: IResumeRepository = Depends(get_resume_repository),
+) -> StandardResponse[ResumeRecord]:
+    """Select a specific resume as active for matching."""
+    resume = await repo.get_resume(resume_id)
+    if not resume:
+        raise NotFoundError(f"Resume '{resume_id}' not found.")
+    assert_resource_owner(
+        resource_user_id=resume.user_id,
+        principal=current_user,
+        allowed_roles=["admin"],
+    )
+    success = await repo.set_active_resume(current_user.id, resume_id)
+    if not success:
+        raise NotFoundError(f"Failed to activate resume '{resume_id}'.")
+    updated = await repo.get_resume(resume_id)
+
+    # Invalidate stale match records by ensuring matching results are computed for the newly activated profile
+    if updated and updated.profile_id:
+        profile = await repo.get_by_id(updated.profile_id)
+        if profile:
+            try:
+                from app.repositories.match_repo import get_match_repository
+                from app.repositories.job_repo import get_job_repository
+                from app.matching.engine import MatchingEngine
+                match_repo = get_match_repository()
+                existing_matches = await match_repo.get_by_candidate_id(profile.id)
+                if not existing_matches:
+                    job_repo = get_job_repository()
+                    await ensure_active_jobs_catalog(job_repo)
+                    engine = MatchingEngine(job_repository=job_repo)
+                    rec_res = await engine.recommend_jobs_for_candidate(candidate=profile, top_k=50, min_score=0.0)
+                    for m in rec_res.matches:
+                        await match_repo.save_match(m)
+            except Exception as exc:
+                logger.warning("Match generation on active resume switch failed: %s", exc)
+
+    MatchingApplicationService.invalidate_cache(current_user.id)
+    return StandardResponse(
+        data=updated or resume,
+        message=f"Resume '{resume.filename}' set as active matching document.",
+    )
+
+
+@router.delete(
+    "/{resume_id}",
+    response_model=StandardResponse[Dict[str, Any]],
+    summary="Delete a resume and clean up files",
+    description="Deletes an authorized resume, its stored physical file, and associated database data.",
+)
+async def delete_resume(
+    resume_id: str,
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
+    repo: IResumeRepository = Depends(get_resume_repository),
+) -> StandardResponse[Dict[str, Any]]:
+    """Delete an authorized resume and its stored physical file."""
+    resume = await repo.get_resume(resume_id)
+    if not resume:
+        # Check if legacy profile
+        profile = await repo.get_by_id(resume_id)
+        if profile:
+            assert_resource_owner(profile.user_id, current_user, allowed_roles=["admin"])
+            await repo.delete_profile(resume_id)
+            return StandardResponse(data={"deleted": True, "id": resume_id}, message="Profile deleted successfully.")
+        raise NotFoundError(f"Resume '{resume_id}' not found.")
+
+    assert_resource_owner(
+        resource_user_id=resume.user_id,
+        principal=current_user,
+        allowed_roles=["admin"],
+    )
+
+    # 1. Clean up file from private storage
+    storage = get_storage_service()
+    if resume.storage_key:
+        try:
+            await storage.delete_file(resume.storage_key)
+        except Exception:
+            pass
+
+    # 2. Clean up database record
+    await repo.delete_resume(resume_id)
+
+    # 3. Clean up associated profile if present
+    if resume.profile_id:
+        try:
+            await repo.delete_profile(resume.profile_id)
+        except Exception:
+            pass
+
+    MatchingApplicationService.invalidate_cache(current_user.id)
+    return StandardResponse(
+        data={"deleted": True, "id": resume_id},
+        message="Resume and associated files deleted successfully.",
     )
 
 
@@ -327,7 +748,7 @@ async def list_candidate_profiles(
 async def update_candidate_profile(
     profile_id: str,
     payload: CandidateProfile = Body(..., embed=False),
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
     repo: IResumeRepository = Depends(get_resume_repository),
 ) -> StandardResponse[CandidateProfile]:
     """Update existing candidate profile with resource ownership check."""
@@ -346,3 +767,4 @@ async def update_candidate_profile(
         data=updated,
         message="Candidate profile updated successfully.",
     )
+

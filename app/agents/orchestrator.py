@@ -101,6 +101,7 @@ class AgentOrchestrator:
         self,
         request: AgentTaskRequest,
         principal: AuthenticatedPrincipal,
+        candidate_profile: Optional[CandidateProfile] = None,
     ) -> AgentTaskResponse:
         """Execute agent task through explicit state transitions and policy-enforced tool execution."""
         task_id = f"task_{uuid.uuid4().hex[:12]}"
@@ -110,6 +111,23 @@ class AgentOrchestrator:
         step_events: List[AgentStepEvent] = []
         collected_results: List[Any] = []
         final_answer = ""
+
+        # Auto-resolve candidate profile if caller is a candidate and profile not passed
+        if candidate_profile is None and principal.role == "candidate":
+            try:
+                candidate_profile = await self.resume_repo.resolve_profile(user_id=principal.id)
+            except Exception:
+                pass
+        if candidate_profile is None and request.candidate_id:
+            try:
+                candidate_profile = await self.resume_repo.resolve_profile(
+                    identifier=request.candidate_id,
+                    user_id=principal.id if principal.role not in ("admin", "recruiter") else None,
+                )
+            except Exception:
+                pass
+        if candidate_profile and not request.candidate_id:
+            request.candidate_id = candidate_profile.id
 
         try:
             # 1. State: RECEIVED -> AUTHORIZED
@@ -270,30 +288,92 @@ class AgentOrchestrator:
                     final_answer = f"Resource not found: {str(exc)}"
                     break
 
-            # 4. Final Answer Synthesis & Validation
+            # 4. Final Answer Synthesis & Validation with Rich Evidence Context
             cand_ctx = None
-            if request.candidate_id:
+            c_rec = candidate_profile
+            if not c_rec and request.candidate_id:
                 try:
                     c_rec = await self.resume_repo.get_by_id(request.candidate_id)
-                    if c_rec:
-                        cand_ctx = {
-                            "full_name": principal.full_name or c_rec.full_name,
-                            "headline": c_rec.headline or c_rec.current_role,
-                            "skills": [s.name for s in c_rec.skills],
-                            "years_of_experience": c_rec.years_of_experience,
-                        }
+                    if not c_rec:
+                        c_rec = await self.resume_repo.resolve_profile(identifier=request.candidate_id)
                 except Exception as exc:
                     logger.debug("Candidate context lookup non-critical notice: %s", exc)
+
+            if not c_rec and principal.role == "candidate":
+                try:
+                    c_rec = await self.resume_repo.resolve_profile(user_id=principal.id)
+                except Exception:
+                    pass
+
+            if c_rec:
+                top_matches_summary = []
+                try:
+                    from app.repositories.match_repo import get_match_repository
+                    match_repo = get_match_repository()
+                    cand_matches = await match_repo.get_matches_for_candidate(c_rec.id)
+                    if cand_matches:
+                        for m in cand_matches[:5]:
+                            j = await self.job_repo.get_by_id(m.job_id)
+                            if j:
+                                top_matches_summary.append({
+                                    "title": j.title,
+                                    "company": j.company,
+                                    "score": m.overall_score,
+                                })
+                except Exception:
+                    pass
+
+                cand_ctx = {
+                    "full_name": principal.full_name or c_rec.full_name or "Candidate",
+                    "email": principal.email or c_rec.email,
+                    "headline": getattr(c_rec, "headline", None) or getattr(c_rec, "current_role", None) or "Software Professional",
+                    "summary": c_rec.summary or "",
+                    "skills": [s.name for s in c_rec.skills],
+                    "years_of_experience": getattr(c_rec, "years_of_experience", None),
+                    "experience": [
+                        {
+                            "title": e.title,
+                            "company": e.company,
+                            "start_date": e.start_date,
+                            "end_date": e.end_date,
+                            "description": e.description,
+                        }
+                        for e in c_rec.experience
+                    ],
+                    "education": [
+                        {
+                            "institution": ed.institution,
+                            "degree": ed.degree,
+                            "field_of_study": ed.field_of_study,
+                            "graduation_year": ed.graduation_year,
+                        }
+                        for ed in c_rec.education
+                    ],
+                    "top_matches": top_matches_summary,
+                }
 
             job_ctx = None
             if request.job_id:
                 try:
                     j_rec = await self.job_repo.get_by_id(request.job_id)
                     if j_rec:
+                        match_score = None
+                        if c_rec:
+                            try:
+                                from app.repositories.match_repo import get_match_repository
+                                m_rec = await get_match_repository().get_match(c_rec.id, j_rec.id)
+                                if m_rec:
+                                    match_score = m_rec.overall_score
+                            except Exception:
+                                pass
+
                         job_ctx = {
                             "title": j_rec.title,
                             "company": j_rec.company,
+                            "location": j_rec.location,
                             "required_skills": j_rec.required_skills,
+                            "preferred_skills": j_rec.preferred_skills,
+                            "match_score": match_score,
                         }
                 except Exception as exc:
                     logger.debug("Job context lookup non-critical notice: %s", exc)

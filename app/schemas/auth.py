@@ -32,6 +32,7 @@ class UserResponse(BaseModel):
     email: EmailStr = Field(description="User email address")
     full_name: str = Field(description="User full name")
     role: str = Field(description="User system role")
+    email_verified: bool = Field(default=False, description="Email verification status")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -52,6 +53,7 @@ class AuthenticatedPrincipal(BaseModel):
     full_name: Optional[str] = None
     role: str = Field(default="candidate", description="Principal role")
     is_active: bool = Field(default=True, description="Account active status")
+    email_verified: bool = Field(default=False, description="Email verification status from provider")
 
 
 class FirebaseLoginRequest(BaseModel):
@@ -72,3 +74,19 @@ class FirebaseConfigResponse(BaseModel):
     messagingSenderId: str
     appId: str
     measurementId: Optional[str] = None
+
+
+class SendVerificationEmailRequest(BaseModel):
+    """Payload to trigger verification email from client SDK."""
+
+    id_token: Optional[str] = Field(default=None, description="Firebase ID token of user to verify")
+    email: Optional[EmailStr] = Field(default=None, description="User email address")
+
+
+class VerificationLinkResponse(BaseModel):
+    """Response returning verification operation status or direct link for test/dev."""
+
+    status: str
+    email: str
+    verification_link: Optional[str] = None
+    message: Optional[str] = None

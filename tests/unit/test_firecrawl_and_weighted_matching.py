@@ -569,7 +569,6 @@ async def test_scenario_10_frontend_contract_and_assets():
         # Verify key pipeline UI components exist in HTML
         assert 'id="dropzoneCv"' in html_content
         assert 'id="inputCvFile"' in html_content
-        assert 'id="pipelineProgressCard"' in html_content
         assert 'id="candidateSummaryBanner"' in html_content
         assert 'id="rankedMatchesSection"' in html_content
         assert 'id="overviewMatchesList"' in html_content

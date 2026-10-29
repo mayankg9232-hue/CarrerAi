@@ -17,6 +17,7 @@ class UserRecord:
     full_name: str
     role: str = "candidate"
     is_active: bool = True
+    email_verified: bool = False
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
@@ -30,6 +31,7 @@ class IUserRepository(ABC):
         hashed_password: str,
         full_name: str,
         role: str = "candidate",
+        email_verified: bool = False,
     ) -> UserRecord:
         """Create and persist a new user record."""
         pass
@@ -73,6 +75,7 @@ class InMemoryUserRepository(IUserRepository):
         hashed_password: str,
         full_name: str,
         role: str = "candidate",
+        email_verified: bool = False,
     ) -> UserRecord:
         norm_email = email.lower().strip()
         if norm_email in self._id_by_email:
@@ -86,6 +89,7 @@ class InMemoryUserRepository(IUserRepository):
             full_name=full_name,
             role=role,
             is_active=True,
+            email_verified=email_verified,
             created_at=datetime.now(timezone.utc),
         )
         self._users_by_id[user_id] = user

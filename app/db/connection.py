@@ -24,9 +24,11 @@ from app.db.schema import (
     CREATE_CANDIDATE_PROFILES_TABLE,
     CREATE_JOBS_TABLE,
     CREATE_MATCH_RECORDS_TABLE,
+    CREATE_RESUMES_TABLE,
     CREATE_SCRAPING_LOCKS_TABLE,
     CREATE_SCRAPING_RUNS_TABLE,
     CREATE_SCRAPING_SOURCES_TABLE,
+    CREATE_USER_SAVED_JOBS_TABLE,
     CREATE_USERS_TABLE,
 )
 
@@ -119,9 +121,10 @@ class DatabaseManager:
                     clean_url = self._clean_postgres_url(self.database_url)
                     self._pg_pool = await asyncpg.create_pool(
                         clean_url,
-                        min_size=1,
-                        max_size=10,
-                        timeout=10.0,
+                        min_size=3,
+                        max_size=15,
+                        timeout=25.0,
+                        command_timeout=30.0,
                         statement_cache_size=0,
                     )
                     async with self._pg_pool.acquire() as conn:
@@ -129,6 +132,8 @@ class DatabaseManager:
                             CREATE_USERS_TABLE,
                             CREATE_JOBS_TABLE,
                             CREATE_CANDIDATE_PROFILES_TABLE,
+                            CREATE_RESUMES_TABLE,
+                            CREATE_USER_SAVED_JOBS_TABLE,
                             CREATE_MATCH_RECORDS_TABLE,
                             CREATE_SCRAPING_RUNS_TABLE,
                             CREATE_SCRAPING_SOURCES_TABLE,
@@ -138,26 +143,30 @@ class DatabaseManager:
                                 stmt = stmt.strip()
                                 if stmt:
                                     await conn.execute(stmt)
-                        # PostgreSQL migration: add missing columns to jobs table idempotently
-                        for col_stmt in [
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS external_job_id VARCHAR(255)",
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS source_platform VARCHAR(64)",
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS department VARCHAR(255)",
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS employment_type VARCHAR(64)",
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS workplace_type VARCHAR(64)",
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS posted_at TEXT",
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS updated_at TEXT",
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS salary VARCHAR(255)",
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS experience_years_required REAL",
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS education_required VARCHAR(255)",
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS responsibilities TEXT DEFAULT '[]'",
-                            "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS domain VARCHAR(128)",
-                            "CREATE INDEX IF NOT EXISTS idx_jobs_platform_ext_id ON jobs(source_platform, external_job_id)",
-                        ]:
-                            try:
-                                await conn.execute(col_stmt)
-                            except Exception:
-                                pass
+                        # PostgreSQL migration: add missing columns to jobs and users table idempotently
+                        consolidated_ddl = """
+                            ALTER TABLE users
+                                ADD COLUMN IF NOT EXISTS email_verified INTEGER NOT NULL DEFAULT 0;
+                            ALTER TABLE jobs
+                                ADD COLUMN IF NOT EXISTS external_job_id VARCHAR(255),
+                                ADD COLUMN IF NOT EXISTS source_platform VARCHAR(64),
+                                ADD COLUMN IF NOT EXISTS department VARCHAR(255),
+                                ADD COLUMN IF NOT EXISTS employment_type VARCHAR(64),
+                                ADD COLUMN IF NOT EXISTS workplace_type VARCHAR(64),
+                                ADD COLUMN IF NOT EXISTS posted_at TEXT,
+                                ADD COLUMN IF NOT EXISTS updated_at TEXT,
+                                ADD COLUMN IF NOT EXISTS salary VARCHAR(255),
+                                ADD COLUMN IF NOT EXISTS experience_years_required REAL,
+                                ADD COLUMN IF NOT EXISTS education_required VARCHAR(255),
+                                ADD COLUMN IF NOT EXISTS responsibilities TEXT DEFAULT '[]',
+                                ADD COLUMN IF NOT EXISTS domain VARCHAR(128),
+                                ADD COLUMN IF NOT EXISTS apply_url TEXT;
+                            CREATE INDEX IF NOT EXISTS idx_jobs_platform_ext_id ON jobs(source_platform, external_job_id);
+                        """
+                        try:
+                            await conn.execute(consolidated_ddl)
+                        except Exception as e:
+                            logger.debug("Idempotent jobs column migration notice: %s", e)
                     self._initialized = True
                     logger.info("PostgreSQL database pool initialized successfully with core tables and scraping models.")
                     return
@@ -271,12 +280,22 @@ class DatabaseManager:
                 conn.executescript(CREATE_USERS_TABLE)
                 conn.executescript(CREATE_JOBS_TABLE)
                 conn.executescript(CREATE_CANDIDATE_PROFILES_TABLE)
+                conn.executescript(CREATE_RESUMES_TABLE)
+                conn.executescript(CREATE_USER_SAVED_JOBS_TABLE)
                 conn.executescript(CREATE_MATCH_RECORDS_TABLE)
                 conn.executescript(CREATE_SCRAPING_RUNS_TABLE)
                 conn.executescript(CREATE_SCRAPING_SOURCES_TABLE)
                 conn.executescript(CREATE_SCRAPING_LOCKS_TABLE)
 
-                # SQLite migration: add missing columns to jobs table idempotently
+                # SQLite migration: add missing columns to jobs and users table idempotently
+                cursor_u = conn.execute("PRAGMA table_info(users)")
+                existing_user_cols = {row["name"] for row in cursor_u.fetchall()}
+                if "email_verified" not in existing_user_cols:
+                    try:
+                        conn.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0")
+                    except Exception:
+                        pass
+
                 cursor = conn.execute("PRAGMA table_info(jobs)")
                 existing_cols = {row["name"] for row in cursor.fetchall()}
                 migration_cols = [
@@ -292,6 +311,7 @@ class DatabaseManager:
                     ("education_required", "TEXT"),
                     ("responsibilities", "TEXT DEFAULT '[]'"),
                     ("domain", "TEXT"),
+                    ("apply_url", "TEXT"),
                 ]
                 for col_name, col_type in migration_cols:
                     if col_name not in existing_cols:

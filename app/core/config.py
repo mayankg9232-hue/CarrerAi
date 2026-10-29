@@ -46,6 +46,8 @@ class Settings(BaseSettings):
     FIREBASE_MEASUREMENT_ID: str = "G-EMPGKM4ZG6"
     FIREBASE_SERVICE_ACCOUNT_PATH: str = ""
     AUTH_PROVIDER: str = "hybrid"  # "local", "firebase", or "hybrid"
+    ALLOW_MOCK_FIREBASE: bool = False
+    REQUIRE_EMAIL_VERIFICATION: bool = True
 
     # Database & PostgreSQL
     DATABASE_URL: str = "sqlite:///./app_dev.db"
@@ -108,6 +110,7 @@ class Settings(BaseSettings):
         "text/plain",
     ]
     MAX_CV_SIZE_BYTES: int = 5 * 1024 * 1024  # 5 MB
+    RESUME_STORAGE_DIR: str = "storage/resumes"
 
     # Automated Weekly Scraping (Firecrawl & Neon / ATS Platforms)
     SCRAPING_ENABLED: bool = True

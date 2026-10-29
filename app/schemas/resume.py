@@ -53,3 +53,56 @@ class CandidateProfile(BaseModel):
     experience: List[ExperienceItem] = Field(default_factory=list, description="Work history entries")
     education: List[EducationItem] = Field(default_factory=list, description="Education history entries")
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ResumeRecord(BaseModel):
+    """Persisted resume file entity associated with an authenticated candidate user."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    id: str = Field(description="Unique resume identifier")
+    user_id: str = Field(description="Authenticated owner user identifier")
+    filename: str = Field(description="Original uploaded document filename")
+    storage_key: str = Field(description="Private durable storage reference path")
+    file_size: int = Field(ge=0, description="File size in bytes")
+    mime_type: str = Field(description="MIME media type")
+    raw_hash: str = Field(description="SHA-256 checksum of raw file bytes")
+    status: str = Field(default="completed", description="Processing lifecycle state: uploaded, processing, completed, failed")
+    is_active: bool = Field(default=True, description="Whether this version is selected as active for matching")
+    version: int = Field(default=1, ge=1, description="Sequential version counter for user's CVs")
+    profile_id: Optional[str] = Field(default=None, description="Linked CandidateProfile identifier")
+    extracted_text: Optional[str] = Field(default=None, description="Raw text extracted from document")
+    error_message: Optional[str] = Field(default=None, description="Safe error details if processing failed")
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ResumeListItem(BaseModel):
+    """Lightweight resume metadata for dashboard and selection listings."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    id: str
+    user_id: str
+    filename: str
+    file_size: int
+    mime_type: str
+    status: str
+    is_active: bool
+    version: int
+    profile_id: Optional[str] = None
+    created_at: datetime
+
+
+class ResumeDetailResponse(BaseModel):
+    """Full resume metadata paired with its parsed candidate profile."""
+
+    resume: ResumeRecord
+    profile: Optional[CandidateProfile] = None
+
+
+class SetActiveResumeRequest(BaseModel):
+    """Request model to update active resume selection."""
+
+    is_active: bool = Field(default=True, description="Flag designating active status")
+

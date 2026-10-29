@@ -1,15 +1,17 @@
 """Matching, recommendations, and explainability endpoints (Phase 5 Developer A)."""
 
-from typing import Dict
-from fastapi import APIRouter, Body, Depends, Query, status
+import time
+from typing import Dict, List, Optional
+from fastapi import APIRouter, Body, Depends, Query, Response, status
 
-from app.authentication.dependencies import get_current_user
+from app.authentication.dependencies import get_current_user, require_verified_user
 from app.schemas.auth import AuthenticatedPrincipal
 from app.schemas.common import StandardResponse
 from app.schemas.matching import (
     MatchRequest,
     MatchResult,
     RecommendedMatchesResponse,
+    RankedMatchesSummaryResponse,
 )
 from app.services.matching_service import (
     MatchingApplicationService,
@@ -29,7 +31,7 @@ router = APIRouter()
 async def match_candidate_to_job(
     candidate_id: str,
     job_id: str,
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
     service: MatchingApplicationService = Depends(get_matching_app_service),
 ) -> StandardResponse[MatchResult]:
     """Calculate explainable candidate-job match evaluation with score breakdown and gap analysis."""
@@ -53,7 +55,7 @@ async def match_candidate_to_job(
 )
 async def match_candidate_to_job_body(
     payload: MatchRequest = Body(..., embed=False),
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
     service: MatchingApplicationService = Depends(get_matching_app_service),
 ) -> StandardResponse[MatchResult]:
     """Calculate match score from body request containing candidate_id and job_id."""
@@ -79,7 +81,7 @@ async def get_candidate_recommendations(
     candidate_id: str,
     min_score: float = Query(60.0, ge=0.0, le=100.0, description="Minimum overall match score (0-100)"),
     limit: int = Query(10, ge=1, le=50, description="Maximum number of recommendations to return"),
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
     service: MatchingApplicationService = Depends(get_matching_app_service),
 ) -> StandardResponse[RecommendedMatchesResponse]:
     """Retrieve ranked job recommendations for candidate profile."""
@@ -105,7 +107,7 @@ async def get_candidate_recommendations(
 async def get_rag_context(
     candidate_id: str,
     job_id: str,
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
     service: MatchingApplicationService = Depends(get_matching_app_service),
 ) -> StandardResponse[Dict[str, str]]:
     """Assemble injection-shielded RAG context for candidate and job."""
@@ -129,7 +131,7 @@ async def get_rag_context(
 )
 async def get_candidate_match_history(
     candidate_id: str,
-    current_user: AuthenticatedPrincipal = Depends(get_current_user),
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
     service: MatchingApplicationService = Depends(get_matching_app_service),
 ) -> StandardResponse[list]:
     """Retrieve persisted match history for candidate profile."""
@@ -140,5 +142,68 @@ async def get_candidate_match_history(
     return StandardResponse(
         data=records,
         message=f"Retrieved {len(records)} persisted match record(s).",
+    )
+
+
+@router.get(
+    "",
+    response_model=StandardResponse[RankedMatchesSummaryResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Get user's ranked job matches",
+    description="Retrieve persisted ranked matches for authenticated user's active resume, or calculate if missing.",
+)
+async def get_user_ranked_matches(
+    response: Response,
+    resume_id: Optional[str] = Query(None, description="Optional resume ID; defaults to user's active resume"),
+    force_refresh: bool = Query(False, description="Whether to recalculate matches against available catalog jobs"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of recommendations to return"),
+    async_matching: bool = Query(False, description="Whether to return immediately with status='matching' if matches are not yet computed"),
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
+    service: MatchingApplicationService = Depends(get_matching_app_service),
+) -> StandardResponse[RankedMatchesSummaryResponse]:
+    """Retrieve ranked job recommendations for candidate's active resume."""
+    t_start = time.perf_counter()
+    result = await service.get_or_compute_ranked_matches(
+        principal=current_user,
+        resume_id=resume_id,
+        force_refresh=force_refresh,
+        limit=limit,
+        async_matching=async_matching,
+    )
+    elapsed_ms = (time.perf_counter() - t_start) * 1000
+    response.headers["X-Process-Time-Ms"] = f"{elapsed_ms:.1f}"
+    return StandardResponse(
+        data=result,
+        message=result.message or "Ranked job recommendations retrieved successfully.",
+    )
+
+
+@router.post(
+    "/refresh",
+    response_model=StandardResponse[RankedMatchesSummaryResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Refresh user's ranked job matches",
+    description="Explicitly re-run matching for authenticated user's active resume against current jobs catalog.",
+)
+async def refresh_user_ranked_matches(
+    response: Response,
+    resume_id: Optional[str] = Query(None, description="Optional resume ID; defaults to user's active resume"),
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of recommendations to return"),
+    current_user: AuthenticatedPrincipal = Depends(require_verified_user),
+    service: MatchingApplicationService = Depends(get_matching_app_service),
+) -> StandardResponse[RankedMatchesSummaryResponse]:
+    """Force re-calculation of ranked matches for active resume."""
+    t_start = time.perf_counter()
+    result = await service.get_or_compute_ranked_matches(
+        principal=current_user,
+        resume_id=resume_id,
+        force_refresh=True,
+        limit=limit,
+    )
+    elapsed_ms = (time.perf_counter() - t_start) * 1000
+    response.headers["X-Process-Time-Ms"] = f"{elapsed_ms:.1f}"
+    return StandardResponse(
+        data=result,
+        message=result.message or "Ranked job matches refreshed successfully.",
     )
 

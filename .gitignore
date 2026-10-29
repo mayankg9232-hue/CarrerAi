@@ -77,3 +77,4 @@ sandbox-temp/
 
 # Large binary files & ephemeral media
 *.pdf
+storage/

@@ -23,6 +23,11 @@ class IMatchRepository(ABC):
         pass
 
     @abstractmethod
+    async def get_ranked_matches_with_jobs(self, candidate_id: str, limit: int = 50) -> List[Any]:
+        """Retrieve ranked persisted matches joined with active jobs for candidate."""
+        pass
+
+    @abstractmethod
     async def get_match(self, candidate_id: str, job_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve latest match between a specific candidate and job."""
         pass
@@ -40,6 +45,17 @@ class InMemoryMatchRepository(IMatchRepository):
         self._matches: List[Dict[str, Any]] = []
 
     async def save_match(self, match: MatchResult) -> MatchResult:
+        # Idempotent update: prevent duplicate records for candidate-job pair
+        for m in self._matches:
+            if m["candidate_id"] == match.candidate_id and m["job_id"] == match.job_id:
+                m["overall_score"] = match.overall_score
+                m["score_breakdown"] = match.breakdown.model_dump(mode="json")
+                m["matched_skills"] = match.matched_skills
+                m["missing_skills"] = match.missing_skills
+                m["caveat"] = match.caveat
+                m["created_at"] = datetime.now(timezone.utc).isoformat()
+                return match
+
         match_id = f"match_{uuid.uuid4().hex[:12]}"
         record = {
             "id": match_id,
@@ -58,6 +74,42 @@ class InMemoryMatchRepository(IMatchRepository):
     async def get_matches_for_candidate(self, candidate_id: str) -> List[Dict[str, Any]]:
         results = [m for m in self._matches if m["candidate_id"] == candidate_id]
         results.sort(key=lambda m: m["overall_score"], reverse=True)
+        return results
+
+    async def get_ranked_matches_with_jobs(self, candidate_id: str, limit: int = 50) -> List[Any]:
+        from app.schemas.matching import JobMatchItem, MatchResult, ScoreBreakdown
+        from app.repositories.job_repo import get_job_repository
+        job_repo = get_job_repository()
+
+        matches = [m for m in self._matches if m["candidate_id"] == candidate_id]
+        matches.sort(key=lambda m: m["overall_score"], reverse=True)
+
+        seen_jobs = set()
+        results: List[JobMatchItem] = []
+        for m in matches:
+            job_id = m["job_id"]
+            if job_id in seen_jobs:
+                continue
+            seen_jobs.add(job_id)
+
+            job = await job_repo.get_by_id(job_id)
+            if not job or not job.is_active:
+                continue
+
+            match_res = MatchResult(
+                candidate_id=m["candidate_id"],
+                job_id=job_id,
+                overall_score=m["overall_score"],
+                breakdown=ScoreBreakdown.model_validate(m["score_breakdown"]),
+                matched_skills=m["matched_skills"],
+                missing_skills=m["missing_skills"],
+                explanation=m.get("caveat") or "Deterministic match based on extracted skills and experience.",
+                caveat=m.get("caveat") or "Deterministic match based on extracted skills and experience.",
+            )
+            results.append(JobMatchItem(match=match_res, job=job))
+            if len(results) >= limit:
+                break
+
         return results
 
     async def get_match(self, candidate_id: str, job_id: str) -> Optional[Dict[str, Any]]:

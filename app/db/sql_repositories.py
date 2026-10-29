@@ -4,7 +4,8 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import logging
-from typing import Any, Dict, List, Optional
+import time
+from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
 from app.db.connection import DatabaseManager, UniqueConstraintViolationError, get_db_manager
@@ -14,7 +15,7 @@ from app.repositories.resume_repo import IResumeRepository
 from app.repositories.user_repo import IUserRepository, UserRecord
 from app.schemas.job import Job
 from app.schemas.matching import MatchResult, ScoreBreakdown
-from app.schemas.resume import CandidateProfile, EducationItem, ExperienceItem, SkillItem
+from app.schemas.resume import CandidateProfile, EducationItem, ExperienceItem, ResumeRecord, SkillItem
 
 logger = logging.getLogger("ai_job_matcher.repositories")
 
@@ -31,16 +32,17 @@ class SQLUserRepository(IUserRepository):
         hashed_password: str,
         full_name: str,
         role: str = "candidate",
+        email_verified: bool = False,
     ) -> UserRecord:
         norm_email = email.lower().strip()
         user_id = f"usr_{uuid.uuid4().hex[:12]}"
         now = datetime.now(timezone.utc)
         query = """
-        INSERT INTO users (id, email, hashed_password, full_name, role, is_active, created_at)
-        VALUES (?, ?, ?, ?, ?, 1, ?)
+        INSERT INTO users (id, email, hashed_password, full_name, role, is_active, email_verified, created_at)
+        VALUES (?, ?, ?, ?, ?, 1, ?, ?)
         """
         try:
-            await self.db.execute(query, (user_id, norm_email, hashed_password, full_name, role, now.isoformat()))
+            await self.db.execute(query, (user_id, norm_email, hashed_password, full_name, role, 1 if email_verified else 0, now.isoformat()))
         except UniqueConstraintViolationError:
             raise ValueError(f"User with email {norm_email} already exists")
 
@@ -51,6 +53,7 @@ class SQLUserRepository(IUserRepository):
             full_name=full_name,
             role=role,
             is_active=True,
+            email_verified=email_verified,
             created_at=now,
         )
 
@@ -98,12 +101,19 @@ class SQLUserRepository(IUserRepository):
             full_name=row["full_name"],
             role=row["role"],
             is_active=bool(row["is_active"]),
+            email_verified=bool(row.get("email_verified", 0)),
             created_at=created_at,
         )
 
 
 class SQLJobRepository(IJobRepository):
     """Persistent SQL-backed job repository enforcing SHA-256 deduplication and query filtering."""
+
+    _active_jobs_count_cache: Optional[Tuple[float, int]] = None
+
+    @classmethod
+    def invalidate_count_cache(cls) -> None:
+        cls._active_jobs_count_cache = None
 
     def __init__(self, db_manager: Optional[DatabaseManager] = None) -> None:
         self.db = db_manager or get_db_manager()
@@ -123,10 +133,10 @@ class SQLJobRepository(IJobRepository):
         INSERT INTO jobs (
             id, title, company, location, description, required_skills, preferred_skills,
             experience_level, source, source_platform, external_job_id, department,
-            employment_type, workplace_type, source_url, content_hash, collected_at,
+            employment_type, workplace_type, source_url, apply_url, content_hash, collected_at,
             posted_at, updated_at, salary, experience_years_required, education_required,
             responsibilities, domain, last_seen_at, is_active
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         params = (
             job.id,
@@ -144,6 +154,7 @@ class SQLJobRepository(IJobRepository):
             job.employment_type,
             job.workplace_type,
             job.source_url,
+            job.apply_url,
             content_hash,
             collected_at,
             posted_at,
@@ -171,6 +182,7 @@ class SQLJobRepository(IJobRepository):
                     await self.update_job(existing.id, last_seen_at=datetime.now(timezone.utc), is_active=True)
                     return await self.get_by_id(existing.id) or job
             raise
+        SQLJobRepository.invalidate_count_cache()
         return job
 
     async def get_by_id(self, job_id: str) -> Optional[Job]:
@@ -219,6 +231,7 @@ class SQLJobRepository(IJobRepository):
         params.append(job_id)
         query = f"UPDATE jobs SET {', '.join(fields)} WHERE id = ?"
         await self.db.execute(query, tuple(params))
+        SQLJobRepository.invalidate_count_cache()
         return await self.get_by_id(job_id)
 
     async def query_jobs(
@@ -272,6 +285,17 @@ class SQLJobRepository(IJobRepository):
         if skills:
             jobs = await self.query_jobs(q=q, skills=skills, location=location, only_active=only_active, limit=10000, offset=0)
             return len(jobs)
+
+        # Fast path: check in-memory TTL cache for total active catalog jobs count
+        if not q and not skills and not location and only_active:
+            now = time.time()
+            if self._active_jobs_count_cache and (now - self._active_jobs_count_cache[0]) < 60.0:
+                return self._active_jobs_count_cache[1]
+            row = await self.db.fetchone("SELECT COUNT(*) as cnt FROM jobs WHERE is_active = 1")
+            cnt = int(row["cnt"]) if row and "cnt" in row else 0
+            SQLJobRepository._active_jobs_count_cache = (now, cnt)
+            return cnt
+
         where_clauses = []
         params = []
         if only_active:
@@ -289,14 +313,69 @@ class SQLJobRepository(IJobRepository):
     async def mark_stale_jobs(self, stale_threshold_days: int = 30) -> int:
         threshold = (datetime.now(timezone.utc) - timedelta(days=stale_threshold_days)).isoformat()
         query = "UPDATE jobs SET is_active = 0 WHERE is_active = 1 AND last_seen_at < ?"
-        return await self.db.execute(query, (threshold,))
+        rows = await self.db.execute(query, (threshold,))
+        SQLJobRepository.invalidate_count_cache()
+        return rows
 
     async def list_all(self) -> List[Job]:
         rows = await self.db.fetchall("SELECT * FROM jobs ORDER BY collected_at DESC")
         return [self._to_job(r) for r in rows if r]
 
     async def clear(self) -> None:
+        await self.db.execute("DELETE FROM user_saved_jobs")
         await self.db.execute("DELETE FROM jobs")
+        SQLJobRepository.invalidate_count_cache()
+
+    # Saved Jobs Operations
+    async def save_job(self, user_id: str, job_id: str, notes: Optional[str] = None) -> bool:
+        job = await self.get_by_id(job_id)
+        if not job:
+            return False
+
+        save_id = f"sv_{uuid.uuid4().hex[:12]}"
+        now = datetime.now(timezone.utc).isoformat()
+        query = """
+        INSERT INTO user_saved_jobs (id, user_id, job_id, saved_at, notes)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(user_id, job_id) DO UPDATE SET saved_at = excluded.saved_at
+        """
+        try:
+            await self.db.execute(query, (save_id, user_id, job_id, now, notes))
+            return True
+        except Exception as e:
+            logger.error("Error saving job %s for user %s: %s", job_id, user_id, e)
+            return False
+
+    async def unsave_job(self, user_id: str, job_id: str) -> bool:
+        query = "DELETE FROM user_saved_jobs WHERE user_id = ? AND job_id = ?"
+        rows = await self.db.execute(query, (user_id, job_id))
+        return rows > 0
+
+    async def get_saved_jobs(self, user_id: str, limit: int = 50, offset: int = 0) -> List[Job]:
+        query = """
+        SELECT j.* FROM jobs j
+        INNER JOIN user_saved_jobs s ON j.id = s.job_id
+        WHERE s.user_id = ?
+        ORDER BY s.saved_at DESC
+        LIMIT ? OFFSET ?
+        """
+        rows = await self.db.fetchall(query, (user_id, limit, offset))
+        return [self._to_job(r) for r in rows if r]
+
+    async def get_saved_job_ids(self, user_id: str) -> List[str]:
+        query = "SELECT job_id FROM user_saved_jobs WHERE user_id = ? ORDER BY saved_at DESC"
+        rows = await self.db.fetchall(query, (user_id,))
+        return [r["job_id"] for r in rows if r]
+
+    async def count_saved_jobs(self, user_id: str) -> int:
+        query = "SELECT COUNT(*) as cnt FROM user_saved_jobs WHERE user_id = ?"
+        row = await self.db.fetchone(query, (user_id,))
+        return int(row["cnt"]) if row and "cnt" in row else 0
+
+    async def is_job_saved(self, user_id: str, job_id: str) -> bool:
+        query = "SELECT 1 FROM user_saved_jobs WHERE user_id = ? AND job_id = ?"
+        row = await self.db.fetchone(query, (user_id, job_id))
+        return bool(row)
 
     def _to_job(self, row: Dict[str, Any]) -> Job:
         collected = datetime.fromisoformat(row["collected_at"]) if isinstance(row["collected_at"], str) else row["collected_at"]
@@ -324,6 +403,7 @@ class SQLJobRepository(IJobRepository):
             employment_type=row.get("employment_type"),
             workplace_type=row.get("workplace_type"),
             source_url=row.get("source_url"),
+            apply_url=row.get("apply_url"),
             content_hash=row.get("content_hash"),
             collected_at=collected,
             posted_at=posted,
@@ -409,6 +489,59 @@ class SQLResumeRepository(IResumeRepository):
     async def clear(self) -> None:
         await self.db.execute("DELETE FROM candidate_profiles")
 
+    async def resolve_profile(
+        self,
+        identifier: Optional[str] = None,
+        user_id: Optional[str] = None,
+    ) -> Optional[CandidateProfile]:
+        """Resolve authoritative candidate profile by profile_id, resume_id, user_id, or client reference."""
+        if identifier:
+            # 1. Direct profile ID match (e.g. prof_...)
+            prof = await self.get_by_id(identifier)
+            if prof:
+                if user_id and prof.user_id != user_id:
+                    return None
+                return prof
+
+            # 2. Match via resume ID (e.g. res_...)
+            resume = await self.get_resume(identifier)
+            if resume:
+                if user_id and resume.user_id != user_id:
+                    return None
+                if resume.profile_id:
+                    p = await self.get_by_id(resume.profile_id)
+                    if p:
+                        return p
+
+            # 3. Handle synthetic or client-prefixed user identifiers (e.g. profile_usr_... or usr_...)
+            if identifier.startswith("profile_") or identifier.startswith("usr_"):
+                candidate_uid = identifier.replace("profile_", "")
+                target_uid = candidate_uid if candidate_uid.startswith("usr_") else user_id
+                if target_uid:
+                    active_res = await self.get_active_resume(target_uid)
+                    if active_res and active_res.profile_id:
+                        p = await self.get_by_id(active_res.profile_id)
+                        if p:
+                            return p
+                    user_profs = await self.get_by_user_id(target_uid)
+                    if user_profs:
+                        return user_profs[0]
+
+            return None
+
+        # 4. Contextual resolution by authenticated user ID
+        if user_id:
+            active_res = await self.get_active_resume(user_id)
+            if active_res and active_res.profile_id:
+                p = await self.get_by_id(active_res.profile_id)
+                if p:
+                    return p
+            user_profs = await self.get_by_user_id(user_id)
+            if user_profs:
+                return user_profs[0]
+
+        return None
+
     def _to_candidate_profile(self, row: Dict[str, Any]) -> CandidateProfile:
         created = datetime.fromisoformat(row["created_at"]) if isinstance(row["created_at"], str) else row["created_at"]
         raw_skills = json.loads(row["skills"]) if isinstance(row["skills"], str) else row["skills"]
@@ -429,6 +562,201 @@ class SQLResumeRepository(IResumeRepository):
             created_at=created,
         )
 
+    # Resume Document Methods
+    async def create_resume(self, resume: ResumeRecord) -> ResumeRecord:
+        now_iso = resume.created_at.isoformat() if resume.created_at else datetime.now(timezone.utc).isoformat()
+        updated_iso = resume.updated_at.isoformat() if resume.updated_at else now_iso
+
+        # If active, deactivate other resumes for this user
+        if resume.is_active:
+            await self.db.execute(
+                "UPDATE resumes SET is_active = 0, updated_at = ? WHERE user_id = ?",
+                (updated_iso, resume.user_id),
+            )
+
+        query = """
+        INSERT INTO resumes (
+            id, user_id, filename, storage_key, file_size, mime_type, raw_hash,
+            status, is_active, version, profile_id, extracted_text, error_message,
+            created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+            filename = excluded.filename,
+            storage_key = excluded.storage_key,
+            file_size = excluded.file_size,
+            status = excluded.status,
+            is_active = excluded.is_active,
+            version = excluded.version,
+            profile_id = excluded.profile_id,
+            extracted_text = excluded.extracted_text,
+            error_message = excluded.error_message,
+            updated_at = excluded.updated_at
+        """
+        params = (
+            resume.id,
+            resume.user_id,
+            resume.filename,
+            resume.storage_key,
+            resume.file_size,
+            resume.mime_type,
+            resume.raw_hash,
+            resume.status,
+            1 if resume.is_active else 0,
+            resume.version,
+            resume.profile_id,
+            resume.extracted_text,
+            resume.error_message,
+            now_iso,
+            updated_iso,
+        )
+        await self.db.execute(query, params)
+        return resume
+
+    async def get_resume(self, resume_id: str) -> Optional[ResumeRecord]:
+        row = await self.db.fetchone("SELECT * FROM resumes WHERE id = ?", (resume_id,))
+        return self._to_resume_record(row) if row else None
+
+    async def get_user_resumes(self, user_id: str) -> List[ResumeRecord]:
+        rows = await self.db.fetchall(
+            "SELECT * FROM resumes WHERE user_id = ? ORDER BY version DESC, created_at DESC",
+            (user_id,),
+        )
+        return [self._to_resume_record(r) for r in rows if r]
+
+    async def get_active_resume(self, user_id: str) -> Optional[ResumeRecord]:
+        row = await self.db.fetchone(
+            "SELECT * FROM resumes WHERE user_id = ? AND is_active = 1 ORDER BY updated_at DESC LIMIT 1",
+            (user_id,),
+        )
+        if not row:
+            resumes = await self.get_user_resumes(user_id)
+            return resumes[0] if resumes else None
+        return self._to_resume_record(row)
+
+    async def get_active_resume_and_profile(
+        self, user_id: str
+    ) -> Tuple[Optional[ResumeRecord], Optional[CandidateProfile]]:
+        """
+        Fast single-roundtrip retrieval of the user's active resume joined with candidate profile.
+        Eliminates sequential DB queries during dashboard initialization.
+        """
+        query = """
+        SELECT 
+            r.id AS r_id, r.user_id AS r_user_id, r.filename AS r_filename, r.storage_key AS r_storage_key,
+            r.file_size AS r_file_size, r.mime_type AS r_mime_type, r.raw_hash AS r_raw_hash,
+            r.status AS r_status, r.is_active AS r_is_active, r.version AS r_version,
+            r.profile_id AS r_profile_id, r.extracted_text AS r_extracted_text,
+            r.error_message AS r_error_message, r.created_at AS r_created_at, r.updated_at AS r_updated_at,
+            p.id AS p_id, p.user_id AS p_user_id, p.raw_hash AS p_raw_hash, p.full_name AS p_full_name,
+            p.email AS p_email, p.phone AS p_phone, p.summary AS p_summary, p.skills AS p_skills,
+            p.experience AS p_experience, p.education AS p_education, p.created_at AS p_created_at
+        FROM resumes r
+        LEFT JOIN candidate_profiles p ON (r.profile_id = p.id OR (r.profile_id IS NULL AND r.user_id = p.user_id))
+        WHERE r.user_id = ? AND r.is_active = 1
+        ORDER BY r.version DESC, r.created_at DESC
+        LIMIT 1
+        """
+        row = await self.db.fetchone(query, (user_id,))
+        if not row or not row.get("r_id"):
+            active_res = await self.get_active_resume(user_id)
+            if not active_res:
+                user_resumes = await self.get_user_resumes(user_id)
+                active_res = user_resumes[0] if user_resumes else None
+            if not active_res:
+                prof = await self.resolve_profile(user_id=user_id)
+                return None, prof
+            prof = await self.resolve_profile(identifier=active_res.profile_id, user_id=user_id)
+            return active_res, prof
+
+        resume = ResumeRecord(
+            id=row["r_id"],
+            user_id=row["r_user_id"],
+            filename=row["r_filename"],
+            storage_key=row["r_storage_key"],
+            file_size=int(row["r_file_size"]),
+            mime_type=row["r_mime_type"],
+            raw_hash=row["r_raw_hash"],
+            status=row.get("r_status", "completed"),
+            is_active=bool(row.get("r_is_active", 1)),
+            version=int(row.get("r_version", 1)),
+            profile_id=row.get("r_profile_id"),
+            extracted_text=row.get("r_extracted_text"),
+            error_message=row.get("r_error_message"),
+            created_at=datetime.fromisoformat(row["r_created_at"]) if isinstance(row["r_created_at"], str) else row["r_created_at"],
+            updated_at=datetime.fromisoformat(row["r_updated_at"]) if isinstance(row["r_updated_at"], str) else row["r_updated_at"],
+        )
+
+        profile = None
+        if row.get("p_id"):
+            raw_skills = json.loads(row["p_skills"]) if isinstance(row["p_skills"], str) else (row["p_skills"] or [])
+            raw_exp = json.loads(row["p_experience"]) if isinstance(row["p_experience"], str) else (row["p_experience"] or [])
+            raw_edu = json.loads(row["p_education"]) if isinstance(row["p_education"], str) else (row["p_education"] or [])
+            profile = CandidateProfile(
+                id=row["p_id"],
+                user_id=row["p_user_id"],
+                raw_hash=row["p_raw_hash"],
+                full_name=row["p_full_name"],
+                headline=row.get("p_phone") or row.get("headline"),
+                email=row["p_email"],
+                summary=row["p_summary"],
+                skills=[SkillItem.model_validate(s) for s in raw_skills],
+                experience=[ExperienceItem.model_validate(e) for e in raw_exp],
+                education=[EducationItem.model_validate(ed) for ed in raw_edu],
+                created_at=datetime.fromisoformat(row["p_created_at"]) if isinstance(row["p_created_at"], str) else row["p_created_at"],
+            )
+
+        return resume, profile
+
+    async def set_active_resume(self, user_id: str, resume_id: str) -> bool:
+        resume = await self.get_resume(resume_id)
+        if not resume or resume.user_id != user_id:
+            return False
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        await self.db.execute("UPDATE resumes SET is_active = 0, updated_at = ? WHERE user_id = ?", (now_iso, user_id))
+        rows = await self.db.execute(
+            "UPDATE resumes SET is_active = 1, updated_at = ? WHERE id = ? AND user_id = ?",
+            (now_iso, resume_id, user_id),
+        )
+        return rows > 0
+
+    async def delete_resume(self, resume_id: str) -> bool:
+        target = await self.get_resume(resume_id)
+        rows = await self.db.execute("DELETE FROM resumes WHERE id = ?", (resume_id,))
+        if rows > 0 and target and target.is_active:
+            remaining = await self.get_user_resumes(target.user_id)
+            if remaining:
+                await self.set_active_resume(target.user_id, remaining[0].id)
+        return rows > 0
+
+    async def get_resume_by_hash(self, user_id: str, raw_hash: str) -> Optional[ResumeRecord]:
+        row = await self.db.fetchone(
+            "SELECT * FROM resumes WHERE user_id = ? AND raw_hash = ? ORDER BY created_at DESC LIMIT 1",
+            (user_id, raw_hash),
+        )
+        return self._to_resume_record(row) if row else None
+
+    def _to_resume_record(self, row: Dict[str, Any]) -> ResumeRecord:
+        created = datetime.fromisoformat(row["created_at"]) if isinstance(row["created_at"], str) else row["created_at"]
+        updated = datetime.fromisoformat(row["updated_at"]) if isinstance(row["updated_at"], str) else row["updated_at"]
+        return ResumeRecord(
+            id=row["id"],
+            user_id=row["user_id"],
+            filename=row["filename"],
+            storage_key=row["storage_key"],
+            file_size=int(row["file_size"]),
+            mime_type=row["mime_type"],
+            raw_hash=row["raw_hash"],
+            status=row.get("status", "completed"),
+            is_active=bool(row.get("is_active", 1)),
+            version=int(row.get("version", 1)),
+            profile_id=row.get("profile_id"),
+            extracted_text=row.get("extracted_text"),
+            error_message=row.get("error_message"),
+            created_at=created,
+            updated_at=updated,
+        )
+
 
 class SQLMatchRepository(IMatchRepository):
     """Persistent SQL-backed repository for match records, score breakdowns, and audit trails."""
@@ -438,6 +766,27 @@ class SQLMatchRepository(IMatchRepository):
 
     async def save_match(self, match: MatchResult) -> MatchResult:
         now_iso = datetime.now(timezone.utc).isoformat()
+        existing = await self.get_match(match.candidate_id, match.job_id)
+        if existing:
+            query = """
+            UPDATE match_records
+            SET overall_score = ?, score_breakdown = ?, matched_skills = ?,
+                missing_skills = ?, caveat = ?, created_at = ?
+            WHERE candidate_id = ? AND job_id = ?
+            """
+            params = (
+                match.overall_score,
+                json.dumps(match.breakdown.model_dump(mode="json")),
+                json.dumps(match.matched_skills),
+                json.dumps(match.missing_skills),
+                match.caveat,
+                now_iso,
+                match.candidate_id,
+                match.job_id,
+            )
+            await self.db.execute(query, params)
+            return match
+
         match_id = f"match_{uuid.uuid4().hex[:12]}"
         query = """
         INSERT INTO match_records (
@@ -465,6 +814,86 @@ class SQLMatchRepository(IMatchRepository):
             (candidate_id,),
         )
         return rows
+
+    async def get_ranked_matches_with_jobs(self, candidate_id: str, limit: int = 50) -> List[Any]:
+        from app.schemas.matching import JobMatchItem, MatchResult, ScoreBreakdown
+        from app.schemas.job import Job
+
+        query = """
+        SELECT 
+            m.id AS match_id, m.candidate_id, m.job_id, m.overall_score,
+            m.score_breakdown, m.matched_skills, m.missing_skills, m.caveat, m.created_at AS match_created_at,
+            j.id AS j_id, j.title, j.company, j.location, j.description,
+            j.required_skills, j.preferred_skills, j.experience_level, j.salary,
+            j.experience_years_required, j.education_required, j.responsibilities,
+            j.domain, j.source, j.source_platform, j.external_job_id, j.department,
+            j.employment_type, j.workplace_type, j.source_url, j.content_hash,
+            j.collected_at, j.last_seen_at, j.posted_at, j.updated_at, j.is_active
+        FROM match_records m
+        INNER JOIN jobs j ON m.job_id = j.id
+        WHERE m.candidate_id = ? AND j.is_active = 1
+        ORDER BY m.overall_score DESC, m.created_at DESC
+        LIMIT ?
+        """
+        rows = await self.db.fetchall(query, (candidate_id, limit))
+        seen_jobs = set()
+        results: List[JobMatchItem] = []
+        for r in rows:
+            job_id = r["job_id"]
+            if job_id in seen_jobs:
+                continue
+            seen_jobs.add(job_id)
+
+            raw_bd = json.loads(r["score_breakdown"]) if isinstance(r["score_breakdown"], str) else (r["score_breakdown"] or {})
+            raw_matched = json.loads(r["matched_skills"]) if isinstance(r["matched_skills"], str) else (r["matched_skills"] or [])
+            raw_missing = json.loads(r["missing_skills"]) if isinstance(r["missing_skills"], str) else (r["missing_skills"] or [])
+
+            match_res = MatchResult(
+                candidate_id=r["candidate_id"],
+                job_id=job_id,
+                overall_score=float(r["overall_score"]),
+                breakdown=ScoreBreakdown.model_validate(raw_bd),
+                matched_skills=raw_matched,
+                missing_skills=raw_missing,
+                explanation=r.get("caveat") or "Deterministic match based on extracted skills and experience.",
+                caveat=r.get("caveat") or "Deterministic match based on extracted skills and experience.",
+            )
+
+            job_dict = {
+                "id": r["j_id"],
+                "title": r["title"],
+                "company": r["company"],
+                "location": r["location"],
+                "description": r["description"],
+                "required_skills": json.loads(r["required_skills"]) if isinstance(r["required_skills"], str) else (r["required_skills"] or []),
+                "preferred_skills": json.loads(r["preferred_skills"]) if isinstance(r["preferred_skills"], str) else (r["preferred_skills"] or []),
+                "experience_level": r.get("experience_level"),
+                "salary": r.get("salary"),
+                "experience_years_required": r.get("experience_years_required"),
+                "education_required": r.get("education_required"),
+                "responsibilities": json.loads(r["responsibilities"]) if r.get("responsibilities") and isinstance(r["responsibilities"], str) else (r.get("responsibilities") or []),
+                "domain": r.get("domain"),
+                "source": r.get("source", "firecrawl"),
+                "source_platform": r.get("source_platform"),
+                "external_job_id": r.get("external_job_id"),
+                "department": r.get("department"),
+                "employment_type": r.get("employment_type"),
+                "workplace_type": r.get("workplace_type"),
+                "source_url": r.get("source_url"),
+                "content_hash": r.get("content_hash"),
+                "is_active": bool(r.get("is_active", 1)),
+            }
+            if r.get("collected_at"):
+                job_dict["collected_at"] = datetime.fromisoformat(r["collected_at"]) if isinstance(r["collected_at"], str) else r["collected_at"]
+            if r.get("posted_at"):
+                job_dict["posted_at"] = datetime.fromisoformat(r["posted_at"]) if isinstance(r["posted_at"], str) else r["posted_at"]
+
+            job_obj = Job.model_validate(job_dict)
+            results.append(JobMatchItem(match=match_res, job=job_obj))
+            if len(results) >= limit:
+                break
+
+        return results
 
     async def get_match(self, candidate_id: str, job_id: str) -> Optional[Dict[str, Any]]:
         row = await self.db.fetchone(

@@ -60,6 +60,89 @@ class AuthenticationService:
                 logger.warning(f"Failed to read Firebase service account credentials: {e}")
         return None
 
+    async def get_google_service_account_access_token(self) -> Optional[str]:
+        """Mint a Google OAuth2 access token using the service account credentials."""
+        sa = self.get_service_account_credentials()
+        if not sa or not sa.get("client_email") or not sa.get("private_key"):
+            return None
+        now = int(datetime.now(timezone.utc).timestamp())
+        payload = {
+            "iss": sa["client_email"],
+            "sub": sa["client_email"],
+            "aud": sa.get("token_uri", "https://oauth2.googleapis.com/token"),
+            "iat": now,
+            "exp": now + 3600,
+            "scope": "https://www.googleapis.com/auth/identitytoolkit https://www.googleapis.com/auth/firebase",
+        }
+        try:
+            signed_jwt = jwt.encode(payload, sa["private_key"], algorithm="RS256")
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.post(
+                    sa.get("token_uri", "https://oauth2.googleapis.com/token"),
+                    data={
+                        "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                        "assertion": signed_jwt,
+                    },
+                )
+                if resp.status_code == 200:
+                    return resp.json().get("access_token")
+        except Exception as e:
+            logger.warning(f"Failed to mint service account access token: {e}")
+        return None
+
+    async def send_verification_email(self, id_token: str) -> dict:
+        """Trigger a Firebase verification email via Identity Toolkit API."""
+        api_key = self.settings.FIREBASE_API_KEY
+        if not api_key:
+            return {"status": "error", "message": "Firebase API key not configured"}
+
+        url = f"https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={api_key}"
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                resp = await client.post(
+                    url,
+                    json={"requestType": "VERIFY_EMAIL", "idToken": id_token},
+                )
+                if resp.status_code == 200:
+                    return {"status": "sent", "email": resp.json().get("email")}
+                err_data = resp.json().get("error", {})
+                msg = err_data.get("message", "FAILED")
+                if "TOO_MANY_ATTEMPTS_TRY_LATER" in msg:
+                    return {
+                        "status": "rate_limited",
+                        "message": "Firebase email rate limit reached. Please wait a few minutes before requesting another verification email, or check your spam/promotions folder.",
+                    }
+                return {"status": "error", "message": msg}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    async def generate_verification_link(self, email: str) -> dict:
+        """Generate official Firebase email verification link via Google Identity Toolkit admin endpoint."""
+        token = await self.get_google_service_account_access_token()
+        project_id = self.settings.FIREBASE_PROJECT_ID or "aihiring-3d070"
+        if not token:
+            return {"status": "error", "message": "Service account credentials unavailable"}
+
+        admin_url = f"https://identitytoolkit.googleapis.com/v1/projects/{project_id}/accounts:sendOobCode"
+        try:
+            async with httpx.AsyncClient(timeout=8.0) as client:
+                resp = await client.post(
+                    admin_url,
+                    headers={"Authorization": f"Bearer {token}"},
+                    json={"requestType": "VERIFY_EMAIL", "email": email, "returnOobLink": True},
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    return {
+                        "status": "success",
+                        "email": email,
+                        "verification_link": data.get("oobLink"),
+                    }
+                err_data = resp.json().get("error", {})
+                return {"status": "error", "message": err_data.get("message", "Link generation failed")}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
     def hash_password(self, plain_password: str) -> str:
         """Hash a plain text password using bcrypt."""
         salt = bcrypt.gensalt(rounds=self.bcrypt_rounds)
@@ -81,6 +164,8 @@ class AuthenticationService:
         user_id: str,
         email: str,
         role: str,
+        full_name: Optional[str] = None,
+        email_verified: bool = False,
         expires_delta: Optional[timedelta] = None,
     ) -> tuple[str, int]:
         """Generate a signed JWT access token and return (token, expires_in_seconds)."""
@@ -97,10 +182,13 @@ class AuthenticationService:
             "sub": user_id,
             "email": email,
             "role": role,
+            "email_verified": email_verified,
             "exp": expire_at,
             "iat": now,
             "jti": str(uuid.uuid4()),
         }
+        if full_name:
+            claims["name"] = full_name
 
         token = jwt.encode(
             claims,
@@ -141,13 +229,28 @@ class AuthenticationService:
 
         # Mock / Test verification support for offline test suites
         if unverified_claims.get("mock_firebase") is True:
+            if not getattr(self.settings, "ALLOW_MOCK_FIREBASE", False) or getattr(self.settings, "APP_ENV", "") == "production":
+                raise AuthenticationError("Mock Firebase tokens are disabled in this environment")
             sub = unverified_claims.get("sub") or unverified_claims.get("user_id")
             email = unverified_claims.get("email")
             role = unverified_claims.get("role", "candidate")
             name = unverified_claims.get("name") or unverified_claims.get("full_name")
             if not sub or not email:
                 raise AuthenticationError("Mock Firebase token missing subject or email")
-            return AuthenticatedPrincipal(id=sub, email=email, full_name=name, role=role, is_active=True)
+            raw_verified = unverified_claims.get("email_verified")
+            if raw_verified is None:
+                is_google = email.endswith("@gmail.com") or "google" in sub.lower() or "google" in unverified_claims.get("firebase", {}).get("sign_in_provider", "").lower()
+                email_verified = is_google
+            else:
+                email_verified = bool(raw_verified)
+            return AuthenticatedPrincipal(
+                id=sub,
+                email=email,
+                full_name=name,
+                role=role,
+                is_active=True,
+                email_verified=email_verified,
+            )
 
         kid = unverified_header.get("kid")
         if not kid:
@@ -171,12 +274,14 @@ class AuthenticationService:
             sub = claims.get("sub")
             email = claims.get("email", "")
             name = claims.get("name")
+            email_verified = bool(claims.get("email_verified", False))
             return AuthenticatedPrincipal(
                 id=sub,
                 email=email,
                 full_name=name,
                 role="candidate",
                 is_active=True,
+                email_verified=email_verified,
             )
         except jwt.ExpiredSignatureError:
             raise AuthenticationError("Firebase ID token has expired")
@@ -194,12 +299,20 @@ class AuthenticationService:
                 hashed_password=self.hash_password(uuid.uuid4().hex),
                 full_name=payload.full_name or principal.full_name or principal.email.split("@")[0],
                 role=payload.role,
+                email_verified=principal.email_verified,
             )
+        else:
+            if principal.email_verified and not user.email_verified:
+                await self.repository.update_user(user.id, email_verified=True)
+                user.email_verified = True
 
+        effective_verified = principal.email_verified or user.email_verified
         token, expires_in = self.create_access_token(
             user_id=user.id,
             email=user.email,
             role=user.role,
+            full_name=user.full_name,
+            email_verified=effective_verified,
         )
         return TokenResponse(
             access_token=token,
@@ -210,6 +323,7 @@ class AuthenticationService:
                 email=user.email,
                 full_name=user.full_name,
                 role=user.role,
+                email_verified=effective_verified,
                 created_at=user.created_at,
             ),
         )
@@ -225,6 +339,7 @@ class AuthenticationService:
                     role="admin",
                     full_name="GitHub Authorized Admin",
                     is_active=True,
+                    email_verified=True,
                 )
             raise AuthenticationError("Invalid or unauthorized GitHub personal access token")
 
@@ -234,12 +349,26 @@ class AuthenticationService:
             iss = unverified_claims.get("iss", "")
             if iss.startswith("https://securetoken.google.com/"):
                 if unverified_claims.get("mock_firebase"):
+                    if not getattr(self.settings, "ALLOW_MOCK_FIREBASE", False) or getattr(self.settings, "APP_ENV", "") == "production":
+                        raise AuthenticationError("Mock Firebase tokens are disabled in this environment")
+                    raw_verified = unverified_claims.get("email_verified")
+                    sub_val = unverified_claims.get("sub", "")
+                    em_val = unverified_claims.get("email", "")
+                    if raw_verified is None:
+                        is_google = em_val.endswith("@gmail.com") or "google" in sub_val.lower()
+                        email_verified = is_google
+                    else:
+                        email_verified = bool(raw_verified)
                     return AuthenticatedPrincipal(
-                        id=unverified_claims.get("sub", ""),
-                        email=unverified_claims.get("email", ""),
+                        id=sub_val,
+                        email=em_val,
                         role=unverified_claims.get("role", "candidate"),
+                        full_name=unverified_claims.get("name") or unverified_claims.get("full_name"),
                         is_active=True,
+                        email_verified=email_verified,
                     )
+        except AuthenticationError:
+            raise
         except Exception:
             pass
 
@@ -253,6 +382,8 @@ class AuthenticationService:
             user_id = payload.get("sub")
             email = payload.get("email")
             role = payload.get("role", "candidate")
+            full_name = payload.get("name") or payload.get("full_name")
+            email_verified = bool(payload.get("email_verified", False))
 
             if not user_id or not email:
                 raise AuthenticationError("Token payload missing subject or email claim")
@@ -261,7 +392,9 @@ class AuthenticationService:
                 id=user_id,
                 email=email,
                 role=role,
+                full_name=full_name,
                 is_active=True,
+                email_verified=email_verified,
             )
         except jwt.ExpiredSignatureError:
             raise AuthenticationError("Access token has expired")
@@ -325,6 +458,7 @@ class AuthenticationService:
             hashed_password=hashed_pw,
             full_name=payload.full_name,
             role=payload.role,
+            email_verified=False,
         )
         logger.info(f"User registered successfully: id={user.id}")
 
@@ -333,6 +467,7 @@ class AuthenticationService:
             email=user.email,
             full_name=user.full_name,
             role=user.role,
+            email_verified=False,
             created_at=user.created_at,
         )
 
@@ -345,6 +480,8 @@ class AuthenticationService:
                 user_id=user.id,
                 email=user.email,
                 role=user.role,
+                full_name=user.full_name,
+                email_verified=user.email_verified,
             )
             logger.info(f"User authenticated successfully via local credentials: id={user.id}")
             return TokenResponse(
@@ -356,6 +493,7 @@ class AuthenticationService:
                     email=user.email,
                     full_name=user.full_name,
                     role=user.role,
+                    email_verified=user.email_verified,
                     created_at=user.created_at,
                 ),
             )
@@ -363,6 +501,7 @@ class AuthenticationService:
         # 2. Connect directly to Firebase Identity Toolkit using FIREBASE_API_KEY
         fb_result = await self.verify_credentials_with_firebase_api(payload.email, payload.password)
         if fb_result and fb_result.get("idToken"):
+            fb_verified = bool(fb_result.get("emailVerified", False))
             if not user:
                 # Automatically provision account in repository
                 user = await self.repository.create_user(
@@ -370,14 +509,20 @@ class AuthenticationService:
                     hashed_password=self.hash_password(payload.password),
                     full_name=fb_result.get("displayName") or payload.email.split("@")[0],
                     role="candidate",
+                    email_verified=fb_verified,
                 )
             else:
                 user.hashed_password = self.hash_password(payload.password)
+                if fb_verified and not user.email_verified:
+                    await self.repository.update_user(user.id, email_verified=True)
+                    user.email_verified = True
 
             token, expires_in = self.create_access_token(
                 user_id=user.id,
                 email=user.email,
                 role=user.role,
+                full_name=user.full_name,
+                email_verified=user.email_verified,
             )
             logger.info(f"User authenticated successfully via Firebase API key: email={payload.email}")
             return TokenResponse(
@@ -389,6 +534,7 @@ class AuthenticationService:
                     email=user.email,
                     full_name=user.full_name,
                     role=user.role,
+                    email_verified=user.email_verified,
                     created_at=user.created_at,
                 ),
             )

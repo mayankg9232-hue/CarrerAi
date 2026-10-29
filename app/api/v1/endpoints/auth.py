@@ -12,10 +12,12 @@ from app.schemas.auth import (
     AuthenticatedPrincipal,
     FirebaseConfigResponse,
     FirebaseLoginRequest,
+    SendVerificationEmailRequest,
     TokenResponse,
     UserLoginRequest,
     UserRegisterRequest,
     UserResponse,
+    VerificationLinkResponse,
 )
 from app.schemas.common import StandardResponse
 
@@ -178,15 +180,72 @@ async def get_firebase_config() -> StandardResponse[FirebaseConfigResponse]:
     """Return public Firebase client configuration needed by Web SDK."""
     settings = get_settings()
     config = FirebaseConfigResponse(
-        apiKey=settings.FIREBASE_API_KEY,
-        authDomain=settings.FIREBASE_AUTH_DOMAIN,
-        projectId=settings.FIREBASE_PROJECT_ID,
-        storageBucket=settings.FIREBASE_STORAGE_BUCKET,
-        messagingSenderId=settings.FIREBASE_MESSAGING_SENDER_ID,
-        appId=settings.FIREBASE_APP_ID,
-        measurementId=settings.FIREBASE_MEASUREMENT_ID,
+        apiKey=settings.FIREBASE_API_KEY or "AIzaSyBcuGpHGfq2dO0-3o8j1qtc2ctWbgxK9Uo",
+        authDomain=settings.FIREBASE_AUTH_DOMAIN or "aihiring-3d070.firebaseapp.com",
+        projectId=settings.FIREBASE_PROJECT_ID or "aihiring-3d070",
+        storageBucket=settings.FIREBASE_STORAGE_BUCKET or "aihiring-3d070.firebasestorage.app",
+        messagingSenderId=settings.FIREBASE_MESSAGING_SENDER_ID or "14319993219",
+        appId=settings.FIREBASE_APP_ID or "1:14319993219:web:39f05a13de221b4bfb36b6",
+        measurementId=settings.FIREBASE_MEASUREMENT_ID or "G-EMPGKM4ZG6",
     )
     return StandardResponse[FirebaseConfigResponse](
         data=config,
         message="Firebase configuration retrieved",
+    )
+
+
+@router.post(
+    "/send-verification",
+    response_model=StandardResponse[dict],
+    status_code=status.HTTP_200_OK,
+    summary="Trigger Firebase verification email via Identity Toolkit",
+)
+async def send_verification(
+    payload: SendVerificationEmailRequest,
+    auth_service: AuthenticationService = Depends(get_auth_service),
+) -> StandardResponse[dict]:
+    """Dispatch verification email to candidate via Google Identity Toolkit."""
+    if not payload.id_token and not payload.email:
+        return StandardResponse[dict](
+            data={"status": "error"},
+            message="Either id_token or email is required",
+        )
+
+    if payload.id_token:
+        result = await auth_service.send_verification_email(payload.id_token)
+    else:
+        result = await auth_service.generate_verification_link(str(payload.email))
+
+    return StandardResponse[dict](
+        data=result,
+        message="Verification email dispatched" if result.get("status") == "sent" else result.get("message", "Processing completed"),
+    )
+
+
+@router.post(
+    "/get-verification-link",
+    response_model=StandardResponse[VerificationLinkResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Generate official Firebase verification link using service account",
+)
+async def get_verification_link(
+    payload: SendVerificationEmailRequest,
+    auth_service: AuthenticationService = Depends(get_auth_service),
+) -> StandardResponse[VerificationLinkResponse]:
+    """Generate official Firebase verification link for development, diagnostics, and testing."""
+    if not payload.email:
+        return StandardResponse[VerificationLinkResponse](
+            data=VerificationLinkResponse(status="error", email="", message="Email is required"),
+            message="Email address is required",
+        )
+
+    result = await auth_service.generate_verification_link(str(payload.email))
+    return StandardResponse[VerificationLinkResponse](
+        data=VerificationLinkResponse(
+            status=result.get("status", "error"),
+            email=str(payload.email),
+            verification_link=result.get("verification_link"),
+            message=result.get("message"),
+        ),
+        message="Verification link generated successfully" if result.get("status") == "success" else "Link generation notice",
     )

@@ -1,6 +1,7 @@
 """Vector embeddings abstraction, deterministic local provider, and cosine similarity calculations."""
 
 from abc import ABC, abstractmethod
+import hashlib
 import math
 import re
 from typing import Any, Dict, List, Optional, Sequence
@@ -9,6 +10,26 @@ import numpy as np
 
 from app.schemas.job import Job
 from app.schemas.resume import CandidateProfile
+
+
+# Process-wide in-memory embedding cache: sha256(text) -> List[float]
+_GLOBAL_EMBEDDING_CACHE: Dict[str, List[float]] = {}
+_MAX_CACHE_ENTRIES = 5000
+
+
+def get_embedding_cache_size() -> int:
+    """Return number of cached embedding vectors."""
+    return len(_GLOBAL_EMBEDDING_CACHE)
+
+
+def clear_embedding_cache() -> None:
+    """Clear all cached embeddings (useful for testing)."""
+    _GLOBAL_EMBEDDING_CACHE.clear()
+
+
+def _hash_embedding_text(text: str) -> str:
+    """Compute deterministic SHA-256 hash for embedding cache key."""
+    return hashlib.sha256(text.strip().encode("utf-8")).hexdigest()
 
 
 def cosine_similarity(vec1: Sequence[float], vec2: Sequence[float]) -> float:
@@ -233,13 +254,69 @@ class GeminiEmbeddingProvider(IEmbeddingProvider):
         return results
 
 
+class CachedEmbeddingProvider(IEmbeddingProvider):
+    """Transparent caching wrapper around any IEmbeddingProvider to prevent duplicate API calls."""
+
+    def __init__(self, inner: IEmbeddingProvider) -> None:
+        self.inner = inner
+
+    def __getattr__(self, name: str):
+        return getattr(self.inner, name)
+
+    @property
+    def dimension(self) -> int:
+        return self.inner.dimension
+
+    async def embed_text(self, text: str) -> List[float]:
+        if not text or not text.strip():
+            return [0.0] * self.dimension
+
+        cache_key = _hash_embedding_text(text)
+        if cache_key in _GLOBAL_EMBEDDING_CACHE:
+            return _GLOBAL_EMBEDDING_CACHE[cache_key]
+
+        vector = await self.inner.embed_text(text)
+        if len(_GLOBAL_EMBEDDING_CACHE) < _MAX_CACHE_ENTRIES:
+            _GLOBAL_EMBEDDING_CACHE[cache_key] = vector
+        return vector
+
+    async def embed_batch(self, texts: List[str]) -> List[List[float]]:
+        if not texts:
+            return []
+
+        results: List[Optional[List[float]]] = [None] * len(texts)
+        missing_indices: List[int] = []
+        missing_texts: List[str] = []
+
+        for idx, t in enumerate(texts):
+            if not t or not t.strip():
+                results[idx] = [0.0] * self.dimension
+                continue
+            key = _hash_embedding_text(t)
+            if key in _GLOBAL_EMBEDDING_CACHE:
+                results[idx] = _GLOBAL_EMBEDDING_CACHE[key]
+            else:
+                missing_indices.append(idx)
+                missing_texts.append(t)
+
+        if missing_texts:
+            new_vectors = await self.inner.embed_batch(missing_texts)
+            for m_idx, text_item, vec in zip(missing_indices, missing_texts, new_vectors):
+                results[m_idx] = vec
+                if len(_GLOBAL_EMBEDDING_CACHE) < _MAX_CACHE_ENTRIES:
+                    _GLOBAL_EMBEDDING_CACHE[_hash_embedding_text(text_item)] = vec
+
+        return [r if r is not None else [0.0] * self.dimension for r in results]
+
+
 def get_embedding_provider(
     provider_name: Optional[str] = None,
     api_key: Optional[str] = None,
     model: Optional[str] = None,
     transport: Optional[httpx.AsyncBaseTransport] = None,
+    enable_cache: bool = True,
 ) -> IEmbeddingProvider:
-    """Factory returning configured vector embedding provider.
+    """Factory returning configured vector embedding provider with transparent caching.
 
     Returns GeminiEmbeddingProvider when provider is 'gemini' and an API key is present.
     Falls back safely to LocalDeterministicEmbeddingProvider when offline or unconfigured.
@@ -252,9 +329,13 @@ def get_embedding_provider(
     mdl = model or settings.EMBEDDING_MODEL or "gemini-embedding-2"
 
     if prov == "gemini" and key:
-        return GeminiEmbeddingProvider(api_key=key, model=mdl, transport=transport)
+        raw_provider = GeminiEmbeddingProvider(api_key=key, model=mdl, transport=transport)
+    else:
+        raw_provider = LocalDeterministicEmbeddingProvider()
 
-    return LocalDeterministicEmbeddingProvider()
+    if enable_cache:
+        return CachedEmbeddingProvider(raw_provider)
+    return raw_provider
 
 
 # ==============================================================================

@@ -1,5 +1,6 @@
 """Matching and gap analysis schemas conforming to docs/api-contracts.md."""
 
+from datetime import datetime
 from typing import Any, List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -122,6 +123,21 @@ class UnifiedPipelineResponse(BaseModel):
     total_matches: int
 
 
+class RankedMatchesSummaryResponse(BaseModel):
+    """Ranked job matches response payload for authenticated user's active resume."""
+
+    status: str = Field(description="Match state: completed, processing, failed, no_resume, empty_catalog")
+    candidate_id: Optional[str] = Field(default=None, description="Authoritative candidate profile identifier")
+    resume_id: Optional[str] = Field(default=None, description="Active resume identifier")
+    ranked_matches: List[JobMatchItem] = Field(default_factory=list, description="Ranked matching job items")
+    total_matches: int = Field(default=0, ge=0, description="Total matching roles evaluated")
+    roles_evaluated: int = Field(default=0, ge=0, description="Total active catalog roles evaluated during matching run")
+    is_cached: bool = Field(default=False, description="Whether results were retrieved directly from database storage")
+    message: Optional[str] = Field(default=None, description="Human-readable informational or error notice")
+    calculated_at: Optional[datetime] = Field(default=None, description="Timestamp when matching was calculated")
+
+
 MatchResult.model_rebuild()
 JobMatchItem.model_rebuild()
+RankedMatchesSummaryResponse.model_rebuild()
 

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name VARCHAR(255) NOT NULL,
     role VARCHAR(32) NOT NULL DEFAULT 'candidate',
     is_active INTEGER NOT NULL DEFAULT 1,
+    email_verified INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS jobs (
     experience_level VARCHAR(64),
     source VARCHAR(64) NOT NULL DEFAULT 'firecrawl',
     source_url TEXT,
+    apply_url TEXT,
     content_hash VARCHAR(64) UNIQUE NOT NULL,
     collected_at TEXT NOT NULL,
     last_seen_at TEXT NOT NULL,
@@ -69,6 +71,8 @@ CREATE TABLE IF NOT EXISTS match_records (
     FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_matches_cand_job ON match_records(candidate_id, job_id);
+CREATE INDEX IF NOT EXISTS idx_matches_cand_score ON match_records(candidate_id, overall_score DESC);
+CREATE INDEX IF NOT EXISTS idx_matches_cand_created ON match_records(candidate_id, created_at DESC);
 """
 
 CREATE_SCRAPING_RUNS_TABLE = """
@@ -113,5 +117,45 @@ CREATE TABLE IF NOT EXISTS scraping_locks (
     locked_at TEXT NOT NULL,
     expires_at TEXT NOT NULL
 );
+"""
+
+CREATE_RESUMES_TABLE = """
+CREATE TABLE IF NOT EXISTS resumes (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64) NOT NULL,
+    filename VARCHAR(255) NOT NULL,
+    storage_key VARCHAR(512) NOT NULL,
+    file_size INTEGER NOT NULL,
+    mime_type VARCHAR(128) NOT NULL,
+    raw_hash VARCHAR(64) NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'completed',
+    is_active INTEGER NOT NULL DEFAULT 1,
+    version INTEGER NOT NULL DEFAULT 1,
+    profile_id VARCHAR(64),
+    extracted_text TEXT,
+    error_message TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (profile_id) REFERENCES candidate_profiles(id) ON DELETE SET NULL
+);
+CREATE INDEX IF NOT EXISTS idx_resumes_user_id ON resumes(user_id);
+CREATE INDEX IF NOT EXISTS idx_resumes_user_active ON resumes(user_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_resumes_user_hash ON resumes(user_id, raw_hash);
+"""
+
+CREATE_USER_SAVED_JOBS_TABLE = """
+CREATE TABLE IF NOT EXISTS user_saved_jobs (
+    id VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64) NOT NULL,
+    job_id VARCHAR(64) NOT NULL,
+    saved_at TEXT NOT NULL,
+    notes TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+    UNIQUE (user_id, job_id)
+);
+CREATE INDEX IF NOT EXISTS idx_saved_jobs_user ON user_saved_jobs(user_id, saved_at DESC);
+CREATE INDEX IF NOT EXISTS idx_saved_jobs_job ON user_saved_jobs(job_id);
 """
 
