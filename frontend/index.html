@@ -7,7 +7,7 @@
   <title>AI Job Matcher — CareerMatch AI</title>
   <meta name="description"
     content="AI Job Matcher connects candidates to tech jobs with explainable matching, skill gap analysis, and verified assessments.">
-  <link rel="stylesheet" href="/frontend-assets/styles.css?v=2.1">
+  <link rel="stylesheet" href="/frontend-assets/styles.css?v=2.3">
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234F46E5'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='12' fill='none' stroke-linecap='round'/></svg>">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -413,11 +413,10 @@
         </div>
         <div class="topbar-actions">
           <button class="btn btn-ai-gradient btn-sm" id="btnTopAiCopilot" type="button"
-            title="Launch AI Career Assistant">
-            <svg class="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
-            </svg>
-            <span>✨ AI Copilot</span>
+            title="AI Copilot" aria-label="AI Copilot">
+            <span class="copilot-icon" aria-hidden="true">
+              <img src="/frontend-assets/icons/copilot-search-engine.png" width="24" height="24" alt="" decoding="async">
+            </span>
           </button>
           <div class="status-indicator-pill">
             <span class="status-dot"></span>
@@ -1422,6 +1421,10 @@ two_sum([2, 7, 11, 15], 9)
               <button class="btn btn-primary" id="btnSendAgentMessage">Send</button>
             </div>
           </div>
+          <p class="copilot-icon-credit">
+            <a href="https://www.flaticon.com/free-animated-icon/search-engine_18559549" target="_blank"
+              rel="noopener noreferrer">Search engine icon from Flaticon</a>
+          </p>
         </section>
 
         <!-- ========================================================================
@@ -1649,12 +1652,11 @@ two_sum([2, 7, 11, 15], 9)
   </div>
 
   <!-- Floating AI Copilot Action Button -->
-  <button class="fab-ai-assistant" id="fabAiAssistant" type="button" aria-label="Open AI Career Copilot">
-    <div class="fab-ai-pulse"></div>
-    <svg class="fab-ai-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z" />
-    </svg>
-    <span class="fab-ai-text">✨ AI Copilot</span>
+  <button class="fab-ai-assistant" id="fabAiAssistant" type="button" title="AI Copilot" aria-label="AI Copilot">
+    <span class="fab-ai-pulse" aria-hidden="true"></span>
+    <span class="copilot-icon" aria-hidden="true">
+      <img src="/frontend-assets/icons/copilot-search-engine.png" width="24" height="24" alt="" decoding="async">
+    </span>
   </button>
 
   <!-- Toast Notification Container -->
