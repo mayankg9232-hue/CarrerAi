@@ -286,6 +286,23 @@ function cacheDomElements() {
 
   // Toast
   dom.toastContainer = document.getElementById('toastContainer');
+
+  // Adeora Reference Landing Page Elements
+  dom.landingPageContainer = document.getElementById('landingPageContainer');
+  dom.landingNavLoginBtn = document.getElementById('landingNavLoginBtn');
+  dom.landingNavGetStartedBtn = document.getElementById('landingNavGetStartedBtn');
+  dom.landingGetStartedText = document.getElementById('landingGetStartedText');
+  dom.landingMobileToggle = document.getElementById('landingMobileToggle');
+  dom.landingMobileMenu = document.getElementById('landingMobileMenu');
+  dom.landingMobileLoginBtn = document.getElementById('landingMobileLoginBtn');
+  dom.landingMobileGetStartedBtn = document.getElementById('landingMobileGetStartedBtn');
+  dom.landingHeroAnalyzeBtn = document.getElementById('landingHeroAnalyzeBtn');
+  dom.landingMatchingGetStartedBtn = document.getElementById('landingMatchingGetStartedBtn');
+  dom.landingFinalCtaBtn = document.getElementById('landingFinalCtaBtn');
+  dom.landingFooterLogin = document.getElementById('landingFooterLogin');
+  dom.landingFooterGetStarted = document.getElementById('landingFooterGetStarted');
+  dom.btnCloseAuthPortal = document.getElementById('btnCloseAuthPortal');
+  dom.btnTopbarViewLanding = document.getElementById('btnTopbarViewLanding');
 }
 
 function bindEventListeners() {
@@ -461,6 +478,100 @@ function bindEventListeners() {
   if (dom.btnCloseApplyModal) dom.btnCloseApplyModal.addEventListener('click', closeApplyModal);
   if (dom.btnCancelApplyConfirm) dom.btnCancelApplyConfirm.addEventListener('click', closeApplyModal);
   if (dom.btnConfirmMarkApplied) dom.btnConfirmMarkApplied.addEventListener('click', handleConfirmApplied);
+
+  // Adeora Reference Landing Page Event Listeners
+  bindLandingEventListeners();
+}
+
+function updateLandingAuthUi() {
+  const isAuthenticated = !!state.token;
+  if (dom.landingNavLoginBtn) {
+    dom.landingNavLoginBtn.textContent = isAuthenticated ? 'WORKSPACE' : 'LOGIN';
+  }
+  if (dom.landingMobileLoginBtn) {
+    dom.landingMobileLoginBtn.textContent = isAuthenticated ? 'WORKSPACE' : 'LOGIN';
+  }
+  if (dom.landingGetStartedText) {
+    dom.landingGetStartedText.textContent = isAuthenticated ? 'DASHBOARD' : 'GET STARTED';
+  }
+}
+
+function bindLandingEventListeners() {
+  const openSignIn = () => {
+    if (state.token) {
+      revealWorkspace();
+    } else {
+      if (dom.authPageContainer) dom.authPageContainer.classList.remove('hidden');
+      setPortalAuthMode(false);
+    }
+  };
+
+  const openSignUp = () => {
+    if (state.token) {
+      revealWorkspace();
+    } else {
+      if (dom.authPageContainer) dom.authPageContainer.classList.remove('hidden');
+      setPortalAuthMode(true);
+    }
+  };
+
+  if (dom.landingNavLoginBtn) dom.landingNavLoginBtn.addEventListener('click', openSignIn);
+  if (dom.landingMobileLoginBtn) dom.landingMobileLoginBtn.addEventListener('click', openSignIn);
+  if (dom.landingFooterLogin) dom.landingFooterLogin.addEventListener('click', openSignIn);
+
+  if (dom.landingNavGetStartedBtn) dom.landingNavGetStartedBtn.addEventListener('click', openSignUp);
+  if (dom.landingMobileGetStartedBtn) dom.landingMobileGetStartedBtn.addEventListener('click', openSignUp);
+  if (dom.landingMatchingGetStartedBtn) dom.landingMatchingGetStartedBtn.addEventListener('click', openSignUp);
+  if (dom.landingFinalCtaBtn) dom.landingFinalCtaBtn.addEventListener('click', openSignUp);
+  if (dom.landingFooterGetStarted) dom.landingFooterGetStarted.addEventListener('click', openSignUp);
+
+  if (dom.landingHeroAnalyzeBtn) {
+    dom.landingHeroAnalyzeBtn.addEventListener('click', () => {
+      if (state.token) {
+        revealWorkspace();
+        switchView('view-resume');
+      } else {
+        if (dom.authPageContainer) dom.authPageContainer.classList.remove('hidden');
+        setPortalAuthMode(false);
+        showAuthAlert('Please sign in or create an account to upload and analyze your resume.', 'info');
+      }
+    });
+  }
+
+  if (dom.landingMobileToggle && dom.landingMobileMenu) {
+    dom.landingMobileToggle.addEventListener('click', () => {
+      dom.landingMobileMenu.classList.toggle('open');
+    });
+  }
+
+  const mobileLinks = document.querySelectorAll('.landing-mobile-link');
+  mobileLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      if (dom.landingMobileMenu) dom.landingMobileMenu.classList.remove('open');
+    });
+  });
+
+  if (dom.btnCloseAuthPortal) {
+    dom.btnCloseAuthPortal.addEventListener('click', () => {
+      if (dom.authPageContainer) dom.authPageContainer.classList.add('hidden');
+    });
+  }
+
+  if (dom.authPageContainer) {
+    dom.authPageContainer.addEventListener('click', (e) => {
+      if (e.target === dom.authPageContainer) {
+        dom.authPageContainer.classList.add('hidden');
+      }
+    });
+  }
+
+  if (dom.btnTopbarViewLanding) {
+    dom.btnTopbarViewLanding.addEventListener('click', () => {
+      if (dom.appContainer) dom.appContainer.classList.add('auth-gated');
+      if (dom.landingPageContainer) dom.landingPageContainer.classList.remove('hidden');
+      updateLandingAuthUi();
+    });
+  }
 }
 
 // ==============================================================================
@@ -1350,7 +1461,7 @@ function renderCandidateProfileSummary(profile) {
         if (!skillName) return;
         const chip = document.createElement('span');
         chip.className = 'candidate-skill-chip';
-        chip.style.cssText = 'background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;';
+        chip.style.cssText = 'background: rgba(56, 189, 248, 0.12); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.25); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;';
         chip.innerHTML = `✓ ${escapeHtml(skillName)}`;
         dom.summaryCandidateSkills.appendChild(chip);
       });
@@ -1450,7 +1561,7 @@ async function loadRankedJobMatches(forceRefresh = false) {
       }
       if (dom.overviewMatchesList) {
         dom.overviewMatchesList.innerHTML = `
-          <div class="card" style="text-align: center; padding: 36px 20px; background: #F8FAFC; border: 1px dashed var(--color-indigo);">
+          <div class="card" style="text-align: center; padding: 36px 20px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--color-indigo);">
             <div style="font-size: 28px; margin-bottom: 8px;">⏱️</div>
             <div style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 6px;">Resume Processing In Progress</div>
             <div style="font-size: 13px; color: var(--color-text-muted); max-width: 480px; margin: 0 auto 16px;">
@@ -1473,7 +1584,7 @@ async function loadRankedJobMatches(forceRefresh = false) {
       }
       if (dom.overviewMatchesList) {
         dom.overviewMatchesList.innerHTML = `
-          <div class="card" style="text-align: center; padding: 36px 20px; background: #F8FAFC; border: 1px dashed var(--color-indigo);">
+          <div class="card" style="text-align: center; padding: 36px 20px; background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--color-indigo);">
             <div class="loading-spinner" style="margin: 0 auto 16px; width: 32px; height: 32px; border: 3px solid var(--color-indigo-subtle); border-top-color: var(--color-indigo); border-radius: 50%; animation: spin 1s linear infinite;"></div>
             <div style="font-size: 16px; font-weight: 700; color: var(--color-navy); margin-bottom: 6px;">Evaluating Catalog Roles</div>
             <div style="font-size: 13px; color: var(--color-text-muted); max-width: 480px; margin: 0 auto 16px;">
@@ -1532,10 +1643,10 @@ async function loadRankedJobMatches(forceRefresh = false) {
       }
       if (dom.overviewMatchesList) {
         dom.overviewMatchesList.innerHTML = `
-          <div class="card" style="text-align: center; padding: 36px 20px; background: #FEF2F2; border: 1px solid #FECACA;">
+          <div class="card" style="text-align: center; padding: 36px 20px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);">
             <div style="font-size: 28px; margin-bottom: 8px;">⚠️</div>
-            <div style="font-size: 16px; font-weight: 700; color: #991B1B; margin-bottom: 6px;">Resume Extraction Failed</div>
-            <div style="font-size: 13px; color: #7F1D1D; max-width: 480px; margin: 0 auto 16px;">
+            <div style="font-size: 16px; font-weight: 700; color: #F87171; margin-bottom: 6px;">Resume Extraction Failed</div>
+            <div style="font-size: 13px; color: var(--color-text-muted); max-width: 480px; margin: 0 auto 16px;">
               ${escapeHtml(data.message || 'An error occurred during resume extraction.')}
             </div>
             <button class="btn btn-secondary btn-sm" onclick="loadRankedJobMatches(true)">↻ Retry Matching</button>
@@ -1560,9 +1671,9 @@ async function loadRankedJobMatches(forceRefresh = false) {
     }
     if (dom.overviewMatchesList) {
       dom.overviewMatchesList.innerHTML = `
-        <div class="card" style="text-align: center; padding: 32px 16px; background: #FEF2F2; border: 1px solid #FECACA;">
-          <div style="font-size: 15px; font-weight: 700; color: #991B1B; margin-bottom: 6px;">Failed to load job recommendations</div>
-          <div style="font-size: 12.5px; color: #7F1D1D; margin-bottom: 14px;">${escapeHtml(err.message)}</div>
+        <div class="card" style="text-align: center; padding: 32px 16px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25);">
+          <div style="font-size: 15px; font-weight: 700; color: #F87171; margin-bottom: 6px;">Failed to load job recommendations</div>
+          <div style="font-size: 12.5px; color: var(--color-text-muted); margin-bottom: 14px;">${escapeHtml(err.message)}</div>
           <button class="btn btn-secondary btn-sm" onclick="loadRankedJobMatches(true)">↻ Try Again</button>
         </div>
       `;
@@ -1603,7 +1714,7 @@ function renderCandidateSummaryBanner(profile) {
   if (dom.summaryCandidateName) dom.summaryCandidateName.textContent = name;
   if (dom.summaryCandidateHeadline) dom.summaryCandidateHeadline.textContent = headline;
   if (dom.summaryCandidateEmail) {
-    dom.summaryCandidateEmail.innerHTML = `${escapeHtml(email)} &bull; <span style="color: #10B981; font-weight: 600;">✓ Synced in Database</span> &bull; 768d Dense Vectors Generated`;
+    dom.summaryCandidateEmail.innerHTML = `${escapeHtml(email)} &bull; <span style="color: #4ADE80; font-weight: 600;">✓ Synced in Database</span> &bull; 768d Dense Vectors Generated`;
   }
   if (dom.summaryCandidateAvatar) {
     const initials = name.split(' ').map(n => n.charAt(0)).slice(0, 2).join('').toUpperCase() || 'CV';
@@ -1621,7 +1732,7 @@ function renderCandidateSummaryBanner(profile) {
         const isVer = typeof s === 'object' && s.is_verified;
         const chip = document.createElement('span');
         chip.className = 'candidate-skill-chip';
-        chip.style.cssText = 'background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;';
+        chip.style.cssText = 'background: rgba(56, 189, 248, 0.12); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.25); padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;';
         chip.innerHTML = `${isVer ? '🛡️ ' : '✓ '}${escapeHtml(skillName)}`;
         dom.summaryCandidateSkills.appendChild(chip);
       });
@@ -1739,12 +1850,12 @@ function renderRankedMatchesList(rankedMatches, rolesEvaluated = null) {
     // Card element
     const card = document.createElement('div');
     card.className = 'job-card ranked-match-card';
-    card.style.cssText = 'background: #FFFFFF; border: 1px solid var(--color-border); border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(23, 38, 65, 0.04);';
+    card.style.cssText = 'background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-card);';
 
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
         <div style="display: flex; align-items: flex-start; gap: 14px;">
-          <div class="company-logo-avatar" style="width: 48px; height: 48px; border-radius: 10px; background: #EEF2FF; color: #4338CA; font-weight: 800; font-size: 20px; display: flex; align-items: center; justify-content: center;">
+          <div class="company-logo-avatar" style="width: 48px; height: 48px; border-radius: 10px; background: rgba(56, 189, 248, 0.1); color: #38BDF8; font-weight: 800; font-size: 20px; display: flex; align-items: center; justify-content: center;">
             ${company.charAt(0)}
           </div>
           <div>
@@ -1753,8 +1864,8 @@ function renderRankedMatchesList(rankedMatches, rolesEvaluated = null) {
                 ${isTopRank ? '★ Rank #1' : `Rank #${rank}`}
               </span>
               <span style="font-size: 13px; font-weight: 600; color: var(--color-text-muted);">${company}</span>
-              ${match.is_provisional ? '<span class="badge-pill" style="background: #FEF3C7; color: #B45309; font-size: 11px;">Provisional Match</span>' : ''}
-              ${match.reduced_confidence ? '<span class="badge-pill" style="background: #F1F5F9; color: #475569; font-size: 11px;">Weights Renormalized</span>' : ''}
+              ${match.is_provisional ? '<span class="badge-pill" style="background: rgba(251, 191, 36, 0.12); color: #FBBF24; font-size: 11px;">Provisional Match</span>' : ''}
+              ${match.reduced_confidence ? '<span class="badge-pill" style="background: rgba(255, 255, 255, 0.06); color: rgba(255, 255, 255, 0.7); font-size: 11px;">Weights Renormalized</span>' : ''}
             </div>
             <h3 style="margin: 0; font-size: 17px; font-weight: 700; color: var(--color-navy);">${title}</h3>
             <div style="display: flex; align-items: center; gap: 12px; font-size: 12.5px; color: var(--color-text-subtle); margin-top: 4px; flex-wrap: wrap;">
@@ -1839,7 +1950,7 @@ function renderRankedMatchesList(rankedMatches, rolesEvaluated = null) {
       <!-- Explainability Quote -->
       ${match.explanation ? `
         <div class="match-explanation-quote">
-          <div style="font-weight: 700; font-size: 11px; text-transform: uppercase; color: #4338CA; margin-bottom: 4px;">Transparent Rationale</div>
+          <div style="font-weight: 700; font-size: 11px; text-transform: uppercase; color: #38BDF8; margin-bottom: 4px;">Transparent Rationale</div>
           <div>${escapeHtml(match.explanation)}</div>
         </div>
       ` : ''}
@@ -2883,12 +2994,15 @@ function checkInitialAuthGate() {
 
 function revealWorkspace() {
   if (dom.authPageContainer) dom.authPageContainer.classList.add('hidden');
+  if (dom.landingPageContainer) dom.landingPageContainer.classList.add('hidden');
   if (dom.appContainer) dom.appContainer.classList.remove('auth-gated');
 }
 
 function gateWorkspace() {
-  if (dom.authPageContainer) dom.authPageContainer.classList.remove('hidden');
+  if (dom.authPageContainer) dom.authPageContainer.classList.add('hidden');
   if (dom.appContainer) dom.appContainer.classList.add('auth-gated');
+  if (dom.landingPageContainer) dom.landingPageContainer.classList.remove('hidden');
+  updateLandingAuthUi();
 }
 
 function openGoogleChooserModal() {

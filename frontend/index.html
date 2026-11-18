@@ -8,6 +8,7 @@
   <meta name="description"
     content="AI Job Matcher connects candidates to tech jobs with explainable matching, skill gap analysis, and verified assessments.">
   <link rel="stylesheet" href="/frontend-assets/styles.css?v=2.3">
+  <link rel="stylesheet" href="/frontend-assets/landing.css?v=1.0">
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234F46E5'/><path d='M30 50 L45 65 L70 35' stroke='white' stroke-width='12' fill='none' stroke-linecap='round'/></svg>">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -15,10 +16,371 @@
 
 <body>
   <!-- ==============================================================================
-       AUTHENTICATION PORTAL (FIRST SCREEN ENTRY GATEWAY)
+       ADEORA DESIGN STUDIO REFERENCE — PUBLIC LANDING PAGE
+       CareerMatch AI — AI Career Intelligence Platform
+       ============================================================================== -->
+  <div id="landingPageContainer">
+    <!-- Fixed Navigation Bar -->
+    <header class="landing-nav-header">
+      <div class="landing-nav-container">
+        <a href="#" class="landing-brand-wrapper" id="landingLogoLink" title="CareerMatch AI">
+          <span class="landing-brand-title">CareerMatch AI</span>
+          <span class="landing-brand-subtext">AI CAREER INTELLIGENCE</span>
+        </a>
+
+        <ul class="landing-nav-links">
+          <li><a href="#how-it-works" class="landing-nav-link">HOW IT WORKS</a></li>
+          <li><a href="#features" class="landing-nav-link">FEATURES</a></li>
+        </ul>
+
+        <div class="landing-nav-actions">
+          <button type="button" class="landing-login-btn" id="landingNavLoginBtn">LOGIN</button>
+          <button type="button" class="landing-btn-create" id="landingNavGetStartedBtn">
+            <span id="landingGetStartedText">GET STARTED</span>
+            <div class="landing-btn-icon-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </div>
+          </button>
+          <button type="button" class="landing-mobile-toggle" id="landingMobileToggle" aria-label="Toggle Mobile Navigation">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px;">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Dropdown Menu -->
+      <div class="landing-mobile-dropdown" id="landingMobileMenu">
+        <a href="#how-it-works" class="landing-mobile-link">HOW IT WORKS</a>
+        <a href="#features" class="landing-mobile-link">FEATURES</a>
+        <div class="landing-mobile-actions">
+          <button type="button" class="landing-login-btn" id="landingMobileLoginBtn" style="justify-content: center; width: 100%; padding: 10px;">LOGIN</button>
+          <button type="button" class="landing-btn-create" id="landingMobileGetStartedBtn" style="justify-content: center; width: 100%;">
+            <span>GET STARTED</span>
+            <div class="landing-btn-icon-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </div>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="landing-hero-section">
+      <!-- 1. Background Video -->
+      <video
+        autoplay
+        loop
+        muted
+        playsinline
+        preload="metadata"
+        class="landing-hero-video"
+      >
+        <source
+          src="https://strvid.nyc3.cdn.digitaloceanspaces.com/motionsite/hero_cloud_animation_video.mp4"
+          type="video/mp4"
+        />
+      </video>
+
+      <!-- 2. Video Overlay -->
+      <div class="landing-hero-overlay"></div>
+
+      <!-- 3. Foreground Image -->
+      <div class="landing-hero-foreground"></div>
+
+      <!-- 4. Bottom Vignette (60vh) -->
+      <div class="landing-hero-vignette-bottom"></div>
+
+      <!-- 5. Top Vignette -->
+      <div class="landing-hero-vignette-top"></div>
+
+      <!-- 6. UI Content -->
+      <div class="landing-hero-content">
+        <div class="landing-hero-subtitle">INTELLIGENT RESUME ANALYSIS. SMARTER JOB DISCOVERY.</div>
+        <h1 class="landing-hero-headline">Your Next Opportunity Starts With Your Resume.</h1>
+        <p class="landing-hero-desc">
+          Upload your resume, discover your professional potential, and let AI connect you with relevant job opportunities across multiple platforms. Find the right roles with intelligent matching and actionable career insights.
+        </p>
+        <div class="landing-hero-actions">
+          <button type="button" class="landing-btn-primary-pill" id="landingHeroAnalyzeBtn">
+            <span>ANALYZE MY RESUME</span>
+            <div class="landing-btn-arrow-circle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </div>
+          </button>
+          <a href="#how-it-works" class="landing-btn-secondary-link" id="landingHeroExploreBtn">
+            <span>EXPLORE HOW IT WORKS</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px;">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 1 — How It Works -->
+    <section class="landing-section" id="how-it-works">
+      <div class="landing-section-container">
+        <div class="landing-section-header">
+          <span class="landing-section-tag">WORKFLOW ARCHITECTURE</span>
+          <h2 class="landing-section-title">FROM RESUME TO OPPORTUNITY.</h2>
+          <p class="landing-section-desc">
+            One intelligent platform to understand your professional profile and discover opportunities that match your potential.
+          </p>
+        </div>
+
+        <div class="landing-steps-grid">
+          <div class="landing-step-card">
+            <span class="landing-step-num">01 — Upload</span>
+            <h3 class="landing-step-title">Upload Your Resume</h3>
+            <p class="landing-step-desc">
+              Upload your PDF or DOCX resume securely and let our system extract your professional information.
+            </p>
+          </div>
+
+          <div class="landing-step-card">
+            <span class="landing-step-num">02 — Analyze</span>
+            <h3 class="landing-step-title">AI Resume Analysis</h3>
+            <p class="landing-step-desc">
+              Understand your skills, education, projects, certifications and experience through intelligent resume analysis.
+            </p>
+          </div>
+
+          <div class="landing-step-card">
+            <span class="landing-step-num">03 — Discover</span>
+            <h3 class="landing-step-title">Discover Job Openings</h3>
+            <p class="landing-step-desc">
+              Discover opportunities from multiple supported job platforms based on your skills, experience and preferred location.
+            </p>
+          </div>
+
+          <div class="landing-step-card">
+            <span class="landing-step-num">04 — Match</span>
+            <h3 class="landing-step-title">Intelligent Job Matching</h3>
+            <p class="landing-step-desc">
+              Compare your professional profile against job requirements and discover opportunities ranked according to compatibility.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2 — Features -->
+    <section class="landing-section landing-section-alt" id="features">
+      <div class="landing-section-container">
+        <div class="landing-section-header">
+          <span class="landing-section-tag">PLATFORM CAPABILITIES</span>
+          <h2 class="landing-section-title">EVERYTHING YOU NEED FOR YOUR NEXT CAREER MOVE.</h2>
+          <p class="landing-section-desc">
+            Designed for serious engineering and technology professionals seeking precision-driven career discovery.
+          </p>
+        </div>
+
+        <div class="landing-features-grid">
+          <div class="landing-feature-card">
+            <span class="landing-feature-tag">01 / EXTRACTION</span>
+            <h3 class="landing-feature-title">AI Resume Analysis</h3>
+            <p class="landing-feature-desc">
+              Extract skills, education, projects, work experience and certifications with deep confidence metrics and structured categorization.
+            </p>
+          </div>
+
+          <div class="landing-feature-card">
+            <span class="landing-feature-tag">02 / INGESTION</span>
+            <h3 class="landing-feature-title">Multi-Platform Job Discovery</h3>
+            <p class="landing-feature-desc">
+              Discover job opportunities from supported job websites through live backend integrations and automated scraping pipelines.
+            </p>
+          </div>
+
+          <div class="landing-feature-card">
+            <span class="landing-feature-tag">03 / ALIGNMENT</span>
+            <h3 class="landing-feature-title">Intelligent Job Matching</h3>
+            <p class="landing-feature-desc">
+              Compare resumes and job requirements using weighted compatibility scoring across skills, experience, domain, and education.
+            </p>
+          </div>
+
+          <div class="landing-feature-card">
+            <span class="landing-feature-tag">04 / DIAGNOSTICS</span>
+            <h3 class="landing-feature-title">Skill Gap Analysis</h3>
+            <p class="landing-feature-desc">
+              Identify missing skills and discover targeted areas for professional improvement before submitting your application.
+            </p>
+          </div>
+
+          <div class="landing-feature-card">
+            <span class="landing-feature-tag">05 / PROVENANCE</span>
+            <h3 class="landing-feature-title">Fresh Job Opportunities</h3>
+            <p class="landing-feature-desc">
+              Find recently collected job listings and view their source, posted date, and verification timestamps with zero fake listings.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3 — Intelligent Matching -->
+    <section class="landing-section">
+      <div class="landing-section-container">
+        <div class="landing-matching-container">
+          <div class="landing-matching-info">
+            <span class="landing-section-tag">SCORING ARCHITECTURE</span>
+            <h2 class="landing-section-title">NOT JUST JOB SEARCH. INTELLIGENT JOB MATCHING.</h2>
+            <p class="landing-section-desc" style="margin-bottom: 2rem;">
+              Our matching engine evaluates your skills, experience, professional background and job requirements to identify opportunities worth pursuing.
+            </p>
+            <button type="button" class="landing-btn-create" id="landingMatchingGetStartedBtn">
+              <span>EXPLORE MATCH ENGINE</span>
+              <div class="landing-btn-icon-circle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </div>
+            </button>
+          </div>
+
+          <!-- Illustrative Match Score Card Preview -->
+          <div class="landing-matching-card">
+            <div class="landing-preview-header">
+              <div>
+                <div class="landing-preview-badge">ILLUSTRATIVE MATCH PREVIEW</div>
+                <div style="font-size: 1.125rem; font-weight: 600; color: #FFFFFF; margin-top: 4px;">Staff Frontend Engineer</div>
+              </div>
+              <div class="landing-preview-score">94%</div>
+            </div>
+
+            <div class="landing-factors-list">
+              <div class="landing-factor-row">
+                <div class="landing-factor-header">
+                  <span>Skills Compatibility (40% Weight)</span>
+                  <span>96%</span>
+                </div>
+                <div class="landing-factor-bar-bg">
+                  <div class="landing-factor-bar-fill" style="width: 96%;"></div>
+                </div>
+              </div>
+
+              <div class="landing-factor-row">
+                <div class="landing-factor-header">
+                  <span>Experience Alignment (25% Weight)</span>
+                  <span>92%</span>
+                </div>
+                <div class="landing-factor-bar-bg">
+                  <div class="landing-factor-bar-fill" style="width: 92%;"></div>
+                </div>
+              </div>
+
+              <div class="landing-factor-row">
+                <div class="landing-factor-header">
+                  <span>Role & Domain Relevance (25% Weight)</span>
+                  <span>95%</span>
+                </div>
+                <div class="landing-factor-bar-bg">
+                  <div class="landing-factor-bar-fill" style="width: 95%;"></div>
+                </div>
+              </div>
+
+              <div class="landing-factor-row">
+                <div class="landing-factor-header">
+                  <span>Education & Credentials (10% Weight)</span>
+                  <span>90%</span>
+                </div>
+                <div class="landing-factor-bar-bg">
+                  <div class="landing-factor-bar-fill" style="width: 90%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 1.75rem; padding-top: 1.25rem; border-top: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.8125rem; color: rgba(255, 255, 255, 0.65); display: flex; align-items: center; gap: 8px;">
+              <span>✓</span>
+              <span>Transparent calculations grounded strictly in verified resume evidence.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+
+    <!-- Section 5 — Final Call to Action -->
+    <section class="landing-section">
+      <div class="landing-section-container">
+        <div class="landing-cta-box">
+          <span class="landing-section-tag">ELEVATE YOUR CAREER</span>
+          <h2 class="landing-cta-headline">YOUR NEXT CAREER MOVE STARTS HERE.</h2>
+          <p class="landing-cta-desc">
+            Upload your resume, discover your strengths and find opportunities that match your professional potential.
+          </p>
+          <button type="button" class="landing-btn-create" id="landingFinalCtaBtn" style="padding: 0.65rem 1.75rem; font-size: 0.9375rem;">
+            <span>GET STARTED NOW</span>
+            <div class="landing-btn-icon-circle" style="width: 2.25rem; height: 2.25rem;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6 — Footer -->
+    <footer class="landing-footer">
+      <div class="landing-footer-grid">
+        <div>
+          <div class="landing-brand-wrapper">
+            <span class="landing-brand-title">CareerMatch AI</span>
+            <span class="landing-brand-subtext">AI CAREER INTELLIGENCE</span>
+          </div>
+          <p class="landing-footer-brand-desc">
+            AI-powered career intelligence platform connecting talent with relevant opportunities through explainable resume analysis and multi-source job matching.
+          </p>
+        </div>
+
+        <div>
+          <div class="landing-footer-col-title">NAVIGATION</div>
+          <ul class="landing-footer-links">
+            <li><a href="#how-it-works" class="landing-footer-link">HOW IT WORKS</a></li>
+            <li><a href="#features" class="landing-footer-link">FEATURES</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="landing-footer-col-title">ACCESS & PLATFORM</div>
+          <ul class="landing-footer-links">
+            <li><a href="javascript:void(0)" class="landing-footer-link" id="landingFooterLogin">LOGIN</a></li>
+            <li><a href="javascript:void(0)" class="landing-footer-link" id="landingFooterGetStarted">GET STARTED</a></li>
+            <li><span class="landing-footer-link" style="opacity: 0.6; cursor: default;">Security & Isolation</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="landing-footer-bottom">
+        <div>© 2026 CareerMatch AI. All rights reserved.</div>
+        <div>Evidence Over Assumptions &bull; Strict Candidate Isolation</div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- ==============================================================================
+       AUTHENTICATION PORTAL (ENTRY MODAL GATEWAY)
        Required to Sign In or Sign Up to access the Workspace
        ============================================================================== -->
-  <div class="auth-page-wrapper" id="authPageContainer">
+  <div class="auth-page-wrapper hidden" id="authPageContainer">
+    <button class="btn-close-auth-portal" id="btnCloseAuthPortal" type="button" aria-label="Close" title="Return to Landing Page">&times;</button>
     <div class="auth-portal-grid">
       <!-- Left Hero Panel -->
       <div class="auth-portal-hero">
@@ -137,10 +499,10 @@
 
         <!-- Email Verification Screen -->
         <div class="auth-verification-box" id="authVerificationScreen" style="display: none; padding: 1.25rem 0.5rem; text-align: center;">
-          <div style="width: 56px; height: 56px; border-radius: 50%; background: #EEF2FF; color: #4F46E5; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px;">✉️</div>
-          <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #0F172A;">Check your inbox</h3>
-          <p id="verificationScreenDesc" style="margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: #64748B;">
-            We've sent a verification link to <strong id="verificationEmailTarget" style="color: #0F172A;">you@example.com</strong>.<br>
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(56, 189, 248, 0.12); color: #38BDF8; display: inline-flex; align-items: center; justify-content: center; font-size: 28px; margin-bottom: 14px;">✉️</div>
+          <h3 style="margin: 0 0 8px; font-size: 18px; font-weight: 700; color: #FFFFFF;">Check your inbox</h3>
+          <p id="verificationScreenDesc" style="margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: var(--color-text-muted);">
+            We've sent a verification link to <strong id="verificationEmailTarget" style="color: #FFFFFF;">you@example.com</strong>.<br>
             Please check your email and click the verification link to activate your career features.
           </p>
 
@@ -151,20 +513,20 @@
             <button class="btn btn-secondary" id="btnResendVerification" type="button" style="width: 100%; padding: 10px; font-size: 13px; font-weight: 500;">
               Resend Verification Email
             </button>
-            <span id="resendCooldownLabel" style="display: none; font-size: 12px; color: #64748B;"></span>
-            <button id="btnGetDevVerificationLink" type="button" style="background: none; border: none; color: #64748B; font-size: 11px; cursor: pointer; text-decoration: underline;">
+            <span id="resendCooldownLabel" style="display: none; font-size: 12px; color: var(--color-text-subtle);"></span>
+            <button id="btnGetDevVerificationLink" type="button" style="background: none; border: none; color: #38BDF8; font-size: 11px; cursor: pointer; text-decoration: underline;">
               ⚙️ Email not in inbox or spam? Open instant verification link
             </button>
           </div>
 
-          <button id="btnBackToAuthFromVerification" type="button" style="background: none; border: none; color: #4F46E5; font-size: 13px; cursor: pointer; text-decoration: underline;">
+          <button id="btnBackToAuthFromVerification" type="button" style="background: none; border: none; color: #38BDF8; font-size: 13px; cursor: pointer; text-decoration: underline;">
             &larr; Back to Sign In
           </button>
         </div>
 
         <!-- Passwordless Email Link Option -->
         <div style="margin-top: 14px; text-align: center;" id="emailLinkToggleContainer">
-          <button id="btnToggleEmailLinkMode" type="button" style="background: none; border: none; color: #64748B; font-size: 12px; cursor: pointer; text-decoration: underline;">
+          <button id="btnToggleEmailLinkMode" type="button" style="background: none; border: none; color: #38BDF8; font-size: 12px; cursor: pointer; text-decoration: underline;">
             ✨ Prefer passwordless login? Sign in with email link
           </button>
         </div>
@@ -191,8 +553,8 @@
               d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
           </svg>
           <div>
-            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #111827;">Sign in with Google</h3>
-            <p style="margin: 2px 0 0; font-size: 12px; color: #6B7280;">to continue to CareerMatch AI</p>
+            <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #FFFFFF;">Sign in with Google</h3>
+            <p style="margin: 2px 0 0; font-size: 12px; color: var(--color-text-muted);">to continue to CareerMatch AI</p>
           </div>
         </div>
         <button class="btn-close-google-chooser" id="btnCloseGoogleChooser" type="button"
@@ -224,33 +586,33 @@
               <span class="google-user-name" id="savedGoogleName">Device Google Account</span>
               <span class="google-user-email" id="savedGoogleEmail"></span>
             </div>
-            <span style="margin-left: auto; font-size: 11.5px; font-weight: 600; color: #1A73E8;">Sign In &rarr;</span>
+            <span style="margin-left: auto; font-size: 11.5px; font-weight: 600; color: #38BDF8;">Sign In &rarr;</span>
           </button>
         </div>
 
         <div class="form-group" style="margin-bottom: 14px;">
           <label class="form-label" for="inputDeviceGoogleEmail"
-            style="font-size: 12.5px; color: #374151; font-weight: 600; margin-bottom: 6px; display: block;">
+            style="font-size: 12.5px; color: var(--color-text-muted); font-weight: 600; margin-bottom: 6px; display: block;">
             Your Google Account / Gmail
           </label>
           <div style="position: relative;">
             <input class="form-input" id="inputDeviceGoogleEmail" type="email" placeholder="e.g. yourname@gmail.com"
               autocomplete="username email" required autofocus
-              style="background: #FFFFFF; border: 1.5px solid #CBD5E1; color: #111827; height: 44px; font-size: 14px; padding: 0 14px; border-radius: 8px; width: 100%;">
+              style="background: rgba(255, 255, 255, 0.04); border: 1px solid var(--color-border); color: #FFFFFF; height: 44px; font-size: 14px; padding: 0 14px; border-radius: 8px; width: 100%;">
           </div>
-          <div style="font-size: 11px; color: #6B7280; margin-top: 5px;">
+          <div style="font-size: 11px; color: var(--color-text-subtle); margin-top: 5px;">
             Select your Gmail from browser autofill or enter your account.
           </div>
         </div>
 
         <button class="btn btn-primary" id="btnSubmitGoogleAuth" type="submit"
-          style="width: 100%; height: 42px; background: #1A73E8; border: none; font-size: 14px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          style="width: 100%; height: 42px; background: #38BDF8; color: #050B14; border: none; font-size: 14px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 8px;">
           <span>Continue as Google Account &rarr;</span>
         </button>
       </form>
 
       <div class="google-chooser-footer"
-        style="margin-top: 16px; font-size: 11px; color: #9CA3AF; line-height: 1.4; text-align: center;">
+        style="margin-top: 16px; font-size: 11px; color: var(--color-text-subtle); line-height: 1.4; text-align: center;">
         Google Identity securely shares your verified email and name with CareerMatch AI.
       </div>
     </div>
@@ -422,6 +784,9 @@
             <span class="status-dot"></span>
             <span id="backendStatusLabel">API Online &bull; v0.1.0</span>
           </div>
+          <button class="btn btn-outline btn-sm" id="btnTopbarViewLanding" type="button" title="View Public Landing Page" style="margin-right: 4px;">
+            <span>🌐 Landing Page</span>
+          </button>
           <button class="btn btn-secondary btn-sm" id="btnAuthAction">Sign In</button>
         </div>
       </header>
@@ -436,7 +801,7 @@
           <div class="card" id="resumeUploadCard" style="padding: var(--space-6);">
             <div class="dropzone-box main-pipeline-dropzone" id="dropzoneCv" style="display: block;">
               <div class="dropzone-icon-circle"
-                style="width: 64px; height: 64px; border-radius: 50%; background: rgba(79, 70, 229, 0.08); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+                style="width: 64px; height: 64px; border-radius: 50%; background: rgba(56, 189, 248, 0.1); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                   stroke-linejoin="round" style="width: 32px; height: 32px; color: var(--color-indigo);">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -504,18 +869,18 @@
                 </div>
               </div>
               <div
-                style="display: flex; align-items: baseline; gap: 4px; background: #EEF2FF; padding: 6px 14px; border-radius: 999px; border: 1px solid #E0E7FF;">
-                <span style="font-size: 16px; font-weight: 800; color: #4F46E5;" id="pipelineProgressPercent">0%</span>
+                style="display: flex; align-items: baseline; gap: 4px; background: rgba(56, 189, 248, 0.12); padding: 6px 14px; border-radius: 999px; border: 1px solid rgba(56, 189, 248, 0.25);">
+                <span style="font-size: 16px; font-weight: 800; color: #38BDF8;" id="pipelineProgressPercent">0%</span>
                 <span
-                  style="font-size: 11px; font-weight: 600; color: #6366F1; text-transform: uppercase; letter-spacing: 0.5px;">Parsed</span>
+                  style="font-size: 11px; font-weight: 600; color: #7DD3FC; text-transform: uppercase; letter-spacing: 0.5px;">Parsed</span>
               </div>
             </div>
 
             <!-- Dynamic Animated CV Parsing Progress Bar -->
             <div
-              style="width: 100%; height: 8px; background: #E2E8F0; border-radius: 999px; margin: 8px 0 16px; overflow: hidden; position: relative;">
+              style="width: 100%; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 999px; margin: 8px 0 16px; overflow: hidden; position: relative;">
               <div id="cvParsingProgressBar"
-                style="width: 0%; height: 100%; background: linear-gradient(90deg, #4F46E5, #06B6D4); border-radius: 999px; transition: width 0.35s ease;">
+                style="width: 0%; height: 100%; background: linear-gradient(90deg, #0284C7, #38BDF8); border-radius: 999px; transition: width 0.35s ease;">
               </div>
             </div>
 
@@ -561,12 +926,12 @@
 
           <!-- Candidate Profile Summary Card (Appears after successful processing) -->
           <div class="candidate-summary-banner" id="candidateSummaryBanner"
-            style="display: none; margin-top: var(--space-4); background: #FFFFFF; border: 1px solid var(--color-border); border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);">
+            style="display: none; margin-top: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 20px; box-shadow: var(--shadow-card);">
             <div class="candidate-summary-main"
               style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
               <div style="display: flex; align-items: center; gap: 14px;">
                 <div class="candidate-avatar" id="summaryCandidateAvatar"
-                  style="width: 52px; height: 52px; border-radius: 12px; background: #EEF2FF; color: #4338CA; font-weight: 800; font-size: 20px; display: flex; align-items: center; justify-content: center;">
+                  style="width: 52px; height: 52px; border-radius: 12px; background: rgba(56, 189, 248, 0.12); color: #38BDF8; font-weight: 800; font-size: 20px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(56, 189, 248, 0.25);">
                   MC</div>
                 <div class="candidate-info">
                   <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -575,7 +940,7 @@
                       Candidate Profile
                     </h2>
                     <span class="badge-pill" id="summaryCandidateBadge"
-                      style="background: #E6F4EA; color: #137333; font-size: 11.5px; font-weight: 600;">
+                      style="background: rgba(74, 222, 128, 0.12); color: #4ADE80; font-size: 11.5px; font-weight: 600; border: 1px solid rgba(74, 222, 128, 0.25);">
                       ✓ Pipeline Synced
                     </span>
                   </div>
@@ -1464,12 +1829,12 @@ two_sum([2, 7, 11, 15], 9)
                 Your active resume is used to calculate match scores and explainability breakdowns.
               </div>
               <div class="settings-resume-info-box"
-                style="background: #F8FAFC; border: 1px solid var(--color-border); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
+                style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;">
                 <div style="display: flex; align-items: center; justify-content: space-between;">
                   <div style="font-weight: 700; color: var(--color-navy); font-size: 14px;" id="settingsResumeFilename">
                     No resume uploaded</div>
                   <span class="badge-pill" id="settingsResumeBadge"
-                    style="background: #E6F4EA; color: #137333; font-size: 11px;">Active</span>
+                    style="background: rgba(74, 222, 128, 0.12); color: #4ADE80; font-size: 11px; border: 1px solid rgba(74, 222, 128, 0.25);">Active</span>
                 </div>
                 <div style="font-size: 12px; color: var(--color-text-muted); margin-top: 4px;" id="settingsResumeMeta">
                   Upload a PDF to activate matching</div>

@@ -1,0 +1,1070 @@
+/* ==============================================================================
+   ADEORA DESIGN STUDIO REFERENCE — PUBLIC LANDING PAGE STYLES
+   CareerMatch AI — AI Career Intelligence Platform
+   Strictly scoped to #landingPageContainer and .landing-* classes
+   ============================================================================== */
+
+:root {
+  --landing-bg-primary: #050B14;
+  --landing-bg-gradient: #02122C;
+  --landing-text-primary: #FFFFFF;
+  --landing-text-secondary: rgba(255, 255, 255, 0.8);
+  --landing-text-tertiary: rgba(255, 255, 255, 0.7);
+  --landing-border-subtle: rgba(255, 255, 255, 0.2);
+  --landing-border-strong: rgba(255, 255, 255, 0.3);
+  --landing-card-bg: rgba(255, 255, 255, 0.03);
+  --landing-card-border: rgba(255, 255, 255, 0.12);
+}
+
+/* ==============================================================================
+   CONTAINER VISIBILITY & RESET
+   ============================================================================== */
+#landingPageContainer {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--landing-bg-primary);
+  color: var(--landing-text-primary);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#landingPageContainer.hidden {
+  display: none !important;
+}
+
+#landingPageContainer *,
+#landingPageContainer *::before,
+#landingPageContainer *::after {
+  box-sizing: border-box;
+}
+
+/* ==============================================================================
+   FIXED NAVIGATION (ADEORA NAVBAR)
+   ============================================================================== */
+.landing-nav-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(5, 11, 20, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background-color 300ms ease, border-color 300ms ease;
+}
+
+.landing-nav-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .landing-nav-container {
+    padding: 1.25rem 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-nav-container {
+    padding: 1.5rem 6rem;
+  }
+}
+
+/* Brand Logo */
+.landing-brand-wrapper {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+.landing-brand-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--landing-text-primary);
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+@media (min-width: 1024px) {
+  .landing-brand-title {
+    font-size: 1.5rem;
+  }
+}
+
+.landing-brand-subtext {
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: var(--landing-text-tertiary);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+@media (min-width: 1024px) {
+  .landing-brand-subtext {
+    font-size: 0.75rem;
+  }
+}
+
+/* Desktop Navigation Links */
+.landing-nav-links {
+  display: none;
+  align-items: center;
+  gap: 2.5rem; /* space-x-10 */
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 1024px) {
+  .landing-nav-links {
+    display: flex;
+  }
+}
+
+.landing-nav-link {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--landing-text-primary);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color 300ms ease;
+  position: relative;
+  padding: 0.25rem 0;
+}
+
+.landing-nav-link:hover {
+  color: rgba(255, 255, 255, 0.7);
+  text-decoration: none;
+}
+
+/* Right Navigation Action Buttons */
+.landing-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.landing-login-btn {
+  background: transparent;
+  border: none;
+  color: var(--landing-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  transition: color 300ms ease;
+  display: inline-flex;
+  align-items: center;
+}
+
+.landing-login-btn:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* Let's Create / Get Started Button */
+.landing-btn-create {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem; /* space-x-3 */
+  padding: 0.4rem 1.15rem 0.4rem 1.25rem;
+  border-radius: 9999px;
+  border: 1px solid var(--landing-border-strong);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--landing-text-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 300ms ease;
+}
+
+.landing-btn-create:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: var(--landing-text-primary);
+  text-decoration: none;
+}
+
+.landing-btn-icon-circle {
+  width: 2rem; /* w-8 */
+  height: 2rem; /* h-8 */
+  border-radius: 9999px;
+  border: 1px solid var(--landing-border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 300ms ease;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.landing-btn-create:hover .landing-btn-icon-circle {
+  background: #FFFFFF;
+  border-color: #FFFFFF;
+}
+
+.landing-btn-icon-circle svg {
+  width: 14px;
+  height: 14px;
+  stroke: var(--landing-text-primary);
+  transition: stroke 300ms ease;
+}
+
+.landing-btn-create:hover .landing-btn-icon-circle svg {
+  stroke: var(--landing-bg-gradient);
+}
+
+/* Mobile Menu Toggle Button */
+.landing-mobile-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--landing-border-subtle);
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  color: var(--landing-text-primary);
+  cursor: pointer;
+  padding: 0;
+  transition: background 200ms ease;
+}
+
+@media (min-width: 1024px) {
+  .landing-mobile-toggle {
+    display: none;
+  }
+}
+
+.landing-mobile-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Mobile Dropdown Menu */
+.landing-mobile-dropdown {
+  display: none;
+  flex-direction: column;
+  padding: 1rem 1.5rem 1.5rem;
+  background: rgba(5, 11, 20, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  gap: 0.75rem;
+}
+
+.landing-mobile-dropdown.open {
+  display: flex;
+}
+
+.landing-mobile-link {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--landing-text-primary);
+  text-decoration: none;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-transform: uppercase;
+}
+
+.landing-mobile-link:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.landing-mobile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* ==============================================================================
+   HERO SECTION (ADEORA HERO BANNER WITH VIDEO & FOREGROUND ASSETS)
+   ============================================================================== */
+.landing-hero-section {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 8rem 1.5rem 6rem;
+  text-align: center;
+  background-color: var(--landing-bg-primary);
+}
+
+@media (min-width: 768px) {
+  .landing-hero-section {
+    padding: 9rem 3rem 7rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-hero-section {
+    padding: 10rem 6rem 8rem;
+  }
+}
+
+/* 1. Background Video (absolute inset-0) */
+.landing-hero-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 2. Video Overlay (absolute inset-0 bg-black/20) */
+.landing-hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.22);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* 3. Foreground Image (absolute bottom-0, height 80vh) */
+.landing-hero-foreground {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80vh;
+  background-image: url('https://strvid.nyc3.cdn.digitaloceanspaces.com/motionsite/hero_foreground_bg.png');
+  background-size: cover;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* 4. Bottom Vignette (60vh) */
+.landing-hero-vignette-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60vh;
+  background: linear-gradient(
+    to top,
+    #02122C 0%,
+    rgba(2, 18, 44, 0.8) 40%,
+    transparent 100%
+  );
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* 5. Top Vignette */
+.landing-hero-vignette-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50vh;
+  background: linear-gradient(
+    to bottom,
+    #02122cff 0%,
+    #02122cfa 10%,
+    #02122c80 25%,
+    transparent 50%
+  );
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* 6. Hero UI Content (relative z-10) */
+.landing-hero-content {
+  position: relative;
+  z-index: 10;
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Subtitle Animation */
+.landing-hero-subtitle {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--landing-text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+  opacity: 0;
+  animation: landingFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0s forwards;
+}
+
+@media (min-width: 1024px) {
+  .landing-hero-subtitle {
+    font-size: 0.875rem;
+  }
+}
+
+/* Main Headline Animation */
+.landing-hero-headline {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--landing-text-primary);
+  margin: 0 0 1.75rem;
+  opacity: 0;
+  animation: landingFadeUpHeadline 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+}
+
+@media (min-width: 768px) {
+  .landing-hero-headline {
+    font-size: 4.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-hero-headline {
+    font-size: 5.5rem;
+  }
+}
+
+/* Description Animation */
+.landing-hero-desc {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.625;
+  color: var(--landing-text-tertiary);
+  max-width: 760px;
+  margin: 0 0 2.5rem;
+  opacity: 0;
+  animation: landingFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+}
+
+@media (min-width: 1024px) {
+  .landing-hero-desc {
+    font-size: 1.125rem;
+  }
+}
+
+/* CTAs Container Animation */
+.landing-hero-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  opacity: 0;
+  animation: landingFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+}
+
+/* Primary CTA — View Our Work / Analyze My Resume */
+.landing-btn-primary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  padding-left: 1.5rem; /* pl-6 */
+  padding-right: 0.5rem; /* pr-2 */
+  padding-top: 0.5rem; /* py-2 */
+  padding-bottom: 0.5rem;
+  border-radius: 9999px; /* rounded-full */
+  border: 1px solid var(--landing-border-subtle);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--landing-text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 300ms ease;
+}
+
+.landing-btn-primary-pill:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: var(--landing-text-primary);
+  text-decoration: none;
+}
+
+.landing-btn-arrow-circle {
+  width: 2.25rem; /* w-9 */
+  height: 2.25rem; /* h-9 */
+  border-radius: 9999px;
+  border: 1px solid var(--landing-border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 300ms ease;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.landing-btn-primary-pill:hover .landing-btn-arrow-circle {
+  background: #FFFFFF;
+  border-color: #FFFFFF;
+}
+
+.landing-btn-arrow-circle svg {
+  width: 16px;
+  height: 16px;
+  stroke: var(--landing-text-primary);
+  transition: stroke 300ms ease;
+}
+
+.landing-btn-primary-pill:hover .landing-btn-arrow-circle svg {
+  stroke: var(--landing-bg-gradient);
+}
+
+/* Secondary CTA — Explore How It Works */
+.landing-btn-secondary-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  color: var(--landing-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 300ms ease;
+}
+
+.landing-btn-secondary-link:hover {
+  color: var(--landing-text-primary);
+  text-decoration: none;
+}
+
+/* Keyframe Animations */
+@keyframes landingFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landingFadeUpHeadline {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==============================================================================
+   COMMON SECTION STYLES
+   ============================================================================== */
+.landing-section {
+  position: relative;
+  width: 100%;
+  padding: 6rem 1.5rem;
+  background-color: var(--landing-bg-gradient);
+}
+
+@media (min-width: 768px) {
+  .landing-section {
+    padding: 7rem 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-section {
+    padding: 8rem 6rem;
+  }
+}
+
+.landing-section-alt {
+  background-color: var(--landing-bg-primary);
+}
+
+.landing-section-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.landing-section-header {
+  text-align: center;
+  max-width: 780px;
+  margin: 0 auto 4rem;
+}
+
+.landing-section-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--landing-text-tertiary);
+  text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+
+.landing-section-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--landing-text-primary);
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+  .landing-section-title {
+    font-size: 2.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-section-title {
+    font-size: 3.25rem;
+  }
+}
+
+.landing-section-desc {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--landing-text-secondary);
+  margin: 0;
+}
+
+@media (min-width: 1024px) {
+  .landing-section-desc {
+    font-size: 1.125rem;
+  }
+}
+
+/* ==============================================================================
+   SECTION 1 — HOW IT WORKS (4 STEPS)
+   ============================================================================== */
+.landing-steps-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .landing-steps-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-steps-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.landing-step-card {
+  background: var(--landing-card-bg);
+  border: 1px solid var(--landing-card-border);
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: transform 300ms ease, border-color 300ms ease, background 300ms ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.landing-step-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--landing-border-strong);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.landing-step-num {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--landing-text-tertiary);
+  margin-bottom: 1.25rem;
+  text-transform: uppercase;
+}
+
+.landing-step-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--landing-text-primary);
+  margin: 0 0 0.875rem;
+  line-height: 1.3;
+}
+
+.landing-step-desc {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--landing-text-secondary);
+  margin: 0;
+}
+
+/* ==============================================================================
+   SECTION 2 — FEATURES (5 MINIMAL FEATURE BLOCKS)
+   ============================================================================== */
+.landing-features-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .landing-features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-features-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.landing-feature-card {
+  background: var(--landing-card-bg);
+  border: 1px solid var(--landing-card-border);
+  border-radius: 16px;
+  padding: 2.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  transition: transform 300ms ease, border-color 300ms ease, background 300ms ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.landing-feature-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--landing-border-strong);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.landing-feature-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: var(--landing-text-tertiary);
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+
+.landing-feature-title {
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--landing-text-primary);
+  margin: 0 0 1rem;
+  line-height: 1.3;
+}
+
+.landing-feature-desc {
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  color: var(--landing-text-secondary);
+  margin: 0;
+}
+
+/* ==============================================================================
+   SECTION 3 — INTELLIGENT MATCHING (VISUAL EXPLANATION)
+   ============================================================================== */
+.landing-matching-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2.5rem;
+  align-items: center;
+}
+
+@media (min-width: 1024px) {
+  .landing-matching-container {
+    grid-template-columns: 1fr 1.15fr;
+  }
+}
+
+.landing-matching-info {
+  text-align: left;
+}
+
+.landing-matching-card {
+  background: var(--landing-card-bg);
+  border: 1px solid var(--landing-card-border);
+  border-radius: 20px;
+  padding: 2.5rem 2rem;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.landing-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.landing-preview-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--landing-text-tertiary);
+  text-transform: uppercase;
+}
+
+.landing-preview-score {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--landing-text-primary);
+}
+
+.landing-factors-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.landing-factor-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.landing-factor-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--landing-text-secondary);
+}
+
+.landing-factor-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.landing-factor-bar-fill {
+  height: 100%;
+  background: #FFFFFF;
+  border-radius: 9999px;
+}
+
+/* ==============================================================================
+   SECTION 4 — FINAL CALL TO ACTION
+   ============================================================================== */
+.landing-cta-box {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(2, 18, 44, 0.5) 100%);
+  border: 1px solid var(--landing-border-strong);
+  border-radius: 24px;
+  padding: 4rem 2rem;
+  text-align: center;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .landing-cta-box {
+    padding: 5rem 3.5rem;
+  }
+}
+
+.landing-cta-headline {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--landing-text-primary);
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+}
+
+@media (min-width: 768px) {
+  .landing-cta-headline {
+    font-size: 3rem;
+  }
+}
+
+.landing-cta-desc {
+  font-size: 1.0625rem;
+  color: var(--landing-text-secondary);
+  max-width: 620px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.6;
+}
+
+/* ==============================================================================
+   SECTION 6 — FOOTER
+   ============================================================================== */
+.landing-footer {
+  background-color: var(--landing-bg-primary);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4rem 1.5rem 2.5rem;
+}
+
+@media (min-width: 768px) {
+  .landing-footer {
+    padding: 5rem 3rem 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .landing-footer {
+    padding: 6rem 6rem 3rem;
+  }
+}
+
+.landing-footer-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  padding-bottom: 3.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 768px) {
+  .landing-footer-grid {
+    grid-template-columns: 1.5fr 1fr 1fr;
+  }
+}
+
+.landing-footer-brand-desc {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--landing-text-tertiary);
+  max-width: 380px;
+  margin-top: 1rem;
+}
+
+.landing-footer-col-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--landing-text-primary);
+  text-transform: uppercase;
+  margin-bottom: 1.25rem;
+}
+
+.landing-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.landing-footer-link {
+  font-size: 0.875rem;
+  color: var(--landing-text-tertiary);
+  text-decoration: none;
+  transition: color 200ms ease;
+  cursor: pointer;
+}
+
+.landing-footer-link:hover {
+  color: var(--landing-text-primary);
+  text-decoration: none;
+}
+
+.landing-footer-bottom {
+  max-width: 1200px;
+  margin: 2rem auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+  color: var(--landing-text-tertiary);
+}
+
+@media (min-width: 768px) {
+  .landing-footer-bottom {
+    flex-direction: row;
+  }
+}
+
+/* ==============================================================================
+   CLOSE BUTTON ON AUTH PORTAL MODAL (FOR CLEAN RETURN TO LANDING PAGE)
+   ============================================================================== */
+.btn-close-auth-portal {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  font-size: 24px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10001;
+  transition: all 200ms ease;
+}
+
+.btn-close-auth-portal:hover {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.08);
+}
+
+/* ==============================================================================
+   REDUCED MOTION ACCESSIBILITY
+   ============================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  #landingPageContainer *,
+  #landingPageContainer *::before,
+  #landingPageContainer *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
